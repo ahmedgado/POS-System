@@ -1,0 +1,25 @@
+{
+  "app": {
+    "title": "POS System",
+    "loading": "Loading..."
+  },
+  "auth": {
+    "login": "Login",
+    "email": "Email",
+    "password": "Password",
+    "logout": "Logout"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "search": "Search",
+    "yes": "Yes",
+    "no": "No"
+  }
+}

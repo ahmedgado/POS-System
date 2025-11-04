@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "categories" ADD COLUMN "active" BOOLEAN NOT NULL DEFAULT true;

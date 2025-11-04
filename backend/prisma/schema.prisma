@@ -1,0 +1,278 @@
+// Prisma Schema for POS System
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== USER MANAGEMENT ====================
+
+enum UserRole {
+  ADMIN
+  OWNER
+  MANAGER
+  CASHIER
+  INVENTORY_CLERK
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+model User {
+  id            String      @id @default(uuid())
+  username      String      @unique
+  email         String      @unique
+  password      String
+  firstName     String
+  lastName      String
+  phone         String?
+  role          UserRole    @default(CASHIER)
+  status        UserStatus  @default(ACTIVE)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  lastLoginAt   DateTime?
+
+  // Relations
+  shifts        Shift[]
+  sales         Sale[]
+  auditLogs     AuditLog[]
+
+  @@map("users")
+}
+
+// ==================== PRODUCT & INVENTORY ====================
+
+model Category {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  description String?
+  parentId    String?
+  active      Boolean   @default(true)
+  parent      Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryHierarchy")
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("categories")
+}
+
+model Product {
+  id              String            @id @default(uuid())
+  sku             String            @unique
+  barcode         String?           @unique
+  name            String
+  description     String?
+  categoryId      String
+  category        Category          @relation(fields: [categoryId], references: [id])
+  price           Decimal           @db.Decimal(10, 2)
+  cost            Decimal?          @db.Decimal(10, 2)
+  taxRate         Decimal           @default(0.10) @db.Decimal(5, 4)
+  stock           Int               @default(0)
+  lowStockAlert   Int               @default(10)
+  unit            String            @default("piece")
+  imageUrl        String?
+  isActive        Boolean           @default(true)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  // Relations
+  saleItems       SaleItem[]
+  stockMovements  StockMovement[]
+
+  @@map("products")
+}
+
+enum MovementType {
+  PURCHASE
+  SALE
+  ADJUSTMENT
+  DAMAGE
+  RETURN
+  TRANSFER
+}
+
+model StockMovement {
+  id          String        @id @default(uuid())
+  productId   String
+  product     Product       @relation(fields: [productId], references: [id])
+  type        MovementType
+  quantity    Int
+  notes       String?
+  createdAt   DateTime      @default(now())
+  createdBy   String
+
+  @@map("stock_movements")
+}
+
+// ==================== SALES & TRANSACTIONS ====================
+
+enum SaleStatus {
+  COMPLETED
+  REFUNDED
+  PARTIALLY_REFUNDED
+  VOIDED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  SPLIT
+  STORE_CREDIT
+}
+
+model Sale {
+  id              String        @id @default(uuid())
+  saleNumber      String        @unique
+  customerId      String?
+  customer        Customer?     @relation(fields: [customerId], references: [id])
+  cashierId       String
+  cashier         User          @relation(fields: [cashierId], references: [id])
+  shiftId         String?
+  shift           Shift?        @relation(fields: [shiftId], references: [id])
+  subtotal        Decimal       @db.Decimal(10, 2)
+  taxAmount       Decimal       @db.Decimal(10, 2)
+  discountAmount  Decimal       @default(0) @db.Decimal(10, 2)
+  totalAmount     Decimal       @db.Decimal(10, 2)
+  paymentMethod   PaymentMethod
+  cashReceived    Decimal?      @db.Decimal(10, 2)
+  changeGiven     Decimal?      @db.Decimal(10, 2)
+  status          SaleStatus    @default(COMPLETED)
+  notes           String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  items           SaleItem[]
+  refunds         Refund[]
+
+  @@map("sales")
+}
+
+model SaleItem {
+  id          String   @id @default(uuid())
+  saleId      String
+  sale        Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  quantity    Int
+  unitPrice   Decimal  @db.Decimal(10, 2)
+  taxRate     Decimal  @db.Decimal(5, 4)
+  discount    Decimal  @default(0) @db.Decimal(10, 2)
+  totalPrice  Decimal  @db.Decimal(10, 2)
+
+  @@map("sale_items")
+}
+
+model Refund {
+  id          String   @id @default(uuid())
+  saleId      String
+  sale        Sale     @relation(fields: [saleId], references: [id])
+  amount      Decimal  @db.Decimal(10, 2)
+  reason      String
+  approvedBy  String?
+  createdAt   DateTime @default(now())
+
+  @@map("refunds")
+}
+
+// ==================== CUSTOMER MANAGEMENT ====================
+
+model Customer {
+  id              String    @id @default(uuid())
+  firstName       String
+  lastName        String
+  email           String?   @unique
+  phone           String?   @unique
+  loyaltyPoints   Int       @default(0)
+  storeCredit     Decimal   @default(0) @db.Decimal(10, 2)
+  totalSpent      Decimal   @default(0) @db.Decimal(10, 2)
+  visitCount      Int       @default(0)
+  lastVisit       DateTime?
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  sales           Sale[]
+
+  @@map("customers")
+}
+
+// ==================== SHIFT MANAGEMENT ====================
+
+enum ShiftStatus {
+  OPEN
+  CLOSED
+  RECONCILED
+}
+
+model Shift {
+  id                String      @id @default(uuid())
+  shiftNumber       String      @unique
+  cashierId         String
+  cashier           User        @relation(fields: [cashierId], references: [id])
+  startingCash      Decimal     @db.Decimal(10, 2)
+  endingCash        Decimal?    @db.Decimal(10, 2)
+  expectedCash      Decimal?    @db.Decimal(10, 2)
+  discrepancy       Decimal?    @db.Decimal(10, 2)
+  totalSales        Decimal     @default(0) @db.Decimal(10, 2)
+  totalTransactions Int         @default(0)
+  status            ShiftStatus @default(OPEN)
+  openedAt          DateTime    @default(now())
+  closedAt          DateTime?
+  notes             String?
+
+  // Relations
+  sales             Sale[]
+
+  @@map("shifts")
+}
+
+// ==================== AUDIT LOG ====================
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  SALE
+  REFUND
+  VOID
+  SHIFT_OPEN
+  SHIFT_CLOSE
+}
+
+model AuditLog {
+  id          String      @id @default(uuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+  action      AuditAction
+  entity      String
+  entityId    String?
+  changes     Json?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime    @default(now())
+
+  @@map("audit_logs")
+}
+
+// ==================== SYSTEM SETTINGS ====================
+
+model Setting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  category  String
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}

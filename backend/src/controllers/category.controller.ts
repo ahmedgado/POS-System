@@ -19,7 +19,7 @@ export class CategoryController {
       id: cat.id,
       name: cat.name,
       description: cat.description,
-      active: true, // Add active field if needed in schema
+      active: cat.active,
       productCount: cat._count.products,
       createdAt: cat.createdAt
     }));
@@ -75,7 +75,7 @@ export class CategoryController {
 
   async update(req: AuthRequest, res: Response) {
     const { id } = req.params;
-    const { name, description } = req.body;
+    const { name, description, active } = req.body;
 
     const category = await prisma.category.findUnique({
       where: { id }
@@ -89,7 +89,8 @@ export class CategoryController {
       where: { id },
       data: {
         name,
-        description
+        description,
+        ...(active !== undefined && { active })
       }
     });
 
@@ -125,6 +126,7 @@ export class CategoryController {
 
   async toggleActive(req: AuthRequest, res: Response) {
     const { id } = req.params;
+    const { active } = req.body;
 
     const category = await prisma.category.findUnique({
       where: { id }
@@ -134,9 +136,11 @@ export class CategoryController {
       throw new AppError('Category not found', 404);
     }
 
-    // Note: If you don't have an 'active' field in schema, this will just return the category
-    // You may need to add 'active Boolean @default(true)' to Category model in schema
+    const updated = await prisma.category.update({
+      where: { id },
+      data: { active }
+    });
 
-    return ApiResponse.success(res, category, 'Category status updated');
+    return ApiResponse.success(res, updated, 'Category status updated');
   }
 }

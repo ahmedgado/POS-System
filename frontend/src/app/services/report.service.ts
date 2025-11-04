@@ -107,27 +107,27 @@ export class ReportService {
   }
 
   exportSalesReportPDF(startDate: string, endDate: string): Observable<Blob> {
-    return this.http.get(`${this.baseUrl}/sales/export/pdf`, {
+    return this.http.get(`${this.baseUrl}/sales/pdf`, {
       params: { startDate, endDate },
       responseType: 'blob'
     });
   }
 
   exportSalesReportExcel(startDate: string, endDate: string): Observable<Blob> {
-    return this.http.get(`${this.baseUrl}/sales/export/excel`, {
+    return this.http.get(`${this.baseUrl}/sales/excel`, {
       params: { startDate, endDate },
       responseType: 'blob'
     });
   }
 
   exportInventoryReportPDF(): Observable<Blob> {
-    return this.http.get(`${this.baseUrl}/inventory/export/pdf`, {
+    return this.http.get(`${this.baseUrl}/inventory/pdf`, {
       responseType: 'blob'
     });
   }
 
   exportInventoryReportExcel(): Observable<Blob> {
-    return this.http.get(`${this.baseUrl}/inventory/export/excel`, {
+    return this.http.get(`${this.baseUrl}/inventory/excel`, {
       responseType: 'blob'
     });
   }

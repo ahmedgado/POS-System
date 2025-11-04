@@ -99,6 +99,20 @@ export class ProductController {
       imageUrl
     } = req.body;
 
+    // Validate required fields
+    if (!categoryId) {
+      throw new AppError('Category is required. Please select a category for this product.', 400);
+    }
+
+    // Check if category exists
+    const categoryExists = await prisma.category.findUnique({
+      where: { id: categoryId }
+    });
+
+    if (!categoryExists) {
+      throw new AppError('Selected category does not exist', 400);
+    }
+
     // Check if SKU already exists
     const existingSku = await prisma.product.findUnique({
       where: { sku }
@@ -170,6 +184,17 @@ export class ProductController {
 
     if (!existingProduct) {
       throw new AppError('Product not found', 404);
+    }
+
+    // Validate categoryId if being updated
+    if (updateData.categoryId) {
+      const categoryExists = await prisma.category.findUnique({
+        where: { id: updateData.categoryId }
+      });
+
+      if (!categoryExists) {
+        throw new AppError('Selected category does not exist', 400);
+      }
     }
 
     // Check SKU uniqueness if changed

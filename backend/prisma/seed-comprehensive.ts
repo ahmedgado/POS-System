@@ -197,15 +197,14 @@ async function main() {
           name: generateProductName(category.name, subcategory, productCounter),
           sku: generateSKU(category.name, productCounter),
           barcode: `BAR${String(productCounter).padStart(10, '0')}`,
-          category: subcategory,
           categoryId: category.id,
           description: `High-quality ${subcategory} product from ${BRANDS[randomInt(0, BRANDS.length - 1)]}`,
           price: randomPrice(1, 999),
           cost: randomPrice(0.5, 499),
           stock: randomInt(0, 500),
-          minStock: randomInt(5, 20),
+          lowStockAlert: randomInt(5, 20),
           imageUrl: getPlaceholderImage(subcategory),
-          active: true
+          isActive: true
         }
       });
       products.push(product);

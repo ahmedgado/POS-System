@@ -6,9 +6,9 @@ import { ApiResponse } from '../utils/response';
 import { logger } from '../utils/logger';
 
 export class ProductController {
-  // GET /api/products - Get all products with pagination
+  // GET /api/products - Get products with pagination
   async getAllProducts(req: AuthRequest, res: Response) {
-    const { page = 1, limit = 20, search, category, active } = req.query;
+    const { page = 1, limit = 100, search, category, active } = req.query;
 
     const skip = (Number(page) - 1) * Number(limit);
     const take = Number(limit);
@@ -31,6 +31,9 @@ export class ProductController {
     if (active !== undefined) {
       where.isActive = active === 'true';
     }
+
+    // Get total count for pagination
+    const totalCount = await prisma.product.count({ where });
 
     // Get products with category
     const products = await prisma.product.findMany({
@@ -56,8 +59,17 @@ export class ProductController {
       taxRate: Number(product.taxRate)
     }));
 
-    // Return products array directly for frontend compatibility
-    return res.json(productsWithNumbers);
+    // Return with pagination metadata
+    return res.json({
+      data: productsWithNumbers,
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / Number(limit)),
+        hasMore: skip + products.length < totalCount
+      }
+    });
   }
 
   // GET /api/products/:id - Get single product
@@ -169,13 +181,35 @@ export class ProductController {
 
     logger.info(`Product created: ${product.name} by ${req.user?.email}`);
 
-    return ApiResponse.success(res, product, 'Product created successfully', 201);
+    // Convert Decimal fields to numbers for frontend
+    const productWithNumbers = {
+      ...product,
+      cost: product.cost ? Number(product.cost) : null,
+      price: Number(product.price),
+      taxRate: Number(product.taxRate)
+    };
+
+    return ApiResponse.success(res, productWithNumbers, 'Product created successfully', 201);
   }
 
   // PUT /api/products/:id - Update product
   async updateProduct(req: AuthRequest, res: Response) {
     const { id } = req.params;
-    const updateData = req.body;
+    const {
+      sku,
+      barcode,
+      name,
+      description,
+      categoryId,
+      price,
+      cost,
+      taxRate,
+      stock,
+      lowStockAlert,
+      unit,
+      imageUrl,
+      isActive
+    } = req.body;
 
     // Check if product exists
     const existingProduct = await prisma.product.findUnique({
@@ -187,9 +221,9 @@ export class ProductController {
     }
 
     // Validate categoryId if being updated
-    if (updateData.categoryId) {
+    if (categoryId) {
       const categoryExists = await prisma.category.findUnique({
-        where: { id: updateData.categoryId }
+        where: { id: categoryId }
       });
 
       if (!categoryExists) {
@@ -198,15 +232,42 @@ export class ProductController {
     }
 
     // Check SKU uniqueness if changed
-    if (updateData.sku && updateData.sku !== existingProduct.sku) {
+    if (sku && sku !== existingProduct.sku) {
       const skuExists = await prisma.product.findUnique({
-        where: { sku: updateData.sku }
+        where: { sku }
       });
 
       if (skuExists) {
         throw new AppError('Product with this SKU already exists', 400);
       }
     }
+
+    // Check barcode uniqueness if changed
+    if (barcode && barcode !== existingProduct.barcode) {
+      const barcodeExists = await prisma.product.findUnique({
+        where: { barcode }
+      });
+
+      if (barcodeExists) {
+        throw new AppError('Product with this barcode already exists', 400);
+      }
+    }
+
+    // Prepare update data - only include fields that are provided
+    const updateData: any = {};
+    if (sku !== undefined) updateData.sku = sku;
+    if (barcode !== undefined) updateData.barcode = barcode || null;
+    if (name !== undefined) updateData.name = name;
+    if (description !== undefined) updateData.description = description;
+    if (categoryId !== undefined) updateData.categoryId = categoryId;
+    if (price !== undefined) updateData.price = price;
+    if (cost !== undefined) updateData.cost = cost;
+    if (taxRate !== undefined) updateData.taxRate = taxRate;
+    if (stock !== undefined) updateData.stock = stock;
+    if (lowStockAlert !== undefined) updateData.lowStockAlert = lowStockAlert;
+    if (unit !== undefined) updateData.unit = unit;
+    if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
+    if (isActive !== undefined) updateData.isActive = isActive;
 
     // Update product
     const product = await prisma.product.update({
@@ -232,7 +293,15 @@ export class ProductController {
 
     logger.info(`Product updated: ${product.name} by ${req.user?.email}`);
 
-    return ApiResponse.success(res, product, 'Product updated successfully');
+    // Convert Decimal fields to numbers for frontend
+    const productWithNumbers = {
+      ...product,
+      cost: product.cost ? Number(product.cost) : null,
+      price: Number(product.price),
+      taxRate: Number(product.taxRate)
+    };
+
+    return ApiResponse.success(res, productWithNumbers, 'Product updated successfully');
   }
 
   // DELETE /api/products/:id - Delete product

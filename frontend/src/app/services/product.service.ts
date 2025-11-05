@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 export interface Product {
@@ -25,14 +25,36 @@ export interface Product {
   updatedAt?: string;
 }
 
+export interface ProductsResponse {
+  data: Product[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasMore: boolean;
+  };
+}
+
 @Injectable({ providedIn: 'root' })
 export class ProductService {
   private readonly baseUrl = '/api/products';
 
   constructor(private http: HttpClient) {}
 
-  getAll(): Observable<Product[]> {
-    return this.http.get<Product[]>(this.baseUrl);
+  getAll(page: number = 1, limit: number = 100, search?: string, category?: string): Observable<ProductsResponse> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('limit', limit.toString());
+
+    if (search) {
+      params = params.set('search', search);
+    }
+    if (category) {
+      params = params.set('category', category);
+    }
+
+    return this.http.get<ProductsResponse>(this.baseUrl, { params });
   }
 
   create(product: Partial<Product>): Observable<Product> {

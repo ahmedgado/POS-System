@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Product, ProductService } from '../services/product.service';
 import { SaleService, CreateSaleRequest } from '../services/sale.service';
 import { AuthService } from '../services/auth.service';
+import { Category, CategoryService } from '../services/category.service';
 
 interface CartItem {
   productId: string;
@@ -52,11 +53,11 @@ interface CartItem {
           </button>
           <button
             *ngFor="let cat of categories"
-            (click)="filterCategory = cat; onSearch()"
-            [style.background]="filterCategory === cat ? '#DC3545' : '#fff'"
-            [style.color]="filterCategory === cat ? '#fff' : '#333'"
+            (click)="filterCategory = cat.name; onSearch()"
+            [style.background]="filterCategory === cat.name ? '#DC3545' : '#fff'"
+            [style.color]="filterCategory === cat.name ? '#fff' : '#333'"
             style="padding:8px 16px;border:1px solid #ddd;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">
-            {{ cat }}
+            {{ cat.name }}
           </button>
         </div>
 
@@ -266,7 +267,7 @@ export class POSComponent implements OnInit {
   cashierName = '';
   searchTerm = '';
   filterCategory = '';
-  categories: string[] = ['Electronics', 'Clothing', 'Food', 'Beverages', 'Books'];
+  categories: Category[] = [];
 
   products: Product[] = [];
   filteredProducts: Product[] = [];
@@ -287,21 +288,34 @@ export class POSComponent implements OnInit {
   constructor(
     private productService: ProductService,
     private saleService: SaleService,
-    private authService: AuthService
+    private authService: AuthService,
+    private categoryService: CategoryService
   ) {
     this.cashierName = this.authService.currentUser?.firstName || 'Cashier';
   }
 
   ngOnInit() {
+    this.loadCategories();
     this.loadProducts();
+  }
+
+  loadCategories() {
+    this.categoryService.getAll().subscribe({
+      next: (data) => {
+        this.categories = data.filter(c => c.active);
+      },
+      error: (err) => {
+        console.error('Failed to load categories:', err);
+      }
+    });
   }
 
   loadProducts() {
     this.loading = true;
-    this.productService.getAll().subscribe({
-      next: (data) => {
-        this.products = data;
-        this.filteredProducts = data;
+    this.productService.getAll(1, 1000).subscribe({
+      next: (response) => {
+        this.products = response.data;
+        this.filteredProducts = response.data;
         this.loading = false;
       },
       error: (err) => {

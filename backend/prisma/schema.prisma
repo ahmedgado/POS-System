@@ -151,8 +151,20 @@ model Sale {
   // Relations
   items           SaleItem[]
   refunds         Refund[]
+  payments        SalePayment[]
 
   @@map("sales")
+}
+
+model SalePayment {
+  id              String        @id @default(uuid())
+  saleId          String
+  sale            Sale          @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  paymentMethod   PaymentMethod
+  amount          Decimal       @db.Decimal(10, 2)
+  createdAt       DateTime      @default(now())
+
+  @@map("sale_payments")
 }
 
 model SaleItem {

@@ -1,19 +1,20 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TranslateModule } from '@ngx-translate/core';
 import { Shift, ShiftService } from '../services/shift.service';
 import { AuthService } from '../services/auth.service';
 
 @Component({
   selector: 'app-shifts',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslateModule],
   template: `
     <div style="min-height:100vh;background:#f5f6f8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
       <!-- Header -->
       <header style="background:#DC3545;color:#fff;padding:20px 32px;box-shadow:0 2px 8px rgba(220,53,69,0.15);">
         <div style="display:flex;align-items:center;justify-content:space-between;">
-          <h1 style="margin:0;font-size:24px;font-weight:700;">🕐 Shifts Management</h1>
+          <h1 style="margin:0;font-size:24px;font-weight:700;">🕐 {{ 'shifts.title' | translate }}</h1>
           <div style="color:rgba(255,255,255,0.9);">{{ cashierName }}</div>
         </div>
       </header>
@@ -22,16 +23,16 @@ import { AuthService } from '../services/auth.service';
       <main style="padding:32px;">
         <!-- Current Shift Status -->
         <section style="background:#fff;padding:24px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);margin-bottom:24px;">
-          <h2 style="margin:0 0 20px 0;color:#333;font-size:18px;font-weight:600;">Current Shift</h2>
+          <h2 style="margin:0 0 20px 0;color:#333;font-size:18px;font-weight:600;">{{ 'shifts.currentShift' | translate }}</h2>
 
           <!-- No Active Shift -->
           <div *ngIf="!currentShift && !loading" style="text-align:center;padding:40px 20px;">
             <div style="font-size:64px;margin-bottom:16px;">🕐</div>
-            <div style="font-size:18px;color:#666;margin-bottom:24px;">No active shift</div>
+            <div style="font-size:18px;color:#666;margin-bottom:24px;">{{ 'shifts.noActiveShift' | translate }}</div>
             <button
               (click)="showOpenShiftModal = true"
               style="background:#28a745;color:#fff;border:none;padding:14px 32px;border-radius:8px;font-weight:600;cursor:pointer;font-size:16px;">
-              🔓 Open New Shift
+              🔓 {{ 'shifts.openNewShift' | translate }}
             </button>
           </div>
 
@@ -40,11 +41,11 @@ import { AuthService } from '../services/auth.service';
             <div style="background:linear-gradient(135deg, #28a745 0%, #20c997 100%);color:#fff;padding:24px;border-radius:12px;margin-bottom:24px;">
               <div style="display:flex;justify-content:space-between;align-items:center;">
                 <div>
-                  <div style="font-size:14px;opacity:0.9;margin-bottom:8px;">Shift Started</div>
+                  <div style="font-size:14px;opacity:0.9;margin-bottom:8px;">{{ 'shifts.shiftStarted' | translate }}</div>
                   <div style="font-size:24px;font-weight:700;">{{ formatTime(currentShift.startTime) }}</div>
                 </div>
                 <div style="text-align:right;">
-                  <div style="font-size:14px;opacity:0.9;margin-bottom:8px;">Starting Cash</div>
+                  <div style="font-size:14px;opacity:0.9;margin-bottom:8px;">{{ 'shifts.startingCash' | translate }}</div>
                   <div style="font-size:24px;font-weight:700;">\${{ toNumber(currentShift.startingCash).toFixed(2) }}</div>
                 </div>
               </div>
@@ -52,15 +53,15 @@ import { AuthService } from '../services/auth.service';
 
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;margin-bottom:24px;">
               <div style="background:#f8f9fa;padding:20px;border-radius:8px;text-align:center;">
-                <div style="color:#666;font-size:13px;margin-bottom:8px;">Total Sales</div>
+                <div style="color:#666;font-size:13px;margin-bottom:8px;">{{ 'shifts.totalSales' | translate }}</div>
                 <div style="font-size:28px;font-weight:700;color:#DC3545;">{{ currentShift.totalSales || 0 }}</div>
               </div>
               <div style="background:#f8f9fa;padding:20px;border-radius:8px;text-align:center;">
-                <div style="color:#666;font-size:13px;margin-bottom:8px;">Total Orders</div>
+                <div style="color:#666;font-size:13px;margin-bottom:8px;">{{ 'shifts.totalOrders' | translate }}</div>
                 <div style="font-size:28px;font-weight:700;color:#007bff;">{{ currentShift.totalOrders || 0 }}</div>
               </div>
               <div style="background:#f8f9fa;padding:20px;border-radius:8px;text-align:center;">
-                <div style="color:#666;font-size:13px;margin-bottom:8px;">Expected Cash</div>
+                <div style="color:#666;font-size:13px;margin-bottom:8px;">{{ 'shifts.expectedCash' | translate }}</div>
                 <div style="font-size:28px;font-weight:700;color:#28a745;">\${{ toNumber(currentShift.expectedCash).toFixed(2) }}</div>
               </div>
             </div>
@@ -69,7 +70,7 @@ import { AuthService } from '../services/auth.service';
               <button
                 (click)="showCloseShiftModal = true"
                 style="background:#dc3545;color:#fff;border:none;padding:14px 32px;border-radius:8px;font-weight:600;cursor:pointer;font-size:16px;">
-                🔒 Close Shift
+                🔒 {{ 'shifts.closeShift' | translate }}
               </button>
             </div>
           </div>
@@ -78,16 +79,16 @@ import { AuthService } from '../services/auth.service';
         <!-- Shift History -->
         <section style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);overflow:hidden;">
           <div style="padding:20px 24px;border-bottom:1px solid #eee;">
-            <h2 style="margin:0;color:#333;font-size:16px;font-weight:600;">Shift History</h2>
+            <h2 style="margin:0;color:#333;font-size:16px;font-weight:600;">{{ 'shifts.shiftHistory' | translate }}</h2>
           </div>
 
           <div *ngIf="loading" style="text-align:center;padding:60px 20px;color:#999;">
-            Loading shifts...
+            {{ 'common.loading' | translate }}...
           </div>
 
           <div *ngIf="!loading && shifts.length === 0" style="text-align:center;padding:60px 20px;color:#999;">
             <div style="font-size:48px;margin-bottom:16px;">📋</div>
-            <div style="font-size:16px;">No shift history yet</div>
+            <div style="font-size:16px;">{{ 'common.noData' | translate }}</div>
           </div>
 
           <div *ngIf="!loading && shifts.length > 0" style="overflow-x:auto;">
@@ -95,14 +96,14 @@ import { AuthService } from '../services/auth.service';
               <thead>
                 <tr style="background:#f8f9fa;border-bottom:2px solid #dee2e6;">
                   <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;">#</th>
-                  <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;">Cashier</th>
-                  <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;">Start Time</th>
-                  <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;">End Time</th>
-                  <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;">Starting Cash</th>
-                  <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;">Ending Cash</th>
-                  <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;">Difference</th>
-                  <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;">Status</th>
-                  <th style="padding:16px 24px;text-align:center;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;">Actions</th>
+                  <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;">{{ 'shifts.cashier' | translate }}</th>
+                  <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;">{{ 'shifts.startTime' | translate }}</th>
+                  <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;">{{ 'shifts.endTime' | translate }}</th>
+                  <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;">{{ 'shifts.startingCash' | translate }}</th>
+                  <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;">{{ 'shifts.endingCash' | translate }}</th>
+                  <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;">{{ 'shifts.difference' | translate }}</th>
+                  <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;">{{ 'shifts.status' | translate }}</th>
+                  <th style="padding:16px 24px;text-align:center;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;">{{ 'shifts.actions' | translate }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -131,7 +132,7 @@ import { AuthService } from '../services/auth.service';
                     <button
                       (click)="viewShiftDetails(shift)"
                       style="background:#007bff;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;">
-                      View
+                      {{ 'common.view' | translate }}
                     </button>
                   </td>
                 </tr>
@@ -147,12 +148,12 @@ import { AuthService } from '../services/auth.service';
          style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;"
          (click)="showOpenShiftModal = false">
       <div style="background:#fff;border-radius:16px;max-width:500px;width:100%;padding:32px;" (click)="$event.stopPropagation()">
-        <h2 style="margin:0 0 24px 0;color:#333;font-size:24px;font-weight:700;text-align:center;">🔓 Open New Shift</h2>
+        <h2 style="margin:0 0 24px 0;color:#333;font-size:24px;font-weight:700;text-align:center;">🔓 {{ 'shifts.openNewShift' | translate }}</h2>
 
         <form (submit)="openShift(); $event.preventDefault()">
           <div style="margin-bottom:24px;">
             <label style="display:block;font-size:14px;font-weight:600;color:#333;margin-bottom:8px;">
-              Starting Cash Amount <span style="color:#dc3545;">*</span>
+              {{ 'shifts.startingCash' | translate }} <span style="color:#dc3545;">*</span>
             </label>
             <input
               type="number"
@@ -168,12 +169,12 @@ import { AuthService } from '../services/auth.service';
 
           <div style="margin-bottom:24px;">
             <label style="display:block;font-size:14px;font-weight:600;color:#333;margin-bottom:8px;">
-              Notes (Optional)
+              {{ 'shifts.notes' | translate }}
             </label>
             <textarea
               [(ngModel)]="openNotes"
               name="notes"
-              placeholder="Add any notes about this shift..."
+              [placeholder]="'shifts.addNotes' | translate"
               rows="3"
               style="width:100%;padding:12px;border:2px solid #ddd;border-radius:8px;font-size:14px;outline:none;resize:vertical;"
             ></textarea>
@@ -185,13 +186,13 @@ import { AuthService } from '../services/auth.service';
               [disabled]="processing || !startingCash || startingCash < 0"
               style="flex:1;background:#28a745;color:#fff;border:none;padding:14px;border-radius:8px;font-weight:600;cursor:pointer;font-size:16px;"
               [style.opacity]="processing || !startingCash || startingCash < 0 ? '0.5' : '1'">
-              {{ processing ? 'Opening...' : 'Open Shift' }}
+              {{ processing ? ('common.loading' | translate) + '...' : ('shifts.openNewShift' | translate) }}
             </button>
             <button
               type="button"
               (click)="showOpenShiftModal = false"
               style="flex:1;background:#fff;color:#666;border:2px solid #ddd;padding:14px;border-radius:8px;font-weight:600;cursor:pointer;">
-              Cancel
+              {{ 'common.cancel' | translate }}
             </button>
           </div>
         </form>
@@ -203,16 +204,16 @@ import { AuthService } from '../services/auth.service';
          style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;"
          (click)="showCloseShiftModal = false">
       <div style="background:#fff;border-radius:16px;max-width:500px;width:100%;padding:32px;" (click)="$event.stopPropagation()">
-        <h2 style="margin:0 0 24px 0;color:#333;font-size:24px;font-weight:700;text-align:center;">🔒 Close Shift</h2>
+        <h2 style="margin:0 0 24px 0;color:#333;font-size:24px;font-weight:700;text-align:center;">🔒 {{ 'shifts.closeShift' | translate }}</h2>
 
         <div style="background:#f8f9fa;padding:20px;border-radius:8px;margin-bottom:24px;">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;text-align:center;">
             <div>
-              <div style="color:#666;font-size:13px;margin-bottom:4px;">Starting Cash</div>
+              <div style="color:#666;font-size:13px;margin-bottom:4px;">{{ 'shifts.startingCash' | translate }}</div>
               <div style="font-size:20px;font-weight:700;color:#28a745;">\${{ toNumber(currentShift?.startingCash).toFixed(2) }}</div>
             </div>
             <div>
-              <div style="color:#666;font-size:13px;margin-bottom:4px;">Expected Cash</div>
+              <div style="color:#666;font-size:13px;margin-bottom:4px;">{{ 'shifts.expectedCash' | translate }}</div>
               <div style="font-size:20px;font-weight:700;color:#007bff;">\${{ toNumber(currentShift?.expectedCash).toFixed(2) }}</div>
             </div>
           </div>
@@ -221,7 +222,7 @@ import { AuthService } from '../services/auth.service';
         <form (submit)="closeShift(); $event.preventDefault()">
           <div style="margin-bottom:24px;">
             <label style="display:block;font-size:14px;font-weight:600;color:#333;margin-bottom:8px;">
-              Actual Cash in Drawer <span style="color:#dc3545;">*</span>
+              {{ 'shifts.actualCash' | translate }} <span style="color:#dc3545;">*</span>
             </label>
             <input
               type="number"
@@ -237,7 +238,7 @@ import { AuthService } from '../services/auth.service';
           </div>
 
           <div *ngIf="endingCash > 0" style="background:#f8f9fa;padding:16px;border-radius:8px;margin-bottom:24px;text-align:center;">
-            <div style="color:#666;font-size:13px;margin-bottom:4px;">Difference</div>
+            <div style="color:#666;font-size:13px;margin-bottom:4px;">{{ 'shifts.difference' | translate }}</div>
             <div style="font-size:28px;font-weight:700;" [style.color]="getDifferenceColor(calculatedDifference)">
               {{ calculatedDifference >= 0 ? '+' : '' }}\${{ calculatedDifference.toFixed(2) }}
             </div>
@@ -248,12 +249,12 @@ import { AuthService } from '../services/auth.service';
 
           <div style="margin-bottom:24px;">
             <label style="display:block;font-size:14px;font-weight:600;color:#333;margin-bottom:8px;">
-              Notes (Optional)
+              {{ 'shifts.notes' | translate }} (Optional)
             </label>
             <textarea
               [(ngModel)]="closeNotes"
               name="notes"
-              placeholder="Add any notes about this shift..."
+              [placeholder]="'shifts.addNotes' | translate"
               rows="3"
               style="width:100%;padding:12px;border:2px solid #ddd;border-radius:8px;font-size:14px;outline:none;resize:vertical;"
             ></textarea>
@@ -265,13 +266,13 @@ import { AuthService } from '../services/auth.service';
               [disabled]="processing || !endingCash || endingCash < 0"
               style="flex:1;background:#dc3545;color:#fff;border:none;padding:14px;border-radius:8px;font-weight:600;cursor:pointer;font-size:16px;"
               [style.opacity]="processing || !endingCash || endingCash < 0 ? '0.5' : '1'">
-              {{ processing ? 'Closing...' : 'Close Shift' }}
+              {{ processing ? (('common.loading' | translate) + '...') : ('shifts.closeShift' | translate) }}
             </button>
             <button
               type="button"
               (click)="showCloseShiftModal = false"
               style="flex:1;background:#fff;color:#666;border:2px solid #ddd;padding:14px;border-radius:8px;font-weight:600;cursor:pointer;">
-              Cancel
+              {{ 'common.cancel' | translate }}
             </button>
           </div>
         </form>
@@ -284,28 +285,28 @@ import { AuthService } from '../services/auth.service';
          (click)="selectedShift = null">
       <div style="background:#fff;border-radius:16px;max-width:600px;width:100%;max-height:80vh;overflow-y:auto;" (click)="$event.stopPropagation()">
         <div style="padding:24px;border-bottom:2px solid #DC3545;">
-          <h2 style="margin:0;color:#333;font-size:20px;font-weight:700;">Shift Details</h2>
+          <h2 style="margin:0;color:#333;font-size:20px;font-weight:700;">{{ 'shifts.shiftHistory' | translate }}</h2>
         </div>
 
         <div style="padding:24px;">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;">
             <div>
-              <div style="color:#666;font-size:13px;margin-bottom:4px;">Cashier</div>
+              <div style="color:#666;font-size:13px;margin-bottom:4px;">{{ 'shifts.cashier' | translate }}</div>
               <div style="color:#333;font-weight:600;">{{ selectedShift.cashierName }}</div>
             </div>
             <div>
-              <div style="color:#666;font-size:13px;margin-bottom:4px;">Status</div>
+              <div style="color:#666;font-size:13px;margin-bottom:4px;">{{ 'shifts.status' | translate }}</div>
               <span [style.background]="selectedShift.status === 'OPEN' ? '#28a745' : '#6c757d'"
                     style="padding:4px 12px;border-radius:12px;font-size:12px;font-weight:600;color:#fff;">
                 {{ selectedShift.status }}
               </span>
             </div>
             <div>
-              <div style="color:#666;font-size:13px;margin-bottom:4px;">Start Time</div>
+              <div style="color:#666;font-size:13px;margin-bottom:4px;">{{ 'shifts.startTime' | translate }}</div>
               <div style="color:#333;font-weight:600;">{{ formatTime(selectedShift.startTime) }}</div>
             </div>
             <div>
-              <div style="color:#666;font-size:13px;margin-bottom:4px;">End Time</div>
+              <div style="color:#666;font-size:13px;margin-bottom:4px;">{{ 'shifts.endTime' | translate }}</div>
               <div style="color:#333;font-weight:600;">{{ selectedShift.endTime ? formatTime(selectedShift.endTime) : 'Ongoing' }}</div>
             </div>
           </div>
@@ -313,23 +314,23 @@ import { AuthService } from '../services/auth.service';
           <div style="background:#f8f9fa;padding:20px;border-radius:8px;margin-bottom:20px;">
             <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;">
               <div style="text-align:center;">
-                <div style="color:#666;font-size:13px;margin-bottom:8px;">Starting Cash</div>
+                <div style="color:#666;font-size:13px;margin-bottom:8px;">{{ 'shifts.startingCash' | translate }}</div>
                 <div style="font-size:24px;font-weight:700;color:#28a745;">\${{ toNumber(selectedShift.startingCash).toFixed(2) }}</div>
               </div>
               <div style="text-align:center;">
-                <div style="color:#666;font-size:13px;margin-bottom:8px;">Ending Cash</div>
+                <div style="color:#666;font-size:13px;margin-bottom:8px;">{{ 'shifts.endingCash' | translate }}</div>
                 <div style="font-size:24px;font-weight:700;color:#007bff;">
                   {{ selectedShift.endingCash ? '$' + toNumber(selectedShift.endingCash).toFixed(2) : '-' }}
                 </div>
               </div>
               <div style="text-align:center;">
-                <div style="color:#666;font-size:13px;margin-bottom:8px;">Expected Cash</div>
+                <div style="color:#666;font-size:13px;margin-bottom:8px;">{{ 'shifts.expectedCash' | translate }}</div>
                 <div style="font-size:24px;font-weight:700;color:#6c757d;">
                   {{ selectedShift.expectedCash ? '$' + toNumber(selectedShift.expectedCash).toFixed(2) : '-' }}
                 </div>
               </div>
               <div style="text-align:center;">
-                <div style="color:#666;font-size:13px;margin-bottom:8px;">Difference</div>
+                <div style="color:#666;font-size:13px;margin-bottom:8px;">{{ 'shifts.difference' | translate }}</div>
                 <div style="font-size:24px;font-weight:700;" [style.color]="getDifferenceColor(selectedShift.difference)">
                   {{ selectedShift.difference !== undefined ? (selectedShift.difference >= 0 ? '+' : '') + '$' + toNumber(selectedShift.difference).toFixed(2) : '-' }}
                 </div>
@@ -338,7 +339,7 @@ import { AuthService } from '../services/auth.service';
           </div>
 
           <div *ngIf="selectedShift.notes" style="background:#fff3cd;border:1px solid #ffc107;padding:16px;border-radius:8px;">
-            <div style="font-weight:600;color:#856404;margin-bottom:8px;">Notes:</div>
+            <div style="font-weight:600;color:#856404;margin-bottom:8px;">{{ 'shifts.notes' | translate }}:</div>
             <div style="color:#856404;">{{ selectedShift.notes }}</div>
           </div>
         </div>
@@ -347,7 +348,7 @@ import { AuthService } from '../services/auth.service';
           <button
             (click)="selectedShift = null"
             style="width:100%;background:#DC3545;color:#fff;border:none;padding:12px;border-radius:8px;font-weight:600;cursor:pointer;">
-            Close
+            {{ 'common.close' | translate }}
           </button>
         </div>
       </div>
@@ -471,9 +472,32 @@ export class ShiftsComponent implements OnInit {
     this.selectedShift = shift;
   }
 
-  formatTime(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleString();
+  formatTime(dateString: string | null | undefined): string {
+    if (!dateString) {
+      return '-';
+    }
+
+    try {
+      const date = new Date(dateString);
+
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        return '-';
+      }
+
+      // Format: MM/DD/YYYY, HH:MM AM/PM
+      return date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+    } catch (error) {
+      console.error('Date formatting error:', error);
+      return '-';
+    }
   }
 
   toNumber(value: any): number {

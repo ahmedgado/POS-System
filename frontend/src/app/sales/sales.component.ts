@@ -1,22 +1,23 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TranslateModule } from '@ngx-translate/core';
 import { SaleService, Sale } from '../services/sale.service';
 
 @Component({
   selector: 'app-sales',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslateModule],
   template: `
     <div style="min-height:100vh;background:#f5f6f8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
       <!-- Header -->
       <header style="background:#DC3545;color:#fff;padding:20px 32px;box-shadow:0 2px 8px rgba(220,53,69,0.15);">
         <div style="display:flex;align-items:center;justify-content:space-between;">
-          <h1 style="margin:0;font-size:24px;font-weight:700;">📊 Sales History</h1>
+          <h1 style="margin:0;font-size:24px;font-weight:700;">📊 {{ 'sales.title' | translate }}</h1>
           <button
             (click)="exportToExcel()"
             style="background:#fff;color:#DC3545;border:none;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;">
-            📥 Export to Excel
+            📥 {{ 'common.export' | translate }}
           </button>
         </div>
       </header>
@@ -25,11 +26,11 @@ import { SaleService, Sale } from '../services/sale.service';
       <main style="padding:32px;">
         <!-- Filters -->
         <section style="background:#fff;padding:24px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);margin-bottom:24px;">
-          <h2 style="margin:0 0 16px 0;color:#333;font-size:16px;font-weight:600;">Filters</h2>
+          <h2 style="margin:0 0 16px 0;color:#333;font-size:16px;font-weight:600;">{{ 'common.filter' | translate }}</h2>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;">
             <!-- Date From -->
             <div>
-              <label style="display:block;font-size:13px;color:#666;font-weight:600;margin-bottom:6px;">From Date</label>
+              <label style="display:block;font-size:13px;color:#666;font-weight:600;margin-bottom:6px;">{{ 'reports.startDate' | translate }}</label>
               <input
                 type="date"
                 [(ngModel)]="filterDateFrom"
@@ -40,7 +41,7 @@ import { SaleService, Sale } from '../services/sale.service';
 
             <!-- Date To -->
             <div>
-              <label style="display:block;font-size:13px;color:#666;font-weight:600;margin-bottom:6px;">To Date</label>
+              <label style="display:block;font-size:13px;color:#666;font-weight:600;margin-bottom:6px;">{{ 'reports.endDate' | translate }}</label>
               <input
                 type="date"
                 [(ngModel)]="filterDateTo"
@@ -51,28 +52,28 @@ import { SaleService, Sale } from '../services/sale.service';
 
             <!-- Payment Method -->
             <div>
-              <label style="display:block;font-size:13px;color:#666;font-weight:600;margin-bottom:6px;">Payment Method</label>
+              <label style="display:block;font-size:13px;color:#666;font-weight:600;margin-bottom:6px;">{{ 'sales.paymentMethod' | translate }}</label>
               <select
                 [(ngModel)]="filterPaymentMethod"
                 (change)="applyFilters()"
                 style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;">
-                <option value="">All</option>
-                <option value="CASH">Cash</option>
-                <option value="CARD">Card</option>
-                <option value="MOBILE">Mobile</option>
+                <option value="">{{ 'common.all' | translate }}</option>
+                <option value="CASH">{{ 'pos.cash' | translate }}</option>
+                <option value="CARD">{{ 'pos.card' | translate }}</option>
+                <option value="MOBILE">{{ 'pos.mobile' | translate }}</option>
               </select>
             </div>
 
             <!-- Status -->
             <div>
-              <label style="display:block;font-size:13px;color:#666;font-weight:600;margin-bottom:6px;">Status</label>
+              <label style="display:block;font-size:13px;color:#666;font-weight:600;margin-bottom:6px;">{{ 'sales.status' | translate }}</label>
               <select
                 [(ngModel)]="filterStatus"
                 (change)="applyFilters()"
                 style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;">
-                <option value="">All</option>
-                <option value="COMPLETED">Completed</option>
-                <option value="REFUNDED">Refunded</option>
+                <option value="">{{ 'common.all' | translate }}</option>
+                <option value="COMPLETED">{{ 'sales.completed' | translate }}</option>
+                <option value="REFUNDED">{{ 'sales.refunded' | translate }}</option>
                 <option value="CANCELLED">Cancelled</option>
               </select>
             </div>
@@ -81,24 +82,24 @@ import { SaleService, Sale } from '../services/sale.service';
           <button
             (click)="clearFilters()"
             style="margin-top:16px;background:#f8f9fa;color:#666;border:1px solid #ddd;padding:8px 16px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;">
-            Clear Filters
+            {{ 'common.filter' | translate }}
           </button>
         </section>
 
         <!-- Statistics Cards -->
         <section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;margin-bottom:24px;">
           <div style="background:#fff;padding:24px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-left:4px solid #DC3545;">
-            <div style="color:#666;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Total Sales</div>
+            <div style="color:#666;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">{{ 'sales.totalSales' | translate }}</div>
             <div style="font-size:32px;font-weight:700;color:#DC3545;">{{ filteredSales.length }}</div>
           </div>
 
           <div style="background:#fff;padding:24px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-left:4px solid #28a745;">
-            <div style="color:#666;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Total Revenue</div>
+            <div style="color:#666;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">{{ 'sales.totalRevenue' | translate }}</div>
             <div style="font-size:32px;font-weight:700;color:#28a745;">\${{ getTotalRevenue().toFixed(2) }}</div>
           </div>
 
           <div style="background:#fff;padding:24px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-left:4px solid #007bff;">
-            <div style="color:#666;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Avg Order Value</div>
+            <div style="color:#666;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">{{ 'sales.averageOrder' | translate }}</div>
             <div style="font-size:32px;font-weight:700;color:#007bff;">\${{ getAverageOrderValue().toFixed(2) }}</div>
           </div>
         </section>
@@ -106,16 +107,16 @@ import { SaleService, Sale } from '../services/sale.service';
         <!-- Sales Table -->
         <section style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);overflow:hidden;">
           <div style="padding:20px 24px;border-bottom:1px solid #eee;">
-            <h2 style="margin:0;color:#333;font-size:16px;font-weight:600;">Sales List</h2>
+            <h2 style="margin:0;color:#333;font-size:16px;font-weight:600;">{{ 'sales.title' | translate }}</h2>
           </div>
 
           <div *ngIf="loading" style="text-align:center;padding:60px 20px;color:#999;">
-            Loading sales...
+            {{ 'common.loading' | translate }}
           </div>
 
           <div *ngIf="!loading && filteredSales.length === 0" style="text-align:center;padding:60px 20px;color:#999;">
             <div style="font-size:48px;margin-bottom:16px;">📋</div>
-            <div style="font-size:16px;">No sales found</div>
+            <div style="font-size:16px;">{{ 'common.noData' | translate }}</div>
           </div>
 
           <div *ngIf="!loading && filteredSales.length > 0" style="overflow-x:auto;">
@@ -123,14 +124,14 @@ import { SaleService, Sale } from '../services/sale.service';
               <thead>
                 <tr style="background:#f8f9fa;border-bottom:2px solid #dee2e6;">
                   <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;letter-spacing:0.5px;">#</th>
-                  <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;letter-spacing:0.5px;">Order ID</th>
-                  <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;letter-spacing:0.5px;">Date & Time</th>
-                  <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;letter-spacing:0.5px;">Cashier</th>
-                  <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;letter-spacing:0.5px;">Items</th>
-                  <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;letter-spacing:0.5px;">Payment</th>
-                  <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;letter-spacing:0.5px;">Total</th>
-                  <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;letter-spacing:0.5px;">Status</th>
-                  <th style="padding:16px 24px;text-align:center;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;letter-spacing:0.5px;">Actions</th>
+                  <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;letter-spacing:0.5px;">{{ 'sales.saleId' | translate }}</th>
+                  <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;letter-spacing:0.5px;">{{ 'sales.date' | translate }}</th>
+                  <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;letter-spacing:0.5px;">{{ 'sales.cashier' | translate }}</th>
+                  <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;letter-spacing:0.5px;">{{ 'sales.items' | translate }}</th>
+                  <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;letter-spacing:0.5px;">{{ 'sales.paymentMethod' | translate }}</th>
+                  <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;letter-spacing:0.5px;">{{ 'pos.total' | translate }}</th>
+                  <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;letter-spacing:0.5px;">{{ 'sales.status' | translate }}</th>
+                  <th style="padding:16px 24px;text-align:center;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;letter-spacing:0.5px;">{{ 'sales.actions' | translate }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -161,12 +162,12 @@ import { SaleService, Sale } from '../services/sale.service';
                     <button
                       (click)="viewDetails(sale)"
                       style="background:#007bff;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;margin-right:8px;">
-                      View
+                      {{ 'sales.view' | translate }}
                     </button>
                     <button
                       (click)="printReceipt(sale)"
                       style="background:#28a745;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;">
-                      Print
+                      {{ 'sales.actions' | translate }}
                     </button>
                   </td>
                 </tr>
@@ -185,7 +186,7 @@ import { SaleService, Sale } from '../services/sale.service';
         <!-- Modal Header -->
         <div style="padding:24px;border-bottom:2px solid #DC3545;">
           <div style="display:flex;justify-content:space-between;align-items:center;">
-            <h2 style="margin:0;color:#333;font-size:20px;font-weight:700;">Order #{{ selectedSale.id }}</h2>
+            <h2 style="margin:0;color:#333;font-size:20px;font-weight:700;">{{ 'sales.saleId' | translate }} #{{ selectedSale.id }}</h2>
             <button
               (click)="closeDetails()"
               style="background:none;border:none;font-size:28px;color:#999;cursor:pointer;line-height:1;padding:0;width:32px;height:32px;">
@@ -201,15 +202,15 @@ import { SaleService, Sale } from '../services/sale.service';
           <div style="margin-bottom:24px;">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
               <div>
-                <div style="color:#666;font-size:13px;margin-bottom:4px;">Cashier</div>
+                <div style="color:#666;font-size:13px;margin-bottom:4px;">{{ 'sales.cashier' | translate }}</div>
                 <div style="color:#333;font-weight:600;">{{ getCashierName(selectedSale) }}</div>
               </div>
               <div>
-                <div style="color:#666;font-size:13px;margin-bottom:4px;">Payment Method</div>
+                <div style="color:#666;font-size:13px;margin-bottom:4px;">{{ 'sales.paymentMethod' | translate }}</div>
                 <div style="color:#333;font-weight:600;">{{ selectedSale.paymentMethod }}</div>
               </div>
               <div>
-                <div style="color:#666;font-size:13px;margin-bottom:4px;">Status</div>
+                <div style="color:#666;font-size:13px;margin-bottom:4px;">{{ 'sales.status' | translate }}</div>
                 <span [style.background]="getStatusColor(selectedSale.status)"
                       style="padding:4px 12px;border-radius:12px;font-size:12px;font-weight:600;color:#fff;">
                   {{ selectedSale.status }}
@@ -220,7 +221,7 @@ import { SaleService, Sale } from '../services/sale.service';
 
           <!-- Items List -->
           <div style="margin-bottom:24px;">
-            <h3 style="margin:0 0 16px 0;color:#333;font-size:16px;font-weight:600;">Items</h3>
+            <h3 style="margin:0 0 16px 0;color:#333;font-size:16px;font-weight:600;">{{ 'sales.items' | translate }}</h3>
             <div style="border:1px solid #eee;border-radius:8px;overflow:hidden;">
               <div *ngFor="let item of selectedSale.items" style="padding:16px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;">
                 <div>
@@ -235,19 +236,19 @@ import { SaleService, Sale } from '../services/sale.service';
           <!-- Totals -->
           <div style="background:#f8f9fa;padding:20px;border-radius:8px;">
             <div style="display:flex;justify-content:space-between;margin-bottom:12px;">
-              <span style="color:#666;">Subtotal:</span>
+              <span style="color:#666;">{{ 'pos.subtotal' | translate }}:</span>
               <span style="font-weight:600;color:#333;">\${{ selectedSale.subtotal.toFixed(2) }}</span>
             </div>
             <div style="display:flex;justify-content:space-between;margin-bottom:12px;">
-              <span style="color:#666;">Tax:</span>
+              <span style="color:#666;">{{ 'pos.tax' | translate }}:</span>
               <span style="font-weight:600;color:#333;">\${{ selectedSale.taxAmount.toFixed(2) }}</span>
             </div>
             <div style="display:flex;justify-content:space-between;margin-bottom:12px;">
-              <span style="color:#666;">Discount:</span>
+              <span style="color:#666;">{{ 'pos.discount' | translate }}:</span>
               <span style="font-weight:600;color:#333;">\${{ selectedSale.discountAmount.toFixed(2) }}</span>
             </div>
             <div style="display:flex;justify-content:space-between;padding-top:12px;border-top:2px solid #DC3545;margin-top:12px;">
-              <span style="font-size:18px;font-weight:700;color:#333;">Total:</span>
+              <span style="font-size:18px;font-weight:700;color:#333;">{{ 'pos.total' | translate }}:</span>
               <span style="font-size:24px;font-weight:700;color:#DC3545;">\${{ selectedSale.totalAmount.toFixed(2) }}</span>
             </div>
           </div>
@@ -258,12 +259,12 @@ import { SaleService, Sale } from '../services/sale.service';
           <button
             (click)="printReceipt(selectedSale)"
             style="flex:1;background:#DC3545;color:#fff;border:none;padding:12px;border-radius:8px;font-weight:600;cursor:pointer;">
-            Print Receipt
+            {{ 'sales.actions' | translate }}
           </button>
           <button
             (click)="closeDetails()"
             style="flex:1;background:#fff;color:#666;border:1px solid #ddd;padding:12px;border-radius:8px;font-weight:600;cursor:pointer;">
-            Close
+            {{ 'common.close' | translate }}
           </button>
         </div>
       </div>
@@ -343,9 +344,32 @@ export class SalesComponent implements OnInit {
     return `${sale.cashier.firstName} ${sale.cashier.lastName}`;
   }
 
-  formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleString();
+  formatDate(dateString: string | null | undefined): string {
+    if (!dateString) {
+      return '-';
+    }
+
+    try {
+      const date = new Date(dateString);
+
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        return '-';
+      }
+
+      // Format: MM/DD/YYYY, HH:MM AM/PM
+      return date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+    } catch (error) {
+      console.error('Date formatting error:', error);
+      return '-';
+    }
   }
 
   getPaymentMethodColor(method: string): string {

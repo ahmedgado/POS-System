@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, tap } from 'rxjs';
 
 export interface StoreSettings {
   id?: number;
@@ -63,8 +63,34 @@ export interface AllSettings {
 })
 export class SettingsService {
   private readonly baseUrl = '/api/settings';
+  private currencyCache: CurrencySettings | null = null;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) {
+    // Load currency settings on init
+    this.loadCurrencySettings();
+  }
+
+  private loadCurrencySettings() {
+    this.getAllSettings().subscribe({
+      next: (settings) => {
+        this.currencyCache = settings.currency;
+      },
+      error: () => {
+        // Use default
+        this.currencyCache = {
+          currencyCode: 'USD',
+          currencySymbol: '$',
+          decimalPlaces: 2,
+          thousandSeparator: ',',
+          decimalSeparator: '.'
+        };
+      }
+    });
+  }
+
+  getCurrencySettings(): CurrencySettings | null {
+    return this.currencyCache;
+  }
 
   getAllSettings(): Observable<AllSettings> {
     return this.http.get<AllSettings>(this.baseUrl);
@@ -83,7 +109,9 @@ export class SettingsService {
   }
 
   updateCurrencySettings(settings: CurrencySettings): Observable<CurrencySettings> {
-    return this.http.put<CurrencySettings>(`${this.baseUrl}/currency`, settings);
+    return this.http.put<CurrencySettings>(`${this.baseUrl}/currency`, settings).pipe(
+      tap(result => this.currencyCache = result)
+    );
   }
 
   updateSystemSettings(settings: SystemSettings): Observable<SystemSettings> {

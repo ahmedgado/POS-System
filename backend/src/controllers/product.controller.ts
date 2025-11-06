@@ -10,8 +10,11 @@ export class ProductController {
   async getAllProducts(req: AuthRequest, res: Response) {
     const { page = 1, limit = 100, search, category, active } = req.query;
 
-    const skip = (Number(page) - 1) * Number(limit);
-    const take = Number(limit);
+    // Validate and cap the limit to prevent performance issues
+    const requestedLimit = Number(limit);
+    const maxLimit = 500; // Maximum allowed limit
+    const take = Math.min(requestedLimit, maxLimit);
+    const skip = (Number(page) - 1) * take;
 
     // Build where clause
     const where: any = {};
@@ -347,6 +350,155 @@ export class ProductController {
     logger.info(`Product deleted: ${product.name} by ${req.user?.email}`);
 
     return ApiResponse.success(res, null, 'Product deleted successfully');
+  }
+
+  // POST /api/products/bulk-delete - Bulk delete products
+  async bulkDeleteProducts(req: AuthRequest, res: Response) {
+    const { ids } = req.body;
+
+    // Validate input
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      throw new AppError('Product IDs array is required', 400);
+    }
+
+    // Limit bulk delete to 100 products at a time
+    if (ids.length > 100) {
+      throw new AppError('Cannot delete more than 100 products at once', 400);
+    }
+
+    // Get all products to check if they exist and if they can be deleted
+    const products = await prisma.product.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, name: true }
+    });
+
+    if (products.length === 0) {
+      throw new AppError('No products found with the provided IDs', 404);
+    }
+
+    // Check which products have sales records
+    const productsWithSales = await prisma.saleItem.groupBy({
+      by: ['productId'],
+      where: { productId: { in: ids } },
+      _count: { productId: true }
+    });
+
+    const productIdsWithSales = new Set(productsWithSales.map(item => item.productId));
+
+    // Check which products have stock movements
+    const productsWithStockMovements = await prisma.stockMovement.groupBy({
+      by: ['productId'],
+      where: { productId: { in: ids } },
+      _count: { productId: true }
+    });
+
+    const productIdsWithStockMovements = new Set(productsWithStockMovements.map(item => item.productId));
+
+    // Combine both sets - products that have either sales or stock movements cannot be deleted
+    const unableToDeleteIdsSet = new Set([...productIdsWithSales, ...productIdsWithStockMovements]);
+
+    // Filter products that can be deleted (no sales and no stock movements)
+    const deletableIds = products
+      .filter(p => !unableToDeleteIdsSet.has(p.id))
+      .map(p => p.id);
+
+    const unableToDeleteIds = products
+      .filter(p => unableToDeleteIdsSet.has(p.id))
+      .map(p => p.id);
+
+    // Delete products that can be deleted
+    let deletedCount = 0;
+    if (deletableIds.length > 0) {
+      const result = await prisma.product.deleteMany({
+        where: { id: { in: deletableIds } }
+      });
+      deletedCount = result.count;
+
+      // Log audit for bulk delete
+      await prisma.auditLog.create({
+        data: {
+          userId: req.user!.id,
+          action: 'DELETE',
+          entity: 'Product',
+          entityId: 'bulk',
+          changes: {
+            deletedIds: deletableIds,
+            deletedCount,
+            unableToDeleteCount: unableToDeleteIds.length
+          },
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent')
+        }
+      });
+
+      logger.info(`Bulk delete: ${deletedCount} products deleted by ${req.user?.email}`);
+    }
+
+    // Return response with details
+    return ApiResponse.success(res, {
+      deletedCount,
+      unableToDeleteCount: unableToDeleteIds.length,
+      unableToDeleteIds,
+      message: unableToDeleteIds.length > 0
+        ? `${deletedCount} products deleted. ${unableToDeleteIds.length} products cannot be deleted because they have sales or stock movement records.`
+        : `${deletedCount} products deleted successfully.`
+    }, 'Bulk delete completed');
+  }
+
+  // POST /api/products/bulk-inactive - Bulk deactivate products
+  async bulkInactiveProducts(req: AuthRequest, res: Response) {
+    const { ids, active = false } = req.body;
+
+    // Validate input
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      throw new AppError('Product IDs array is required', 400);
+    }
+
+    // Limit bulk operation to 100 products at a time
+    if (ids.length > 100) {
+      throw new AppError('Cannot update more than 100 products at once', 400);
+    }
+
+    // Get all products to check if they exist
+    const products = await prisma.product.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, name: true, isActive: true }
+    });
+
+    if (products.length === 0) {
+      throw new AppError('No products found with the provided IDs', 404);
+    }
+
+    // Update all products to inactive/active
+    const result = await prisma.product.updateMany({
+      where: { id: { in: ids } },
+      data: { isActive: active }
+    });
+
+    // Log audit for bulk inactive
+    await prisma.auditLog.create({
+      data: {
+        userId: req.user!.id,
+        action: 'UPDATE',
+        entity: 'Product',
+        entityId: 'bulk',
+        changes: {
+          updatedIds: ids,
+          updatedCount: result.count,
+          isActive: active
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      }
+    });
+
+    logger.info(`Bulk ${active ? 'activate' : 'deactivate'}: ${result.count} products by ${req.user?.email}`);
+
+    // Return response with details
+    return ApiResponse.success(res, {
+      updatedCount: result.count,
+      message: `${result.count} products ${active ? 'activated' : 'deactivated'} successfully.`
+    }, `Bulk ${active ? 'activate' : 'deactivate'} completed`);
   }
 
   // GET /api/products/low-stock - Get low stock products

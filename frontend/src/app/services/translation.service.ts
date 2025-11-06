@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { TranslateService } from '@ngx-translate/core';
 
 export type Language = 'en' | 'ar';
 
@@ -143,16 +144,20 @@ export class TranslationService {
     'login.signingIn': { en: 'Signing in...', ar: 'جاري الدخول...' },
   };
 
-  constructor() {
+  constructor(private translateService: TranslateService) {
     // Load saved language from localStorage
     const savedLang = localStorage.getItem('language') as Language;
     if (savedLang) {
       this.currentLanguage.next(savedLang);
+      this.translateService.use(savedLang);
+    } else {
+      this.translateService.use('en');
     }
   }
 
   setLanguage(lang: Language) {
     this.currentLanguage.next(lang);
+    this.translateService.use(lang);
     localStorage.setItem('language', lang);
     // Update document direction
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
@@ -164,6 +169,13 @@ export class TranslationService {
   }
 
   translate(key: string): string {
+    // First try ngx-translate (JSON files)
+    const translated = this.translateService.instant(key);
+    if (translated !== key) {
+      return translated;
+    }
+
+    // Fallback to hardcoded translations
     const translation = this.translations[key];
     if (!translation) {
       console.warn(`Translation key not found: ${key}`);

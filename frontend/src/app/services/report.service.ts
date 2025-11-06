@@ -12,6 +12,25 @@ export interface SalesReportData {
     count: number;
     total: number;
   }[];
+  transactions: {
+    id: string;
+    date: string;
+    cashierName: string;
+    customerName: string;
+    items: {
+      productName: string;
+      sku: string;
+      quantity: number;
+      price: number;
+      subtotal: number;
+    }[];
+    subtotal: number;
+    discount: number;
+    tax: number;
+    total: number;
+    paymentMethod: string;
+    status: string;
+  }[];
   salesByDate: {
     date: string;
     sales: number;
@@ -33,31 +52,47 @@ export interface SalesReportData {
 
 export interface InventoryReportData {
   totalProducts: number;
-  totalStockValue: number;
-  lowStockItems: number;
-  outOfStockItems: number;
-  products: {
-    id: number;
+  totalValue: number;
+  lowStockCount: number;
+  outOfStockCount: number;
+  stockStatus: {
+    inStock: number;
+    lowStock: number;
+    outOfStock: number;
+  };
+  byCategory: {
+    category: string;
+    count: number;
+    value: number;
+    stock: number;
+  }[];
+  inventory: {
+    id: string;
     name: string;
     sku: string;
     category: string;
     stock: number;
-    minStock: number;
+    lowStockAlert: number;
     price: number;
-    stockValue: number;
+    cost: number;
+    value: number;
     status: string;
+    isActive: boolean;
   }[];
 }
 
 export interface CashierPerformanceData {
-  cashiers: {
-    id: string;
+  totalRevenue: number;
+  totalOrders: number;
+  activeCashiers: number;
+  averageRevenuePerCashier: number;
+  performance: {
+    cashierId: string;
     name: string;
+    email: string;
     totalSales: number;
     totalRevenue: number;
-    totalOrders: number;
     averageOrderValue: number;
-    shiftsCount: number;
   }[];
 }
 
@@ -65,15 +100,12 @@ export interface FinancialReportData {
   totalRevenue: number;
   totalCost: number;
   grossProfit: number;
-  grossProfitMargin: number;
+  netProfit: number;
   totalTax: number;
   totalDiscount: number;
-  netRevenue: number;
-  revenueByPaymentMethod: {
-    method: string;
-    revenue: number;
-    percentage: number;
-  }[];
+  profitMargin: number;
+  totalTransactions: number;
+  averageTransactionValue: number;
 }
 
 @Injectable({
@@ -95,7 +127,7 @@ export class ReportService {
   }
 
   getCashierPerformance(startDate: string, endDate: string): Observable<CashierPerformanceData> {
-    return this.http.get<CashierPerformanceData>(`${this.baseUrl}/cashier-performance`, {
+    return this.http.get<CashierPerformanceData>(`${this.baseUrl}/cashier`, {
       params: { startDate, endDate }
     });
   }
@@ -128,6 +160,34 @@ export class ReportService {
 
   exportInventoryReportExcel(): Observable<Blob> {
     return this.http.get(`${this.baseUrl}/inventory/excel`, {
+      responseType: 'blob'
+    });
+  }
+
+  exportCashierPerformancePDF(startDate: string, endDate: string): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/cashier/pdf`, {
+      params: { startDate, endDate },
+      responseType: 'blob'
+    });
+  }
+
+  exportCashierPerformanceExcel(startDate: string, endDate: string): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/cashier/excel`, {
+      params: { startDate, endDate },
+      responseType: 'blob'
+    });
+  }
+
+  exportFinancialReportPDF(startDate: string, endDate: string): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/financial/pdf`, {
+      params: { startDate, endDate },
+      responseType: 'blob'
+    });
+  }
+
+  exportFinancialReportExcel(startDate: string, endDate: string): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/financial/excel`, {
+      params: { startDate, endDate },
       responseType: 'blob'
     });
   }

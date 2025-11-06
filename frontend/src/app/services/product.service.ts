@@ -68,4 +68,12 @@ export class ProductService {
   delete(id: string): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }
+
+  bulkDelete(ids: string[]): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/bulk-delete`, { ids });
+  }
+
+  bulkInactive(ids: string[], active: boolean = false): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/bulk-inactive`, { ids, active });
+  }
 }

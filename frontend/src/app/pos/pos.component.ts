@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TranslateModule } from '@ngx-translate/core';
 import { Product, ProductService } from '../services/product.service';
 import { SaleService, CreateSaleRequest } from '../services/sale.service';
 import { AuthService } from '../services/auth.service';
@@ -17,7 +18,7 @@ interface CartItem {
 @Component({
   selector: 'app-pos',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslateModule],
   template: `
     <div style="display:flex;height:100vh;background:#f5f6f8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
 
@@ -25,7 +26,7 @@ interface CartItem {
       <div style="flex:1;display:flex;flex-direction:column;background:#fff;border-right:1px solid #ddd;">
         <!-- Header -->
         <header style="background:#DC3545;color:#fff;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;">
-          <h1 style="margin:0;font-size:20px;font-weight:700;">🛒 POS Terminal</h1>
+          <h1 style="margin:0;font-size:20px;font-weight:700;">🛒 {{ 'pos.title' | translate }}</h1>
           <div style="font-size:14px;">{{ cashierName }}</div>
         </header>
 
@@ -35,7 +36,7 @@ interface CartItem {
             type="text"
             [(ngModel)]="searchTerm"
             (input)="onSearch()"
-            placeholder="Search by name, SKU, or barcode..."
+            [placeholder]="'pos.searchPlaceholder' | translate"
             style="width:100%;padding:12px 16px;border:2px solid #ddd;border-radius:8px;font-size:14px;outline:none;"
             [style.border-color]="searchTerm ? '#DC3545' : '#ddd'"
             autofocus
@@ -49,7 +50,7 @@ interface CartItem {
             [style.background]="filterCategory === '' ? '#DC3545' : '#fff'"
             [style.color]="filterCategory === '' ? '#fff' : '#333'"
             style="padding:8px 16px;border:1px solid #ddd;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">
-            All
+            {{ 'pos.allCategories' | translate }}
           </button>
           <button
             *ngFor="let cat of categories"
@@ -63,24 +64,30 @@ interface CartItem {
 
         <!-- Products Grid -->
         <div style="flex:1;overflow-y:auto;padding:16px;">
-          <div *ngIf="loading" style="text-align:center;padding:40px;color:#999;">Loading products...</div>
+          <div *ngIf="loading" style="text-align:center;padding:40px;color:#999;">{{ 'common.loading' | translate }}</div>
 
           <div *ngIf="!loading && filteredProducts.length === 0" style="text-align:center;padding:40px;color:#999;">
-            No products found
+            {{ 'pos.noProducts' | translate }}
           </div>
 
           <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;">
             <div
               *ngFor="let product of filteredProducts"
               (click)="addToCart(product)"
-              style="background:#fff;border:2px solid #eee;border-radius:12px;padding:16px;cursor:pointer;text-align:center;transition:all 0.2s;"
+              style="background:#fff;border:2px solid #eee;border-radius:12px;padding:12px;cursor:pointer;text-align:center;transition:all 0.2s;"
               (mouseenter)="$event.currentTarget.style.borderColor='#DC3545'; $event.currentTarget.style.transform='translateY(-2px)'"
               (mouseleave)="$event.currentTarget.style.borderColor='#eee'; $event.currentTarget.style.transform='translateY(0)'">
-              <div style="font-size:32px;margin-bottom:8px;">📦</div>
+              <div style="width:100%;height:80px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+                <img
+                  [src]="product.imageUrl || 'https://via.placeholder.com/100x100?text=No+Image'"
+                  [alt]="product.name"
+                  style="max-width:100%;max-height:100%;object-fit:contain;border-radius:6px;"
+                  (error)="$event.target.src='https://via.placeholder.com/100x100?text=No+Image'">
+              </div>
               <div style="font-weight:600;color:#333;margin-bottom:4px;font-size:13px;line-height:1.3;">{{ product.name }}</div>
               <div style="color:#888;font-size:11px;margin-bottom:8px;">{{ product.sku }}</div>
               <div style="color:#DC3545;font-weight:700;font-size:16px;">\${{ product.price.toFixed(2) }}</div>
-              <div style="color:#888;font-size:11px;margin-top:4px;">Stock: {{ product.stock }}</div>
+              <div style="color:#888;font-size:11px;margin-top:4px;">{{ 'pos.stock' | translate }}: {{ product.stock }}</div>
             </div>
           </div>
         </div>
@@ -90,23 +97,23 @@ interface CartItem {
       <div style="width:420px;display:flex;flex-direction:column;background:#fff;">
         <!-- Cart Header -->
         <div style="background:#f8f9fa;padding:16px 20px;border-bottom:2px solid #DC3545;">
-          <h2 style="margin:0;font-size:18px;font-weight:700;color:#333;">Shopping Cart</h2>
-          <div style="color:#666;font-size:13px;margin-top:4px;">{{ cartItems.length }} items</div>
+          <h2 style="margin:0;font-size:18px;font-weight:700;color:#333;">{{ 'pos.shoppingCart' | translate }}</h2>
+          <div style="color:#666;font-size:13px;margin-top:4px;">{{ cartItems.length }} {{ 'pos.items' | translate }}</div>
         </div>
 
         <!-- Cart Items -->
         <div style="flex:1;overflow-y:auto;padding:16px 20px;">
           <div *ngIf="cartItems.length === 0" style="text-align:center;padding:60px 20px;color:#999;">
             <div style="font-size:48px;margin-bottom:16px;">🛒</div>
-            <div style="font-size:16px;">Cart is empty</div>
-            <div style="font-size:13px;margin-top:8px;">Scan or select products</div>
+            <div style="font-size:16px;">{{ 'pos.emptyCart' | translate }}</div>
+            <div style="font-size:13px;margin-top:8px;">{{ 'pos.addProducts' | translate }}</div>
           </div>
 
           <div *ngFor="let item of cartItems; let i = index" style="background:#f8f9fa;border-radius:8px;padding:12px;margin-bottom:12px;">
             <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;">
               <div style="flex:1;">
                 <div style="font-weight:600;color:#333;margin-bottom:4px;">{{ item.name }}</div>
-                <div style="color:#666;font-size:12px;">\${{ item.price.toFixed(2) }} each</div>
+                <div style="color:#666;font-size:12px;">\${{ item.price.toFixed(2) }} {{ 'pos.each' | translate }}</div>
               </div>
               <button
                 (click)="removeFromCart(i)"
@@ -145,15 +152,15 @@ interface CartItem {
         <!-- Totals -->
         <div style="border-top:2px solid #eee;padding:16px 20px;">
           <div style="display:flex;justify-content:space-between;margin-bottom:12px;color:#666;font-size:14px;">
-            <span>Subtotal:</span>
+            <span>{{ 'pos.subtotal' | translate }}:</span>
             <span style="font-weight:600;">\${{ getSubtotal().toFixed(2) }}</span>
           </div>
           <div style="display:flex;justify-content:space-between;margin-bottom:12px;color:#666;font-size:14px;">
-            <span>Tax ({{ taxRate * 100 }}%):</span>
+            <span>{{ 'pos.tax' | translate }} ({{ taxRate * 100 }}%):</span>
             <span style="font-weight:600;">\${{ getTax().toFixed(2) }}</span>
           </div>
           <div style="display:flex;justify-content:space-between;margin-bottom:12px;color:#666;font-size:14px;">
-            <span>Discount:</span>
+            <span>{{ 'pos.discount' | translate }}:</span>
             <input
               type="number"
               [(ngModel)]="discountAmount"
@@ -164,14 +171,14 @@ interface CartItem {
             />
           </div>
           <div style="display:flex;justify-content:space-between;padding-top:12px;border-top:2px solid #DC3545;margin-top:12px;">
-            <span style="font-size:18px;font-weight:700;color:#333;">Total:</span>
+            <span style="font-size:18px;font-weight:700;color:#333;">{{ 'pos.total' | translate }}:</span>
             <span style="font-size:24px;font-weight:700;color:#DC3545;">\${{ getTotal().toFixed(2) }}</span>
           </div>
         </div>
 
         <!-- Payment Method -->
         <div style="padding:16px 20px;border-top:1px solid #eee;">
-          <div style="font-weight:600;color:#333;margin-bottom:12px;font-size:14px;">Payment Method:</div>
+          <div style="font-weight:600;color:#333;margin-bottom:12px;font-size:14px;">{{ 'pos.paymentMethod' | translate }}:</div>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
             <button
               (click)="paymentMethod = 'CASH'"
@@ -179,7 +186,7 @@ interface CartItem {
               [style.color]="paymentMethod === 'CASH' ? '#fff' : '#333'"
               [style.border]="paymentMethod === 'CASH' ? '2px solid #DC3545' : '2px solid #ddd'"
               style="padding:12px;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;">
-              💵 Cash
+              💵 {{ 'pos.cash' | translate }}
             </button>
             <button
               (click)="paymentMethod = 'CARD'"
@@ -187,7 +194,7 @@ interface CartItem {
               [style.color]="paymentMethod === 'CARD' ? '#fff' : '#333'"
               [style.border]="paymentMethod === 'CARD' ? '2px solid #DC3545' : '2px solid #ddd'"
               style="padding:12px;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;">
-              💳 Card
+              💳 {{ 'pos.card' | translate }}
             </button>
             <button
               (click)="paymentMethod = 'MOBILE'"
@@ -195,7 +202,7 @@ interface CartItem {
               [style.color]="paymentMethod === 'MOBILE' ? '#fff' : '#333'"
               [style.border]="paymentMethod === 'MOBILE' ? '2px solid #DC3545' : '2px solid #ddd'"
               style="padding:12px;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;">
-              📱 Mobile
+              📱 {{ 'pos.mobile' | translate }}
             </button>
           </div>
         </div>
@@ -203,7 +210,7 @@ interface CartItem {
         <!-- Cash Payment Details -->
         <div *ngIf="paymentMethod === 'CASH'" style="padding:0 20px 16px 20px;">
           <div style="margin-bottom:8px;">
-            <label style="font-size:13px;color:#666;font-weight:600;">Amount Paid:</label>
+            <label style="font-size:13px;color:#666;font-weight:600;">{{ 'pos.amountPaid' | translate }}:</label>
             <input
               type="number"
               [(ngModel)]="amountPaid"
@@ -214,7 +221,7 @@ interface CartItem {
             />
           </div>
           <div *ngIf="amountPaid > 0" style="display:flex;justify-content:space-between;padding:12px;background:#f8f9fa;border-radius:6px;">
-            <span style="font-weight:600;color:#333;">Change:</span>
+            <span style="font-weight:600;color:#333;">{{ 'pos.change' | translate }}:</span>
             <span style="font-weight:700;color:#28a745;font-size:18px;">\${{ getChange().toFixed(2) }}</span>
           </div>
         </div>
@@ -227,7 +234,7 @@ interface CartItem {
             style="width:100%;background:#DC3545;color:#fff;border:none;padding:16px;border-radius:8px;font-weight:700;font-size:16px;cursor:pointer;margin-bottom:8px;"
             [style.opacity]="cartItems.length === 0 || processing ? '0.5' : '1'"
             [style.cursor]="cartItems.length === 0 || processing ? 'not-allowed' : 'pointer'">
-            {{ processing ? 'Processing...' : 'Complete Sale' }}
+            {{ processing ? ('pos.processing' | translate) : ('pos.completeSale' | translate) }}
           </button>
           <button
             (click)="clearCart()"
@@ -235,7 +242,7 @@ interface CartItem {
             style="width:100%;background:#fff;color:#dc3545;border:2px solid #dc3545;padding:12px;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;"
             [style.opacity]="cartItems.length === 0 ? '0.5' : '1'"
             [style.cursor]="cartItems.length === 0 ? 'not-allowed' : 'pointer'">
-            Clear Cart
+            {{ 'pos.clearCart' | translate }}
           </button>
         </div>
       </div>
@@ -247,17 +254,17 @@ interface CartItem {
          (click)="closeSuccessModal()">
       <div style="background:#fff;border-radius:16px;padding:40px;max-width:400px;text-align:center;" (click)="$event.stopPropagation()">
         <div style="font-size:64px;margin-bottom:16px;">✅</div>
-        <h2 style="margin:0 0 16px 0;color:#28a745;font-size:24px;">Sale Completed!</h2>
+        <h2 style="margin:0 0 16px 0;color:#28a745;font-size:24px;">{{ 'pos.saleCompleted' | translate }}</h2>
         <div style="color:#666;margin-bottom:24px;">
-          <div style="font-size:16px;margin-bottom:8px;">Total: <strong style="color:#DC3545;font-size:20px;">\${{ lastSaleTotal.toFixed(2) }}</strong></div>
+          <div style="font-size:16px;margin-bottom:8px;">{{ 'pos.total' | translate }}: <strong style="color:#DC3545;font-size:20px;">\${{ lastSaleTotal.toFixed(2) }}</strong></div>
           <div *ngIf="paymentMethod === 'CASH' && lastSaleChange > 0" style="font-size:14px;">
-            Change: <strong style="color:#28a745;">\${{ lastSaleChange.toFixed(2) }}</strong>
+            {{ 'pos.change' | translate }}: <strong style="color:#28a745;">\${{ lastSaleChange.toFixed(2) }}</strong>
           </div>
         </div>
         <button
           (click)="closeSuccessModal()"
           style="background:#DC3545;color:#fff;border:none;padding:12px 32px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;">
-          New Sale
+          {{ 'pos.newSale' | translate }}
         </button>
       </div>
     </div>
@@ -312,7 +319,7 @@ export class POSComponent implements OnInit {
 
   loadProducts() {
     this.loading = true;
-    this.productService.getAll(1, 1000).subscribe({
+    this.productService.getAll(1, 500).subscribe({
       next: (response) => {
         this.products = response.data;
         this.filteredProducts = response.data;
@@ -459,6 +466,7 @@ export class POSComponent implements OnInit {
         this.lastSaleTotal = this.getTotal();
         this.lastSaleChange = this.getChange();
         this.showSuccessModal = true;
+        this.loadProducts(); // Reload products to get updated stock
       },
       error: (err) => {
         this.processing = false;

@@ -16,8 +16,8 @@ router.use(authenticate);
 router.get(
   '/',
   validate([
-    query('page').optional().isInt({ min: 1 }),
-    query('limit').optional().isInt({ min: 1, max: 100 }),
+    query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
+    query('limit').optional().isInt({ min: 1, max: 500 }).withMessage('Limit must be between 1 and 500'),
     query('search').optional().isString(),
     query('category').optional().isString(),
     query('active').optional().isBoolean()
@@ -76,6 +76,29 @@ router.put(
     body('stock').optional().isInt({ min: 0 })
   ]),
   asyncHandler(productController.updateProduct.bind(productController))
+);
+
+// POST /api/products/bulk-delete - Bulk delete products (Admin only)
+router.post(
+  '/bulk-delete',
+  authorize(UserRole.ADMIN),
+  validate([
+    body('ids').isArray({ min: 1 }).withMessage('Product IDs array is required'),
+    body('ids.*').isString().withMessage('Each ID must be a string')
+  ]),
+  asyncHandler(productController.bulkDeleteProducts.bind(productController))
+);
+
+// POST /api/products/bulk-inactive - Bulk deactivate/activate products (Admin, Manager)
+router.post(
+  '/bulk-inactive',
+  authorize(UserRole.ADMIN, UserRole.MANAGER),
+  validate([
+    body('ids').isArray({ min: 1 }).withMessage('Product IDs array is required'),
+    body('ids.*').isString().withMessage('Each ID must be a string'),
+    body('active').optional().isBoolean().withMessage('Active must be a boolean')
+  ]),
+  asyncHandler(productController.bulkInactiveProducts.bind(productController))
 );
 
 // DELETE /api/products/:id - Delete product (Admin only)

@@ -4,11 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { Product, ProductService } from '../services/product.service';
 import { Category, CategoryService } from '../services/category.service';
+import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
 
 @Component({
   selector: 'app-products',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule],
+  imports: [CommonModule, FormsModule, TranslateModule, CurrencyFormatPipe],
   template: `
     <div style="min-height:100vh;background:#f5f6f8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
       <!-- Header -->
@@ -59,7 +60,7 @@ import { Category, CategoryService } from '../services/category.service';
           </div>
           <div style="background:#fff;padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
             <div style="font-size:12px;color:#666;margin-bottom:4px;">{{ 'products.totalValue' | translate }}</div>
-            <div style="font-size:28px;font-weight:700;color:#DC3545;">\${{ getTotalValue() | number:'1.2-2' }}</div>
+            <div style="font-size:28px;font-weight:700;color:#DC3545;">{{ getTotalValue() | currencyFormat }}</div>
           </div>
           <div style="background:#fff;padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
             <div style="font-size:12px;color:#666;margin-bottom:4px;">{{ 'products.lowStock' | translate }}</div>
@@ -125,7 +126,7 @@ import { Category, CategoryService } from '../services/category.service';
                       {{ p.category?.name || 'N/A' }}
                     </span>
                   </td>
-                  <td style="padding:16px;text-align:right;font-weight:600;color:#DC3545;width:100px;">\${{ p.price | number:'1.2-2' }}</td>
+                  <td style="padding:16px;text-align:right;font-weight:600;color:#DC3545;width:100px;">{{ p.price | currencyFormat }}</td>
                   <td style="padding:16px;text-align:center;width:80px;">
                     <span [style.color]="p.stock <= p.lowStockAlert ? '#DC3545' : '#28A745'" style="font-weight:600;">
                       {{ p.stock }}

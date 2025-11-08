@@ -6,6 +6,7 @@ import { Product, ProductService } from '../services/product.service';
 import { SaleService, CreateSaleRequest } from '../services/sale.service';
 import { AuthService } from '../services/auth.service';
 import { Category, CategoryService } from '../services/category.service';
+import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
 
 interface CartItem {
   productId: string;
@@ -18,7 +19,7 @@ interface CartItem {
 @Component({
   selector: 'app-pos',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule],
+  imports: [CommonModule, FormsModule, TranslateModule, CurrencyFormatPipe],
   template: `
     <div style="display:flex;height:100vh;background:#f5f6f8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
 
@@ -86,7 +87,7 @@ interface CartItem {
               </div>
               <div style="font-weight:600;color:#333;margin-bottom:4px;font-size:13px;line-height:1.3;">{{ product.name }}</div>
               <div style="color:#888;font-size:11px;margin-bottom:8px;">{{ product.sku }}</div>
-              <div style="color:#DC3545;font-weight:700;font-size:16px;">\${{ product.price.toFixed(2) }}</div>
+              <div style="color:#DC3545;font-weight:700;font-size:16px;">{{ product.price | currencyFormat }}</div>
               <div style="color:#888;font-size:11px;margin-top:4px;">{{ 'pos.stock' | translate }}: {{ product.stock }}</div>
             </div>
           </div>
@@ -113,7 +114,7 @@ interface CartItem {
             <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;">
               <div style="flex:1;">
                 <div style="font-weight:600;color:#333;margin-bottom:4px;">{{ item.name }}</div>
-                <div style="color:#666;font-size:12px;">\${{ item.price.toFixed(2) }} {{ 'pos.each' | translate }}</div>
+                <div style="color:#666;font-size:12px;">{{ item.price | currencyFormat }} {{ 'pos.each' | translate }}</div>
               </div>
               <button
                 (click)="removeFromCart(i)"
@@ -143,7 +144,7 @@ interface CartItem {
                 </button>
               </div>
               <div style="flex:1;text-align:right;">
-                <div style="font-weight:700;color:#DC3545;font-size:16px;">\${{ item.subtotal.toFixed(2) }}</div>
+                <div style="font-weight:700;color:#DC3545;font-size:16px;">{{ item.subtotal | currencyFormat }}</div>
               </div>
             </div>
           </div>
@@ -153,11 +154,11 @@ interface CartItem {
         <div style="border-top:2px solid #eee;padding:16px 20px;">
           <div style="display:flex;justify-content:space-between;margin-bottom:12px;color:#666;font-size:14px;">
             <span>{{ 'pos.subtotal' | translate }}:</span>
-            <span style="font-weight:600;">\${{ getSubtotal().toFixed(2) }}</span>
+            <span style="font-weight:600;">{{ getSubtotal() | currencyFormat }}</span>
           </div>
           <div style="display:flex;justify-content:space-between;margin-bottom:12px;color:#666;font-size:14px;">
             <span>{{ 'pos.tax' | translate }} ({{ taxRate * 100 }}%):</span>
-            <span style="font-weight:600;">\${{ getTax().toFixed(2) }}</span>
+            <span style="font-weight:600;">{{ getTax() | currencyFormat }}</span>
           </div>
           <div style="display:flex;justify-content:space-between;margin-bottom:12px;color:#666;font-size:14px;">
             <span>{{ 'pos.discount' | translate }}:</span>
@@ -172,7 +173,7 @@ interface CartItem {
           </div>
           <div style="display:flex;justify-content:space-between;padding-top:12px;border-top:2px solid #DC3545;margin-top:12px;">
             <span style="font-size:18px;font-weight:700;color:#333;">{{ 'pos.total' | translate }}:</span>
-            <span style="font-size:24px;font-weight:700;color:#DC3545;">\${{ getTotal().toFixed(2) }}</span>
+            <span style="font-size:24px;font-weight:700;color:#DC3545;">{{ getTotal() | currencyFormat }}</span>
           </div>
         </div>
 
@@ -222,7 +223,7 @@ interface CartItem {
           </div>
           <div *ngIf="amountPaid > 0" style="display:flex;justify-content:space-between;padding:12px;background:#f8f9fa;border-radius:6px;">
             <span style="font-weight:600;color:#333;">{{ 'pos.change' | translate }}:</span>
-            <span style="font-weight:700;color:#28a745;font-size:18px;">\${{ getChange().toFixed(2) }}</span>
+            <span style="font-weight:700;color:#28a745;font-size:18px;">{{ getChange() | currencyFormat }}</span>
           </div>
         </div>
 
@@ -256,9 +257,9 @@ interface CartItem {
         <div style="font-size:64px;margin-bottom:16px;">✅</div>
         <h2 style="margin:0 0 16px 0;color:#28a745;font-size:24px;">{{ 'pos.saleCompleted' | translate }}</h2>
         <div style="color:#666;margin-bottom:24px;">
-          <div style="font-size:16px;margin-bottom:8px;">{{ 'pos.total' | translate }}: <strong style="color:#DC3545;font-size:20px;">\${{ lastSaleTotal.toFixed(2) }}</strong></div>
+          <div style="font-size:16px;margin-bottom:8px;">{{ 'pos.total' | translate }}: <strong style="color:#DC3545;font-size:20px;">{{ lastSaleTotal | currencyFormat }}</strong></div>
           <div *ngIf="paymentMethod === 'CASH' && lastSaleChange > 0" style="font-size:14px;">
-            {{ 'pos.change' | translate }}: <strong style="color:#28a745;">\${{ lastSaleChange.toFixed(2) }}</strong>
+            {{ 'pos.change' | translate }}: <strong style="color:#28a745;">{{ lastSaleChange | currencyFormat }}</strong>
           </div>
         </div>
         <button

@@ -66,24 +66,37 @@ export class SettingsService {
   private currencyCache: CurrencySettings | null = null;
 
   constructor(private http: HttpClient) {
-    // Load currency settings on init
-    this.loadCurrencySettings();
+    // Load from localStorage first
+    const cached = localStorage.getItem('currencySettings');
+    if (cached) {
+      try {
+        this.currencyCache = JSON.parse(cached);
+      } catch (e) {
+        this.setDefaultCurrency();
+      }
+    } else {
+      this.setDefaultCurrency();
+    }
   }
 
-  private loadCurrencySettings() {
+  private setDefaultCurrency() {
+    this.currencyCache = {
+      currencyCode: 'USD',
+      currencySymbol: '$',
+      decimalPlaces: 2,
+      thousandSeparator: ',',
+      decimalSeparator: '.'
+    };
+  }
+
+  loadCurrencySettings() {
     this.getAllSettings().subscribe({
       next: (settings) => {
         this.currencyCache = settings.currency;
+        localStorage.setItem('currencySettings', JSON.stringify(settings.currency));
       },
       error: () => {
-        // Use default
-        this.currencyCache = {
-          currencyCode: 'USD',
-          currencySymbol: '$',
-          decimalPlaces: 2,
-          thousandSeparator: ',',
-          decimalSeparator: '.'
-        };
+        this.setDefaultCurrency();
       }
     });
   }
@@ -110,7 +123,10 @@ export class SettingsService {
 
   updateCurrencySettings(settings: CurrencySettings): Observable<CurrencySettings> {
     return this.http.put<CurrencySettings>(`${this.baseUrl}/currency`, settings).pipe(
-      tap(result => this.currencyCache = result)
+      tap(result => {
+        this.currencyCache = result;
+        localStorage.setItem('currencySettings', JSON.stringify(result));
+      })
     );
   }
 

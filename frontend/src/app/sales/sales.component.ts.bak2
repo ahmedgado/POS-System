@@ -96,12 +96,12 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
 
           <div style="background:#fff;padding:24px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-left:4px solid #28a745;">
             <div style="color:#666;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">{{ 'sales.totalRevenue' | translate }}</div>
-            <div style="font-size:32px;font-weight:700;color:#28a745;">{{ getTotalRevenue() | currencyFormat }}</div>
+            <div style="font-size:32px;font-weight:700;color:#28a745;">\${{ getTotalRevenue().toFixed(2) }}</div>
           </div>
 
           <div style="background:#fff;padding:24px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-left:4px solid #007bff;">
             <div style="color:#666;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">{{ 'sales.averageOrder' | translate }}</div>
-            <div style="font-size:32px;font-weight:700;color:#007bff;">{{ getAverageOrderValue() | currencyFormat }}</div>
+            <div style="font-size:32px;font-weight:700;color:#007bff;">\${{ getAverageOrderValue().toFixed(2) }}</div>
           </div>
         </section>
 
@@ -152,7 +152,7 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
                       {{ sale.paymentMethod }}
                     </span>
                   </td>
-                  <td style="padding:16px 24px;color:#DC3545;font-weight:700;font-size:16px;">{{ sale.totalAmount | currencyFormat }}</td>
+                  <td style="padding:16px 24px;color:#DC3545;font-weight:700;font-size:16px;">\${{ sale.totalAmount.toFixed(2) }}</td>
                   <td style="padding:16px 24px;">
                     <span [style.background]="getStatusColor(sale.status)"
                           style="padding:4px 12px;border-radius:12px;font-size:12px;font-weight:600;color:#fff;">
@@ -227,9 +227,9 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
               <div *ngFor="let item of selectedSale.items" style="padding:16px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;">
                 <div>
                   <div style="font-weight:600;color:#333;margin-bottom:4px;">{{ item.product?.name || 'Unknown Product' }}</div>
-                  <div style="color:#666;font-size:13px;">{{ item.quantity }} × {{ item.unitPrice | currencyFormat }}</div>
+                  <div style="color:#666;font-size:13px;">{{ item.quantity }} × \${{ item.unitPrice.toFixed(2) }}</div>
                 </div>
-                <div style="font-weight:700;color:#DC3545;">{{ item.totalPrice | currencyFormat }}</div>
+                <div style="font-weight:700;color:#DC3545;">\${{ item.totalPrice.toFixed(2) }}</div>
               </div>
             </div>
           </div>
@@ -238,19 +238,19 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
           <div style="background:#f8f9fa;padding:20px;border-radius:8px;">
             <div style="display:flex;justify-content:space-between;margin-bottom:12px;">
               <span style="color:#666;">{{ 'pos.subtotal' | translate }}:</span>
-              <span style="font-weight:600;color:#333;">{{ selectedSale.subtotal | currencyFormat }}</span>
+              <span style="font-weight:600;color:#333;">\${{ selectedSale.subtotal.toFixed(2) }}</span>
             </div>
             <div style="display:flex;justify-content:space-between;margin-bottom:12px;">
               <span style="color:#666;">{{ 'pos.tax' | translate }}:</span>
-              <span style="font-weight:600;color:#333;">{{ selectedSale.taxAmount | currencyFormat }}</span>
+              <span style="font-weight:600;color:#333;">\${{ selectedSale.taxAmount.toFixed(2) }}</span>
             </div>
             <div style="display:flex;justify-content:space-between;margin-bottom:12px;">
               <span style="color:#666;">{{ 'pos.discount' | translate }}:</span>
-              <span style="font-weight:600;color:#333;">{{ selectedSale.discountAmount | currencyFormat }}</span>
+              <span style="font-weight:600;color:#333;">\${{ selectedSale.discountAmount.toFixed(2) }}</span>
             </div>
             <div style="display:flex;justify-content:space-between;padding-top:12px;border-top:2px solid #DC3545;margin-top:12px;">
               <span style="font-size:18px;font-weight:700;color:#333;">{{ 'pos.total' | translate }}:</span>
-              <span style="font-size:24px;font-weight:700;color:#DC3545;">{{ selectedSale.totalAmount | currencyFormat }}</span>
+              <span style="font-size:24px;font-weight:700;color:#DC3545;">\${{ selectedSale.totalAmount.toFixed(2) }}</span>
             </div>
           </div>
         </div>

@@ -4,11 +4,13 @@ import { Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { AuthService } from '../services/auth.service';
 import { DashboardService, DashboardStats } from '../services/dashboard.service';
+import { SettingsService } from '../services/settings.service';
+import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, TranslateModule],
+  imports: [CommonModule, TranslateModule, CurrencyFormatPipe],
   template: `
     <div style="min-height:100vh;background:#f5f6f8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
       <!-- Header -->
@@ -42,7 +44,7 @@ import { DashboardService, DashboardStats } from '../services/dashboard.service'
               <!-- Today's Revenue -->
               <div style="background:#fff;padding:24px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-left:4px solid #28a745;">
                 <div style="color:#666;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">{{ 'dashboard.todayRevenue' | translate }}</div>
-                <div style="font-size:32px;font-weight:700;color:#28a745;margin-bottom:4px;">\${{ stats.todayRevenue.toFixed(2) }}</div>
+                <div style="font-size:32px;font-weight:700;color:#28a745;margin-bottom:4px;">{{ stats.todayRevenue | currencyFormat }}</div>
                 <div style="color:#888;font-size:13px;">{{ 'dashboard.totalEarnings' | translate }}</div>
               </div>
 
@@ -75,7 +77,7 @@ import { DashboardService, DashboardStats } from '../services/dashboard.service'
               <!-- Total Revenue -->
               <div style="background:#fff;padding:24px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
                 <div style="color:#666;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">{{ 'dashboard.totalRevenue' | translate }}</div>
-                <div style="font-size:28px;font-weight:700;color:#333;">\${{ stats.totalRevenue.toFixed(2) }}</div>
+                <div style="font-size:28px;font-weight:700;color:#333;">{{ stats.totalRevenue | currencyFormat }}</div>
               </div>
 
               <!-- Total Orders -->
@@ -105,7 +107,7 @@ import { DashboardService, DashboardStats } from '../services/dashboard.service'
                   <div style="font-weight:600;color:#333;margin-bottom:4px;">Order #{{ sale.id }}</div>
                   <div style="font-size:13px;color:#888;">{{ sale.items }} items • {{ sale.cashierName }}</div>
                 </div>
-                <div style="font-weight:700;color:#DC3545;font-size:18px;">\${{ sale.total.toFixed(2) }}</div>
+                <div style="font-weight:700;color:#DC3545;font-size:18px;">{{ sale.total | currencyFormat }}</div>
               </div>
             </section>
 
@@ -123,7 +125,7 @@ import { DashboardService, DashboardStats } from '../services/dashboard.service'
                     <div style="font-size:13px;color:#888;">{{ product.sold }} sold</div>
                   </div>
                 </div>
-                <div style="font-weight:700;color:#28a745;font-size:16px;">\${{ product.revenue.toFixed(2) }}</div>
+                <div style="font-weight:700;color:#28a745;font-size:16px;">{{ product.revenue | currencyFormat }}</div>
               </div>
             </section>
           </div>
@@ -134,7 +136,7 @@ import { DashboardService, DashboardStats } from '../services/dashboard.service'
             <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;">
               <div *ngFor="let cat of stats.salesByCategory" style="padding:16px;border:1px solid #f0f0f0;border-radius:8px;">
                 <div style="font-weight:600;color:#333;margin-bottom:8px;">{{ cat.category }}</div>
-                <div style="font-size:24px;font-weight:700;color:#DC3545;margin-bottom:4px;">\${{ cat.total.toFixed(2) }}</div>
+                <div style="font-size:24px;font-weight:700;color:#DC3545;margin-bottom:4px;">{{ cat.total | currencyFormat }}</div>
                 <div style="font-size:13px;color:#888;">{{ cat.percentage.toFixed(1) }}% of total</div>
               </div>
             </div>
@@ -152,10 +154,12 @@ export class DashboardComponent implements OnInit {
   constructor(
     private auth: AuthService,
     private router: Router,
-    private dashboardService: DashboardService
+    private dashboardService: DashboardService,
+    private settingsService: SettingsService
   ) {}
 
   ngOnInit() {
+    this.settingsService.loadCurrencySettings();
     this.loadStats();
   }
 

@@ -12,12 +12,12 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
   standalone: true,
   imports: [CommonModule, TranslateModule, CurrencyFormatPipe],
   template: `
-    <div style="min-height:100vh;background:#f5f6f8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+    <div style="min-height:100vh;background:#f8f6f4;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',sans-serif;">
       <!-- Header -->
-      <header style="background:#DC3545;color:#fff;padding:20px 32px;box-shadow:0 2px 8px rgba(220,53,69,0.15);">
+      <header style="background:linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);color:#d4af37;padding:24px 40px;box-shadow:0 4px 16px rgba(0,0,0,0.2);">
         <div style="display:flex;align-items:center;justify-content:space-between;">
-          <h1 style="margin:0;font-size:24px;font-weight:700;">{{ 'dashboard.title' | translate }}</h1>
-          <div style="color:rgba(255,255,255,0.9);">{{ 'dashboard.welcome' | translate }}, {{ userEmail || 'User' }}</div>
+          <h1 style="margin:0;font-size:26px;font-weight:700;letter-spacing:0.5px;">{{ 'dashboard.title' | translate }}</h1>
+          <div style="color:#f8f6f4;font-size:15px;">{{ 'dashboard.welcome' | translate }}, {{ userEmail || 'User' }}</div>
         </div>
       </header>
 
@@ -35,31 +35,31 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
             <h2 style="margin:0 0 16px 0;color:#333;font-size:18px;font-weight:600;">{{ 'dashboard.todayOverview' | translate }}</h2>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;">
               <!-- Today's Sales -->
-              <div style="background:#fff;padding:24px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-left:4px solid #DC3545;">
-                <div style="color:#666;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">{{ 'dashboard.todaySales' | translate }}</div>
-                <div style="font-size:32px;font-weight:700;color:#DC3545;margin-bottom:4px;">{{ stats.todaySales }}</div>
-                <div style="color:#888;font-size:13px;">{{ 'dashboard.ordersCompleted' | translate }}</div>
+              <div style="background:#ffffff;padding:28px;border-radius:16px;box-shadow:0 4px 16px rgba(0,0,0,0.08);border-left:5px solid #d4af37;">
+                <div style="color:#8b7355;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">{{ 'dashboard.todaySales' | translate }}</div>
+                <div style="font-size:36px;font-weight:700;color:#d4af37;margin-bottom:6px;">{{ stats.todaySales }}</div>
+                <div style="color:#8b7355;font-size:14px;">{{ 'dashboard.ordersCompleted' | translate }}</div>
               </div>
 
               <!-- Today's Revenue -->
-              <div style="background:#fff;padding:24px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-left:4px solid #28a745;">
-                <div style="color:#666;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">{{ 'dashboard.todayRevenue' | translate }}</div>
-                <div style="font-size:32px;font-weight:700;color:#28a745;margin-bottom:4px;">{{ stats.todayRevenue | currencyFormat }}</div>
-                <div style="color:#888;font-size:13px;">{{ 'dashboard.totalEarnings' | translate }}</div>
+              <div style="background:#ffffff;padding:28px;border-radius:16px;box-shadow:0 4px 16px rgba(0,0,0,0.08);border-left:5px solid #2d7c3e;">
+                <div style="color:#8b7355;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">{{ 'dashboard.todayRevenue' | translate }}</div>
+                <div style="font-size:36px;font-weight:700;color:#2d7c3e;margin-bottom:6px;">{{ stats.todayRevenue | currencyFormat }}</div>
+                <div style="color:#8b7355;font-size:14px;">{{ 'dashboard.totalEarnings' | translate }}</div>
               </div>
 
               <!-- Today's Orders -->
-              <div style="background:#fff;padding:24px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-left:4px solid #007bff;">
-                <div style="color:#666;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">{{ 'dashboard.todayOrders' | translate }}</div>
-                <div style="font-size:32px;font-weight:700;color:#007bff;margin-bottom:4px;">{{ stats.todayOrders }}</div>
-                <div style="color:#888;font-size:13px;">Items sold</div>
+              <div style="background:#ffffff;padding:28px;border-radius:16px;box-shadow:0 4px 16px rgba(0,0,0,0.08);border-left:5px solid #5a7a9b;">
+                <div style="color:#8b7355;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">{{ 'dashboard.todayOrders' | translate }}</div>
+                <div style="font-size:36px;font-weight:700;color:#5a7a9b;margin-bottom:6px;">{{ stats.todayOrders }}</div>
+                <div style="color:#8b7355;font-size:14px;">Items sold</div>
               </div>
 
               <!-- Low Stock Alert -->
-              <div style="background:#fff;padding:24px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-left:4px solid #ffc107;">
-                <div style="color:#666;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">{{ 'dashboard.lowStockItems' | translate }}</div>
-                <div style="font-size:32px;font-weight:700;color:#ffc107;margin-bottom:4px;">{{ stats.lowStockProducts }}</div>
-                <div style="color:#888;font-size:13px;">Items need attention</div>
+              <div style="background:#ffffff;padding:28px;border-radius:16px;box-shadow:0 4px 16px rgba(0,0,0,0.08);border-left:5px solid #c19a2e;">
+                <div style="color:#8b7355;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">{{ 'dashboard.lowStockItems' | translate }}</div>
+                <div style="font-size:36px;font-weight:700;color:#c19a2e;margin-bottom:6px;">{{ stats.lowStockProducts }}</div>
+                <div style="color:#8b7355;font-size:14px;">Items need attention</div>
               </div>
             </div>
           </section>

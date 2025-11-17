@@ -58,7 +58,7 @@ import { AuthService } from '../services/auth.service';
               </div>
               <div style="background:#f8f9fa;padding:20px;border-radius:8px;text-align:center;">
                 <div style="color:#666;font-size:13px;margin-bottom:8px;">{{ 'shifts.totalOrders' | translate }}</div>
-                <div style="font-size:28px;font-weight:700;color:#007bff;">{{ currentShift.totalOrders || 0 }}</div>
+                <div style="font-size:28px;font-weight:700;color:#007bff;">{{ currentShift.totalTransactions || currentShift.totalOrders || 0 }}</div>
               </div>
               <div style="background:#f8f9fa;padding:20px;border-radius:8px;text-align:center;">
                 <div style="color:#666;font-size:13px;margin-bottom:8px;">{{ 'shifts.expectedCash' | translate }}</div>

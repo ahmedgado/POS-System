@@ -5,7 +5,7 @@ export class SaleController {
   // Create new sale
   async createSale(req: Request, res: Response): Promise<Response> {
     try {
-      const { customerId, items, paymentMethod, subtotal, taxAmount, discountAmount, totalAmount, cashReceived, changeGiven, shiftId } = req.body;
+      const { customerId, items, paymentMethod, subtotal, taxAmount, discountAmount, totalAmount, cashReceived, changeGiven, shiftId, tableId, waiterId, orderType, tipAmount, serviceCharge } = req.body;
       const cashierId = (req as any).user.id;
 
       // Validate items
@@ -33,6 +33,12 @@ export class SaleController {
             cashReceived,
             changeGiven,
             shiftId,
+            tableId,
+            waiterId: waiterId || cashierId, // Default to cashier if no waiter
+            orderType: orderType || 'DINE_IN',
+            orderStatus: tableId ? 'PENDING' : 'COMPLETED', // PENDING if table order, COMPLETED if retail
+            tipAmount: tipAmount || 0,
+            serviceCharge: serviceCharge || 0,
             status: 'COMPLETED'
           }
         });
@@ -75,6 +81,21 @@ export class SaleController {
           });
         }
 
+        // Update shift statistics if sale is linked to a shift
+        if (shiftId) {
+          await tx.shift.update({
+            where: { id: shiftId },
+            data: {
+              totalSales: {
+                increment: totalAmount
+              },
+              totalTransactions: {
+                increment: 1
+              }
+            }
+          });
+        }
+
         return newSale;
       });
 
@@ -87,7 +108,13 @@ export class SaleController {
             }
           },
           customer: true,
-          cashier: true
+          cashier: true,
+          waiter: true,
+          table: {
+            include: {
+              floor: true
+            }
+          }
         }
       });
 

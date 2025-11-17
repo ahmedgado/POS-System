@@ -34,6 +34,11 @@ export interface CreateSaleRequest {
   cashReceived?: number;
   changeGiven?: number;
   shiftId?: string;
+  tableId?: string;
+  waiterId?: string;
+  orderType?: 'DINE_IN' | 'TAKEAWAY' | 'DELIVERY' | 'DRIVE_THRU';
+  tipAmount?: number;
+  serviceCharge?: number;
 }
 
 export interface Sale {
@@ -52,6 +57,18 @@ export interface Sale {
     lastName: string;
   };
   customer?: {
+    firstName: string;
+    lastName: string;
+  };
+  table?: {
+    id: string;
+    tableNumber: string;
+    floor?: {
+      name: string;
+    };
+  };
+  orderType?: string;
+  waiter?: {
     firstName: string;
     lastName: string;
   };

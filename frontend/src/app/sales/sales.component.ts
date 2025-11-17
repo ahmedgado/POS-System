@@ -10,14 +10,16 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
   standalone: true,
   imports: [CommonModule, FormsModule, TranslateModule, CurrencyFormatPipe],
   template: `
-    <div style="min-height:100vh;background:#f5f6f8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+    <div style="min-height:100vh;background:#f8f6f4;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',sans-serif;">
       <!-- Header -->
-      <header style="background:#DC3545;color:#fff;padding:20px 32px;box-shadow:0 2px 8px rgba(220,53,69,0.15);">
+      <header style="background:linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);color:#d4af37;padding:24px 40px;box-shadow:0 4px 16px rgba(0,0,0,0.2);">
         <div style="display:flex;align-items:center;justify-content:space-between;">
-          <h1 style="margin:0;font-size:24px;font-weight:700;">📊 {{ 'sales.title' | translate }}</h1>
+          <h1 style="margin:0;font-size:26px;font-weight:700;letter-spacing:0.5px;">📊 {{ 'sales.title' | translate }}</h1>
           <button
             (click)="exportToExcel()"
-            style="background:#fff;color:#DC3545;border:none;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;">
+            style="background:linear-gradient(135deg, #d4af37 0%, #c19a2e 100%);color:#1a1a1a;border:none;padding:12px 24px;border-radius:10px;font-weight:600;cursor:pointer;font-size:14px;box-shadow:0 4px 12px rgba(212,175,55,0.3);transition:all 0.2s;"
+            (mouseenter)="$event.target.style.transform='translateY(-2px)';$event.target.style.boxShadow='0 6px 16px rgba(212,175,55,0.4)'"
+            (mouseleave)="$event.target.style.transform='translateY(0)';$event.target.style.boxShadow='0 4px 12px rgba(212,175,55,0.3)'">
             📥 {{ 'common.export' | translate }}
           </button>
         </div>
@@ -89,19 +91,19 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
 
         <!-- Statistics Cards -->
         <section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;margin-bottom:24px;">
-          <div style="background:#fff;padding:24px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-left:4px solid #DC3545;">
-            <div style="color:#666;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">{{ 'sales.totalSales' | translate }}</div>
-            <div style="font-size:32px;font-weight:700;color:#DC3545;">{{ filteredSales.length }}</div>
+          <div style="background:#ffffff;padding:28px;border-radius:16px;box-shadow:0 4px 16px rgba(0,0,0,0.08);border-left:5px solid #d4af37;">
+            <div style="color:#8b7355;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">{{ 'sales.totalSales' | translate }}</div>
+            <div style="font-size:36px;font-weight:700;color:#d4af37;">{{ filteredSales.length }}</div>
           </div>
 
-          <div style="background:#fff;padding:24px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-left:4px solid #28a745;">
-            <div style="color:#666;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">{{ 'sales.totalRevenue' | translate }}</div>
-            <div style="font-size:32px;font-weight:700;color:#28a745;">{{ getTotalRevenue() | currencyFormat }}</div>
+          <div style="background:#ffffff;padding:28px;border-radius:16px;box-shadow:0 4px 16px rgba(0,0,0,0.08);border-left:5px solid #2d2d2d;">
+            <div style="color:#8b7355;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">{{ 'sales.totalRevenue' | translate }}</div>
+            <div style="font-size:36px;font-weight:700;color:#2d2d2d;">{{ getTotalRevenue() | currencyFormat }}</div>
           </div>
 
-          <div style="background:#fff;padding:24px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-left:4px solid #007bff;">
-            <div style="color:#666;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">{{ 'sales.averageOrder' | translate }}</div>
-            <div style="font-size:32px;font-weight:700;color:#007bff;">{{ getAverageOrderValue() | currencyFormat }}</div>
+          <div style="background:#ffffff;padding:28px;border-radius:16px;box-shadow:0 4px 16px rgba(0,0,0,0.08);border-left:5px solid #c19a2e;">
+            <div style="color:#8b7355;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">{{ 'sales.averageOrder' | translate }}</div>
+            <div style="font-size:36px;font-weight:700;color:#c19a2e;">{{ getAverageOrderValue() | currencyFormat }}</div>
           </div>
         </section>
 
@@ -123,16 +125,17 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
           <div *ngIf="!loading && filteredSales.length > 0" style="overflow-x:auto;">
             <table style="width:100%;border-collapse:collapse;">
               <thead>
-                <tr style="background:#f8f9fa;border-bottom:2px solid #dee2e6;">
-                  <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;letter-spacing:0.5px;">#</th>
-                  <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;letter-spacing:0.5px;">{{ 'sales.saleId' | translate }}</th>
-                  <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;letter-spacing:0.5px;">{{ 'sales.date' | translate }}</th>
-                  <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;letter-spacing:0.5px;">{{ 'sales.cashier' | translate }}</th>
-                  <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;letter-spacing:0.5px;">{{ 'sales.items' | translate }}</th>
-                  <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;letter-spacing:0.5px;">{{ 'sales.paymentMethod' | translate }}</th>
-                  <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;letter-spacing:0.5px;">{{ 'pos.total' | translate }}</th>
-                  <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;letter-spacing:0.5px;">{{ 'sales.status' | translate }}</th>
-                  <th style="padding:16px 24px;text-align:center;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;letter-spacing:0.5px;">{{ 'sales.actions' | translate }}</th>
+                <tr style="background:linear-gradient(135deg, #f8f6f4 0%, #faf9f7 100%);border-bottom:2px solid #d4af37;">
+                  <th style="padding:18px 24px;text-align:left;font-size:12px;font-weight:700;color:#8b7355;text-transform:uppercase;letter-spacing:1px;">#</th>
+                  <th style="padding:18px 24px;text-align:left;font-size:12px;font-weight:700;color:#8b7355;text-transform:uppercase;letter-spacing:1px;">{{ 'sales.saleId' | translate }}</th>
+                  <th style="padding:18px 24px;text-align:left;font-size:12px;font-weight:700;color:#8b7355;text-transform:uppercase;letter-spacing:1px;">{{ 'sales.date' | translate }}</th>
+                  <th style="padding:18px 24px;text-align:left;font-size:12px;font-weight:700;color:#8b7355;text-transform:uppercase;letter-spacing:1px;">{{ 'sales.cashier' | translate }}</th>
+                  <th style="padding:18px 24px;text-align:left;font-size:12px;font-weight:700;color:#8b7355;text-transform:uppercase;letter-spacing:1px;">Order Type</th>
+                  <th style="padding:18px 24px;text-align:left;font-size:12px;font-weight:700;color:#8b7355;text-transform:uppercase;letter-spacing:1px;">{{ 'sales.items' | translate }}</th>
+                  <th style="padding:18px 24px;text-align:left;font-size:12px;font-weight:700;color:#8b7355;text-transform:uppercase;letter-spacing:1px;">{{ 'sales.paymentMethod' | translate }}</th>
+                  <th style="padding:18px 24px;text-align:left;font-size:12px;font-weight:700;color:#8b7355;text-transform:uppercase;letter-spacing:1px;">{{ 'pos.total' | translate }}</th>
+                  <th style="padding:18px 24px;text-align:left;font-size:12px;font-weight:700;color:#8b7355;text-transform:uppercase;letter-spacing:1px;">{{ 'sales.status' | translate }}</th>
+                  <th style="padding:18px 24px;text-align:center;font-size:12px;font-weight:700;color:#8b7355;text-transform:uppercase;letter-spacing:1px;">{{ 'sales.actions' | translate }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -145,6 +148,13 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
                   <td style="padding:16px 24px;color:#333;font-weight:600;font-size:14px;">#{{ sale.id }}</td>
                   <td style="padding:16px 24px;color:#666;font-size:14px;">{{ formatDate(sale.createdAt) }}</td>
                   <td style="padding:16px 24px;color:#666;font-size:14px;">{{ getCashierName(sale) }}</td>
+                  <td style="padding:16px 24px;color:#666;font-size:14px;">
+                    <span *ngIf="sale.orderType" [style.background]="getOrderTypeColor(sale.orderType)"
+                          style="padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;color:#fff;">
+                      {{ sale.orderType }}
+                    </span>
+                    <span *ngIf="!sale.orderType" style="color:#999;">-</span>
+                  </td>
                   <td style="padding:16px 24px;color:#666;font-size:14px;">{{ getTotalItems(sale) }}</td>
                   <td style="padding:16px 24px;">
                     <span [style.background]="getPaymentMethodColor(sale.paymentMethod)"
@@ -159,16 +169,20 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
                       {{ sale.status }}
                     </span>
                   </td>
-                  <td style="padding:16px 24px;text-align:center;">
+                  <td style="padding:18px 24px;text-align:center;">
                     <button
                       (click)="viewDetails(sale)"
-                      style="background:#007bff;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;margin-right:8px;">
-                      {{ 'sales.view' | translate }}
+                      style="background:linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);color:#d4af37;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;margin-right:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);transition:all 0.2s;"
+                      (mouseenter)="$event.target.style.transform='translateY(-1px)';$event.target.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)'"
+                      (mouseleave)="$event.target.style.transform='translateY(0)';$event.target.style.boxShadow='0 2px 8px rgba(0,0,0,0.15)'">
+                      View
                     </button>
                     <button
                       (click)="printReceipt(sale)"
-                      style="background:#28a745;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;">
-                      {{ 'sales.actions' | translate }}
+                      style="background:linear-gradient(135deg, #d4af37 0%, #c19a2e 100%);color:#1a1a1a;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;box-shadow:0 2px 8px rgba(212,175,55,0.3);transition:all 0.2s;"
+                      (mouseenter)="$event.target.style.transform='translateY(-1px)';$event.target.style.boxShadow='0 4px 12px rgba(212,175,55,0.4)'"
+                      (mouseleave)="$event.target.style.transform='translateY(0)';$event.target.style.boxShadow='0 2px 8px rgba(212,175,55,0.3)'">
+                      Print
                     </button>
                   </td>
                 </tr>
@@ -216,6 +230,26 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
                       style="padding:4px 12px;border-radius:12px;font-size:12px;font-weight:600;color:#fff;">
                   {{ selectedSale.status }}
                 </span>
+              </div>
+              <div>
+                <div style="color:#666;font-size:13px;margin-bottom:4px;">Order Type</div>
+                <span *ngIf="selectedSale.orderType" [style.background]="getOrderTypeColor(selectedSale.orderType)"
+                      style="padding:4px 12px;border-radius:12px;font-size:12px;font-weight:600;color:#fff;">
+                  {{ selectedSale.orderType }}
+                </span>
+                <span *ngIf="!selectedSale.orderType" style="color:#999;">-</span>
+              </div>
+              <div *ngIf="selectedSale.table">
+                <div style="color:#666;font-size:13px;margin-bottom:4px;">Table</div>
+                <div style="color:#d4af37;font-weight:600;">
+                  {{ selectedSale.table.floor?.name }} - {{ selectedSale.table.tableNumber }}
+                </div>
+              </div>
+              <div *ngIf="selectedSale.waiter">
+                <div style="color:#666;font-size:13px;margin-bottom:4px;">Waiter</div>
+                <div style="color:#333;font-weight:600;">
+                  {{ selectedSale.waiter.firstName }} {{ selectedSale.waiter.lastName }}
+                </div>
               </div>
             </div>
           </div>
@@ -391,6 +425,16 @@ export class SalesComponent implements OnInit {
     }
   }
 
+  getOrderTypeColor(orderType: string): string {
+    switch (orderType) {
+      case 'DINE_IN': return '#d4af37';
+      case 'TAKEAWAY': return '#5a7a9b';
+      case 'DELIVERY': return '#c19a2e';
+      case 'DRIVE_THRU': return '#8e44ad';
+      default: return '#6c757d';
+    }
+  }
+
   viewDetails(sale: Sale) {
     this.selectedSale = sale;
   }
@@ -400,8 +444,196 @@ export class SalesComponent implements OnInit {
   }
 
   printReceipt(sale: Sale) {
-    alert('Print receipt for Order #' + sale.id);
-    // TODO: Implement receipt printing
+    const tableInfo = sale.table
+      ? `<div style="margin-bottom:8px;"><strong>Table:</strong> ${sale.table.floor?.name} - ${sale.table.tableNumber}</div>`
+      : '';
+
+    const orderTypeLabel = sale.orderType || 'N/A';
+    const waiterInfo = sale.waiter
+      ? `<div style="margin-bottom:8px;"><strong>Waiter:</strong> ${sale.waiter.firstName} ${sale.waiter.lastName}</div>`
+      : '';
+
+    const itemsHtml = sale.items.map(item => `
+      <tr>
+        <td style="padding:8px 0;border-bottom:1px solid #eee;">${item.product?.name || 'Unknown'}</td>
+        <td style="padding:8px 0;border-bottom:1px solid #eee;text-align:center;">${item.quantity}</td>
+        <td style="padding:8px 0;border-bottom:1px solid #eee;text-align:right;">${item.unitPrice.toFixed(2)} EGP</td>
+        <td style="padding:8px 0;border-bottom:1px solid #eee;text-align:right;font-weight:600;">${item.totalPrice.toFixed(2)} EGP</td>
+      </tr>
+    `).join('');
+
+    const receiptHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Receipt #${sale.saleNumber}</title>
+        <style>
+          @media print {
+            body { margin: 0; padding: 20px; }
+          }
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+          }
+          .header {
+            text-align: center;
+            border-bottom: 3px solid #d4af37;
+            padding-bottom: 16px;
+            margin-bottom: 20px;
+          }
+          .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: #d4af37;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+          }
+          .subtitle {
+            color: #666;
+            font-size: 12px;
+          }
+          .info-section {
+            margin-bottom: 20px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #333;
+          }
+          .order-type {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 11px;
+            color: #fff;
+            background: #5a7a9b;
+          }
+          table {
+            width: 100%;
+            margin: 20px 0;
+            border-collapse: collapse;
+          }
+          th {
+            text-align: left;
+            padding: 8px 0;
+            border-bottom: 2px solid #d4af37;
+            color: #333;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+          }
+          td {
+            font-size: 13px;
+            color: #333;
+          }
+          .totals {
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 2px solid #eee;
+          }
+          .total-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 13px;
+          }
+          .grand-total {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 2px solid #d4af37;
+            display: flex;
+            justify-content: space-between;
+            font-size: 18px;
+            font-weight: 700;
+            color: #d4af37;
+          }
+          .footer {
+            text-align: center;
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid #eee;
+            font-size: 12px;
+            color: #666;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="logo">ST. REGIS POS</div>
+          <div class="subtitle">The St. Regis New Capital</div>
+        </div>
+
+        <div class="info-section">
+          <div style="margin-bottom:8px;"><strong>Receipt #:</strong> ${sale.saleNumber}</div>
+          <div style="margin-bottom:8px;"><strong>Date:</strong> ${this.formatDate(sale.createdAt)}</div>
+          <div style="margin-bottom:8px;"><strong>Cashier:</strong> ${this.getCashierName(sale)}</div>
+          ${tableInfo}
+          ${waiterInfo}
+          <div style="margin-bottom:8px;">
+            <strong>Order Type:</strong>
+            <span class="order-type" style="background:${this.getOrderTypeColor(orderTypeLabel)};">${orderTypeLabel}</span>
+          </div>
+          ${sale.customer ? `<div style="margin-bottom:8px;"><strong>Customer:</strong> ${sale.customer.firstName} ${sale.customer.lastName}</div>` : ''}
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th style="text-align:center;">Qty</th>
+              <th style="text-align:right;">Price</th>
+              <th style="text-align:right;">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemsHtml}
+          </tbody>
+        </table>
+
+        <div class="totals">
+          <div class="total-row">
+            <span>Subtotal:</span>
+            <span>${sale.subtotal.toFixed(2)} EGP</span>
+          </div>
+          <div class="total-row">
+            <span>Tax:</span>
+            <span>${sale.taxAmount.toFixed(2)} EGP</span>
+          </div>
+          ${sale.discountAmount > 0 ? `
+          <div class="total-row">
+            <span>Discount:</span>
+            <span>-${sale.discountAmount.toFixed(2)} EGP</span>
+          </div>
+          ` : ''}
+          <div class="grand-total">
+            <span>TOTAL:</span>
+            <span>${sale.totalAmount.toFixed(2)} EGP</span>
+          </div>
+          <div class="total-row" style="margin-top:12px;">
+            <span>Payment Method:</span>
+            <span style="font-weight:600;">${sale.paymentMethod}</span>
+          </div>
+        </div>
+
+        <div class="footer">
+          <div>Thank you for your visit!</div>
+          <div style="margin-top:8px;">www.thestregisnewcapital.com</div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const printWindow = window.open('', '_blank', 'width=400,height=600');
+    if (printWindow) {
+      printWindow.document.write(receiptHtml);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
+        printWindow.print();
+      }, 250);
+    }
   }
 
   exportToExcel() {

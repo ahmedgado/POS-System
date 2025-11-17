@@ -4,16 +4,18 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 export interface Shift {
-  id: number;
-  cashierName: string;
-  startTime: string;
+  id: string;
+  shiftNumber?: string;
+  cashierName?: string;
+  startTime?: string;
   endTime?: string;
-  startingCash: number;
+  startingCash?: number;
   endingCash?: number;
   expectedCash?: number;
   difference?: number;
   totalSales?: number;
   totalOrders?: number;
+  totalTransactions?: number;
   status: 'OPEN' | 'CLOSED';
   notes?: string;
 }

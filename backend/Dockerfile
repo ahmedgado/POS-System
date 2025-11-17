@@ -75,5 +75,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]
 
-# Run migrations and start server
-CMD ["sh", "-c", "npx prisma migrate deploy && npm run start:prod"]
+# Run database sync and start server
+CMD ["sh", "-c", "npx prisma db push --skip-generate --accept-data-loss && npm run start:prod"]

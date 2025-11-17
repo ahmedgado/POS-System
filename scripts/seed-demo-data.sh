@@ -21,7 +21,7 @@ echo "║   مولد البيانات التجريبية                     ║
 echo "╚════════════════════════════════════════════════╝"
 echo -e "${NC}"
 
-PROJECT_DIR="/Users/gado/IdeaProjects/POS-System"
+PROJECT_DIR="/Users/ahmedgad/test/POS-System"
 cd "$PROJECT_DIR"
 
 echo -e "${YELLOW}This will generate:${NC}"

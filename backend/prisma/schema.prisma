@@ -15,6 +15,8 @@ enum UserRole {
   OWNER
   MANAGER
   CASHIER
+  WAITER        // Restaurant-specific role
+  KITCHEN_STAFF // Restaurant-specific role
   INVENTORY_CLERK
 }
 
@@ -41,6 +43,7 @@ model User {
   // Relations
   shifts        Shift[]
   sales         Sale[]
+  waiterSales   Sale[]      @relation("SaleWaiter") // Restaurant: sales as waiter
   auditLogs     AuditLog[]
 
   @@map("users")
@@ -64,27 +67,30 @@ model Category {
 }
 
 model Product {
-  id              String            @id @default(uuid())
-  sku             String            @unique
-  barcode         String?           @unique
+  id              String                   @id @default(uuid())
+  sku             String                   @unique
+  barcode         String?                  @unique
   name            String
   description     String?
   categoryId      String
-  category        Category          @relation(fields: [categoryId], references: [id])
-  price           Decimal           @db.Decimal(10, 2)
-  cost            Decimal?          @db.Decimal(10, 2)
-  taxRate         Decimal           @default(0.10) @db.Decimal(5, 4)
-  stock           Int               @default(0)
-  lowStockAlert   Int               @default(10)
-  unit            String            @default("piece")
+  category        Category                 @relation(fields: [categoryId], references: [id])
+  price           Decimal                  @db.Decimal(10, 2)
+  cost            Decimal?                 @db.Decimal(10, 2)
+  taxRate         Decimal                  @default(0.10) @db.Decimal(5, 4)
+  stock           Int                      @default(0)
+  lowStockAlert   Int                      @default(10)
+  unit            String                   @default("piece")
   imageUrl        String?
-  isActive        Boolean           @default(true)
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  isActive        Boolean                  @default(true)
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
 
   // Relations
   saleItems       SaleItem[]
   stockMovements  StockMovement[]
+  modifierGroups  ProductModifierGroup[]   // Restaurant: modifiers for this product
+  kitchenStations ProductKitchenStation[]  // Restaurant: which stations prepare this
+  recipe          Recipe?                  // Restaurant: recipe/BOM
 
   @@map("products")
 }
@@ -96,6 +102,8 @@ enum MovementType {
   DAMAGE
   RETURN
   TRANSFER
+  WASTE         // Restaurant-specific: Food spoilage
+  COMP          // Restaurant-specific: Complimentary items
 }
 
 model StockMovement {
@@ -113,6 +121,22 @@ model StockMovement {
 
 // ==================== SALES & TRANSACTIONS ====================
 
+enum OrderType {
+  DINE_IN
+  TAKEAWAY
+  DELIVERY
+  DRIVE_THRU
+}
+
+enum OrderStatus {
+  PENDING       // Order created, not sent to kitchen
+  PREPARING     // Sent to kitchen
+  READY         // Food ready
+  SERVED        // Served to customer (dine-in)
+  COMPLETED     // Payment completed
+  CANCELLED
+}
+
 enum SaleStatus {
   COMPLETED
   REFUNDED
@@ -123,8 +147,9 @@ enum SaleStatus {
 enum PaymentMethod {
   CASH
   CARD
-  SPLIT
+  MOBILE_WALLET
   STORE_CREDIT
+  SPLIT
 }
 
 model Sale {
@@ -133,18 +158,29 @@ model Sale {
   customerId      String?
   customer        Customer?     @relation(fields: [customerId], references: [id])
   cashierId       String
-  cashier         User          @relation(fields: [cashierId], references: [id])
+  cashier         User          @relation(fields: [cashierId], references: [id], map: "sale_cashier_fk")
+  waiterId        String?       // Restaurant: waiter who took order
+  waiter          User?         @relation("SaleWaiter", fields: [waiterId], references: [id])
   shiftId         String?
   shift           Shift?        @relation(fields: [shiftId], references: [id])
+  tableId         String?       // Restaurant: table assignment
+  table           Table?        @relation(fields: [tableId], references: [id])
+  orderType       OrderType     @default(DINE_IN) // Restaurant: order type
+  orderStatus     OrderStatus   @default(PENDING) // Restaurant: order status
   subtotal        Decimal       @db.Decimal(10, 2)
   taxAmount       Decimal       @db.Decimal(10, 2)
+  serviceCharge   Decimal       @default(0) @db.Decimal(10, 2) // Restaurant: auto service %
   discountAmount  Decimal       @default(0) @db.Decimal(10, 2)
+  tipAmount       Decimal       @default(0) @db.Decimal(10, 2) // Restaurant: tips
   totalAmount     Decimal       @db.Decimal(10, 2)
   paymentMethod   PaymentMethod
   cashReceived    Decimal?      @db.Decimal(10, 2)
   changeGiven     Decimal?      @db.Decimal(10, 2)
   status          SaleStatus    @default(COMPLETED)
   notes           String?
+  deliveryAddress String?       // Restaurant: for delivery orders
+  deliveryFee     Decimal       @default(0) @db.Decimal(10, 2) // Restaurant: delivery fee
+  estimatedTime   DateTime?     // Restaurant: estimated ready/delivery time
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
@@ -168,16 +204,23 @@ model SalePayment {
 }
 
 model SaleItem {
-  id          String   @id @default(uuid())
+  id          String             @id @default(uuid())
   saleId      String
-  sale        Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  sale        Sale               @relation(fields: [saleId], references: [id], onDelete: Cascade)
   productId   String
-  product     Product  @relation(fields: [productId], references: [id])
+  product     Product            @relation(fields: [productId], references: [id])
   quantity    Int
-  unitPrice   Decimal  @db.Decimal(10, 2)
-  taxRate     Decimal  @db.Decimal(5, 4)
-  discount    Decimal  @default(0) @db.Decimal(10, 2)
-  totalPrice  Decimal  @db.Decimal(10, 2)
+  unitPrice   Decimal            @db.Decimal(10, 2)
+  taxRate     Decimal            @db.Decimal(5, 4)
+  discount    Decimal            @default(0) @db.Decimal(10, 2)
+  totalPrice  Decimal            @db.Decimal(10, 2)
+  courseType  String?            // Restaurant: STARTER, MAIN, DESSERT
+  notes       String?            // Restaurant: special instructions
+  sentToKitchenAt DateTime?      // Restaurant: when sent to kitchen
+  readyAt     DateTime?          // Restaurant: when marked ready
+
+  // Relations
+  modifiers   SaleItemModifier[] // Restaurant: customizations
 
   @@map("sale_items")
 }
@@ -287,4 +330,212 @@ model Setting {
   updatedAt DateTime @updatedAt
 
   @@map("settings")
+}
+
+// ==================== RESTAURANT-SPECIFIC FEATURES ====================
+
+// Table Management
+enum TableStatus {
+  AVAILABLE
+  OCCUPIED
+  RESERVED
+  CLEANING
+}
+
+model Floor {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  tables      Table[]
+
+  @@map("floors")
+}
+
+model Table {
+  id          String      @id @default(uuid())
+  floorId     String
+  floor       Floor       @relation(fields: [floorId], references: [id])
+  tableNumber String
+  capacity    Int
+  status      TableStatus @default(AVAILABLE)
+  positionX   Int?        // For floor plan designer
+  positionY   Int?        // For floor plan designer
+  shape       String?     // CIRCLE, SQUARE, RECTANGLE for UI
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  sales       Sale[]
+
+  @@unique([floorId, tableNumber])
+  @@map("tables")
+}
+
+// Product Modifiers
+model ModifierGroup {
+  id              String     @id @default(uuid())
+  name            String
+  description     String?
+  isRequired      Boolean    @default(false) // Must select at least one
+  minSelection    Int        @default(0)
+  maxSelection    Int?       // NULL = unlimited
+  sortOrder       Int        @default(0)
+  isActive        Boolean    @default(true)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  // Relations
+  modifiers       Modifier[]
+  products        ProductModifierGroup[]
+
+  @@map("modifier_groups")
+}
+
+model Modifier {
+  id              String       @id @default(uuid())
+  groupId         String
+  group           ModifierGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  name            String
+  priceAdjustment Decimal      @default(0) @db.Decimal(10, 2) // + or - from base price
+  isDefault       Boolean      @default(false)
+  sortOrder       Int          @default(0)
+  isActive        Boolean      @default(true)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  // Relations
+  saleItems       SaleItemModifier[]
+
+  @@map("modifiers")
+}
+
+model ProductModifierGroup {
+  id              String         @id @default(uuid())
+  productId       String
+  product         Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  modifierGroupId String
+  modifierGroup   ModifierGroup  @relation(fields: [modifierGroupId], references: [id], onDelete: Cascade)
+  createdAt       DateTime       @default(now())
+
+  @@unique([productId, modifierGroupId])
+  @@map("product_modifier_groups")
+}
+
+model SaleItemModifier {
+  id          String     @id @default(uuid())
+  saleItemId  String
+  saleItem    SaleItem   @relation(fields: [saleItemId], references: [id], onDelete: Cascade)
+  modifierId  String
+  modifier    Modifier   @relation(fields: [modifierId], references: [id])
+  quantity    Int        @default(1)
+  price       Decimal    @db.Decimal(10, 2) // Stored price at time of sale
+
+  @@map("sale_item_modifiers")
+}
+
+// Recipe & BOM (Bill of Materials)
+model Ingredient {
+  id            String   @id @default(uuid())
+  name          String   @unique
+  unit          String   // kg, liter, piece, etc.
+  cost          Decimal  @db.Decimal(10, 2)
+  stock         Decimal  @default(0) @db.Decimal(10, 3) // Allow decimals
+  lowStockAlert Decimal  @default(0) @db.Decimal(10, 3)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  recipeItems   RecipeItem[]
+
+  @@map("ingredients")
+}
+
+model Recipe {
+  id          String   @id @default(uuid())
+  productId   String   @unique
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  description String?
+  prepTime    Int?     // Minutes
+  cookTime    Int?     // Minutes
+  servings    Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  items       RecipeItem[]
+
+  @@map("recipes")
+}
+
+model RecipeItem {
+  id           String     @id @default(uuid())
+  recipeId     String
+  recipe       Recipe     @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  ingredientId String
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id])
+  quantity     Decimal    @db.Decimal(10, 3) // Amount needed
+  unit         String     // Must match ingredient unit
+  notes        String?
+
+  @@map("recipe_items")
+}
+
+// Kitchen Display System
+enum KitchenTicketStatus {
+  NEW
+  IN_PROGRESS
+  READY
+  SERVED
+  CANCELLED
+}
+
+model KitchenStation {
+  id          String   @id @default(uuid())
+  name        String   @unique // Grill, Bar, Pastry, etc.
+  description String?
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  tickets     KitchenTicket[]
+  products    ProductKitchenStation[]
+
+  @@map("kitchen_stations")
+}
+
+model ProductKitchenStation {
+  id               String         @id @default(uuid())
+  productId        String
+  product          Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  kitchenStationId String
+  kitchenStation   KitchenStation @relation(fields: [kitchenStationId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, kitchenStationId])
+  @@map("product_kitchen_stations")
+}
+
+model KitchenTicket {
+  id               String              @id @default(uuid())
+  saleId           String
+  saleItemId       String
+  kitchenStationId String
+  kitchenStation   KitchenStation      @relation(fields: [kitchenStationId], references: [id])
+  status           KitchenTicketStatus @default(NEW)
+  priority         Int                 @default(0) // Higher = more urgent
+  createdAt        DateTime            @default(now())
+  startedAt        DateTime?
+  completedAt      DateTime?
+  notes            String?
+
+  @@map("kitchen_tickets")
 }

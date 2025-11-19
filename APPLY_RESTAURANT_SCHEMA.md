@@ -7,7 +7,7 @@ Since you're using Docker to avoid Node.js version issues, here's the simplified
 ### Method 1: One-Command Migration (Easiest)
 
 ```bash
-cd /Users/ahmedgad/test/POS-System
+cd /Users/gado/IdeaProjects/POS-System
 ./migrate-restaurant-schema.sh
 ```
 
@@ -27,7 +27,7 @@ This script will:
 ### Method 2: Manual Docker Commands (If script fails)
 
 ```bash
-cd /Users/ahmedgad/test/POS-System
+cd /Users/gado/IdeaProjects/POS-System
 
 # Step 1: Stop everything
 docker-compose down
@@ -59,7 +59,7 @@ docker-compose logs -f backend
 ### Method 3: Complete Fresh Start (If database has issues)
 
 ```bash
-cd /Users/ahmedgad/test/POS-System
+cd /Users/gado/IdeaProjects/POS-System
 
 # CAUTION: This deletes ALL data
 docker-compose down -v  # -v removes volumes (database data)
@@ -351,7 +351,7 @@ If you encounter issues:
 **Ready to migrate?**
 
 ```bash
-cd /Users/ahmedgad/test/POS-System
+cd /Users/gado/IdeaProjects/POS-System
 ./migrate-restaurant-schema.sh
 ```
 

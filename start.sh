@@ -15,7 +15,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Project directory
-PROJECT_DIR="/Users/ahmedgad/test/POS-System"
+PROJECT_DIR="/Users/gado/IdeaProjects/POS-System"
 
 echo -e "${BLUE}"
 echo "╔════════════════════════════════════════════════╗"

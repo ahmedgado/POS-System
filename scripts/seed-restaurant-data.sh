@@ -22,7 +22,7 @@ echo "║   مولد بيانات نظام نقاط البيع للمطاعم   
 echo "╚════════════════════════════════════════════════╝"
 echo -e "${NC}"
 
-PROJECT_DIR="/Users/ahmedgad/test/POS-System"
+PROJECT_DIR="/Users/gado/IdeaProjects/POS-System"
 cd "$PROJECT_DIR"
 
 echo -e "${YELLOW}This will generate complete restaurant data:${NC}"
@@ -60,7 +60,7 @@ if docker compose ps 2>/dev/null | grep -q "backend.*Up"; then
     echo "This will take 2-3 minutes..."
     echo ""
 
-    docker compose exec -T backend npx ts-node prisma/seed-restaurant-demo.ts
+    docker compose exec -T backend node prisma/seed-restaurant-demo.js
 
     SEED_EXIT_CODE=$?
 

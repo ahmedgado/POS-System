@@ -282,7 +282,7 @@ All routes authenticated with `authenticate` middleware.
 ### Immediate (Today)
 1. **Fix TypeScript compilation**:
    ```bash
-   cd /Users/ahmedgad/test/POS-System/backend/src/controllers
+   cd /Users/gado/IdeaProjects/POS-System/backend/src/controllers
    sed -i '' 's/): Promise<void> => {/) => {/g' *.controller.ts
    docker-compose up --build -d backend
    ```
@@ -372,14 +372,14 @@ All routes authenticated with `authenticate` middleware.
 
 ### Fix & Deploy Backend
 ```bash
-cd /Users/ahmedgad/test/POS-System
+cd /Users/gado/IdeaProjects/POS-System
 
 # Fix TypeScript
 cd backend/src/controllers
 sed -i '' 's/): Promise<void> => {/) => {/g' floor.controller.ts table.controller.ts modifier.controller.ts kitchen.controller.ts
 
 # Rebuild
-cd /Users/ahmedgad/test/POS-System
+cd /Users/gado/IdeaProjects/POS-System
 docker-compose up --build -d backend
 
 # Check logs
@@ -406,7 +406,7 @@ curl -X GET http://localhost:3000/api/restaurant/floors \
 
 ### Generate Frontend Components
 ```bash
-cd /Users/ahmedgad/test/POS-System/frontend
+cd /Users/gado/IdeaProjects/POS-System/frontend
 
 # Create restaurant module structure
 ng generate module restaurant --routing

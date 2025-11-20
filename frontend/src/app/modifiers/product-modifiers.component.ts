@@ -15,161 +15,154 @@ interface ProductWithModifiers extends Product {
   standalone: true,
   imports: [CommonModule, FormsModule, PaginationComponent],
   template: `
-    <div style="min-height:100vh;background:linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);padding:24px;">
-
+    <div style="min-height:100vh;background:#f8f6f4;">
       <!-- Header -->
-      <div style="background:linear-gradient(135deg, #d4af37 0%, #c19a2e 100%);border-radius:16px;padding:32px;margin-bottom:24px;box-shadow:0 8px 32px rgba(212,175,55,0.3);">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <div>
-            <h1 style="margin:0;color:#1a1a1a;font-size:32px;font-weight:800;letter-spacing:-0.5px;">
-              🔗 Product Modifiers
-            </h1>
-            <p style="margin:8px 0 0 0;color:#2d2d2d;font-size:14px;opacity:0.9;">
-              Assign customization options to menu items
-            </p>
+      <header style="background:linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);color:#c4a75b;padding:20px 32px;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <h1 style="margin:0;font-size:24px;font-weight:700;">🔗 Product Modifiers</h1>
+        </div>
+      </header>
+
+      <main style="padding:32px;">
+        <!-- Search & Filter Bar -->
+        <div style="background:#fff;border-radius:16px;padding:24px;margin-bottom:24px;border:1px solid #e5e5e5;">
+          <div style="display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;">
+            <input
+              type="text"
+              [(ngModel)]="searchQuery"
+              (input)="filterProducts()"
+              placeholder="🔍 Search products..."
+              style="width:100%;padding:14px 20px;background:#f8f9fa;border:2px solid #e5e5e5;border-radius:12px;color:#333;font-size:15px;outline:none;"
+              [style.border-color]="searchQuery ? '#c4a75b' : '#e5e5e5'">
+            <select
+              [(ngModel)]="selectedCategoryFilter"
+              (change)="filterProducts()"
+              style="padding:14px 20px;background:#f8f9fa;border:2px solid #e5e5e5;border-radius:12px;color:#333;font-size:15px;outline:none;cursor:pointer;">
+              <option value="">All Categories</option>
+              <option *ngFor="let cat of categories" [value]="cat.id">{{ cat.name }}</option>
+            </select>
           </div>
         </div>
-      </div>
 
-      <!-- Search & Filter Bar -->
-      <div style="background:#2d2d2d;border-radius:16px;padding:24px;margin-bottom:24px;border:2px solid #3d3d3d;">
-        <div style="display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;">
-          <input
-            type="text"
-            [(ngModel)]="searchQuery"
-            (input)="filterProducts()"
-            placeholder="🔍 Search products..."
-            style="width:100%;padding:14px 20px;background:#3d3d3d;border:2px solid #4d4d4d;border-radius:12px;color:#fff;font-size:15px;outline:none;"
-            [style.border-color]="searchQuery ? '#d4af37' : '#4d4d4d'">
-          <select
-            [(ngModel)]="selectedCategoryFilter"
-            (change)="filterProducts()"
-            style="padding:14px 20px;background:#3d3d3d;border:2px solid #4d4d4d;border-radius:12px;color:#fff;font-size:15px;outline:none;cursor:pointer;">
-            <option value="">All Categories</option>
-            <option *ngFor="let cat of categories" [value]="cat.id">{{ cat.name }}</option>
-          </select>
+        <!-- Loading State -->
+        <div *ngIf="loading" style="text-align:center;padding:80px 20px;color:#c4a75b;">
+          <div style="font-size:48px;margin-bottom:16px;">⏳</div>
+          <div style="font-size:18px;font-weight:600;">Loading products...</div>
         </div>
-      </div>
 
-      <!-- Loading State -->
-      <div *ngIf="loading" style="text-align:center;padding:80px 20px;color:#d4af37;">
-        <div style="font-size:48px;margin-bottom:16px;">⏳</div>
-        <div style="font-size:18px;font-weight:600;">Loading products...</div>
-      </div>
+        <!-- Products Grid -->
+        <div *ngIf="!loading" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(350px,1fr));gap:20px;">
+          <div
+            *ngFor="let product of filteredProducts"
+            style="background:#fff;border-radius:16px;overflow:hidden;border:2px solid #e5e5e5;transition:all 0.3s ease;cursor:pointer;"
+            (click)="openProductModifiers(product)"
+            (mouseenter)="$event.currentTarget.style.borderColor='#c4a75b'; $event.currentTarget.style.transform='translateY(-4px)'"
+            (mouseleave)="$event.currentTarget.style.borderColor='#e5e5e5'; $event.currentTarget.style.transform='translateY(0)'">
 
-      <!-- Products Grid -->
-      <div *ngIf="!loading" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(350px,1fr));gap:20px;">
-        <div
-          *ngFor="let product of filteredProducts"
-          style="background:#2d2d2d;border-radius:16px;overflow:hidden;border:2px solid #3d3d3d;transition:all 0.3s ease;cursor:pointer;"
-          (click)="openProductModifiers(product)"
-          (mouseenter)="$event.currentTarget.style.borderColor='#d4af37'; $event.currentTarget.style.transform='translateY(-4px)'"
-          (mouseleave)="$event.currentTarget.style.borderColor='#3d3d3d'; $event.currentTarget.style.transform='translateY(0)'">
-
-          <!-- Product Image -->
-          <div style="height:180px;background:#1a1a1a;position:relative;overflow:hidden;">
-            <img
-              [src]="getProductImageUrl(product.id)"
-              [alt]="product.name"
-              style="width:100%;height:100%;object-fit:cover;"
-              (error)="$event.target.src='https://via.placeholder.com/400x300?text=No+Image'">
-            <div style="position:absolute;top:12px;right:12px;background:rgba(212,175,55,0.95);color:#1a1a1a;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;">
-              \${{ product.price.toFixed(2) }}
-            </div>
-          </div>
-
-          <!-- Product Info -->
-          <div style="padding:20px;">
-            <h3 style="margin:0 0 8px 0;color:#d4af37;font-size:18px;font-weight:700;">
-              {{ product.name }}
-            </h3>
-            <p style="margin:0 0 12px 0;color:#999;font-size:13px;">
-              SKU: {{ product.sku }}
-            </p>
-
-            <!-- Assigned Modifiers -->
-            <div style="margin-top:12px;padding-top:12px;border-top:1px solid #3d3d3d;">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                <span style="color:#d4af37;font-size:12px;font-weight:700;text-transform:uppercase;">
-                  Modifiers
-                </span>
-                <span style="background:#4d4d4d;color:#d4af37;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;">
-                  {{ product.modifierCount || 0 }}
-                </span>
-              </div>
-
-              <div *ngIf="!product.modifierCount || product.modifierCount === 0"
-                   style="text-align:center;padding:12px;color:#666;font-size:12px;">
-                No modifiers assigned
-              </div>
-
-              <div *ngIf="product.modifierCount && product.modifierCount > 0"
-                   style="display:flex;flex-wrap:wrap;gap:6px;">
-                <span
-                  *ngFor="let mod of product.assignedModifiers?.slice(0, 3)"
-                  style="background:#3d3d3d;color:#d4af37;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;">
-                  {{ mod.name }}
-                </span>
-                <span
-                  *ngIf="product.modifierCount > 3"
-                  style="background:#3d3d3d;color:#999;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;">
-                  +{{ product.modifierCount - 3 }} more
-                </span>
+            <!-- Product Image -->
+            <div style="height:180px;background:#f8f9fa;position:relative;overflow:hidden;">
+              <img
+                [src]="getProductImageUrl(product.id)"
+                [alt]="product.name"
+                style="width:100%;height:100%;object-fit:cover;"
+                (error)="$event.target.src='https://via.placeholder.com/400x300?text=No+Image'">
+              <div style="position:absolute;top:12px;right:12px;background:rgba(196, 167, 91, 0.95);color:#1a1a1a;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;">
+                \${{ product.price.toFixed(2) }}
               </div>
             </div>
 
-            <!-- Action Button -->
-            <button
-              (click)="openProductModifiers(product); $event.stopPropagation()"
-              style="width:100%;margin-top:16px;background:linear-gradient(135deg, #d4af37 0%, #c19a2e 100%);color:#1a1a1a;border:none;padding:12px;border-radius:10px;font-weight:700;cursor:pointer;font-size:14px;">
-              ⚙️ Manage Modifiers
-            </button>
+            <!-- Product Info -->
+            <div style="padding:20px;">
+              <h3 style="margin:0 0 8px 0;color:#333;font-size:18px;font-weight:700;">
+                {{ product.name }}
+              </h3>
+              <p style="margin:0 0 12px 0;color:#666;font-size:13px;">
+                SKU: {{ product.sku }}
+              </p>
+
+              <!-- Assigned Modifiers -->
+              <div style="margin-top:12px;padding-top:12px;border-top:1px solid #e5e5e5;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                  <span style="color:#333;font-size:12px;font-weight:700;text-transform:uppercase;">
+                    Modifiers
+                  </span>
+                  <span style="background:#e5e5e5;color:#333;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;">
+                    {{ product.modifierCount || 0 }}
+                  </span>
+                </div>
+
+                <div *ngIf="!product.modifierCount || product.modifierCount === 0"
+                     style="text-align:center;padding:12px;color:#999;font-size:12px;">
+                  No modifiers assigned
+                </div>
+
+                <div *ngIf="product.modifierCount && product.modifierCount > 0"
+                     style="display:flex;flex-wrap:wrap;gap:6px;">
+                  <span
+                    *ngFor="let mod of product.assignedModifiers?.slice(0, 3)"
+                    style="background:#e5e5e5;color:#333;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;">
+                    {{ mod.name }}
+                  </span>
+                  <span
+                    *ngIf="product.modifierCount > 3"
+                    style="background:#e5e5e5;color:#666;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;">
+                    +{{ product.modifierCount - 3 }} more
+                  </span>
+                </div>
+              </div>
+
+              <!-- Action Button -->
+              <button
+                (click)="openProductModifiers(product); $event.stopPropagation()"
+                style="width:100%;margin-top:16px;background:linear-gradient(135deg, #c4a75b 0%, #a38a4a 100%);color:#1a1a1a;border:none;padding:12px;border-radius:10px;font-weight:700;cursor:pointer;font-size:14px;">
+                ⚙️ Manage Modifiers
+              </button>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- Empty State -->
-      <div *ngIf="!loading && filteredProducts.length === 0"
-           style="text-align:center;padding:80px 20px;background:#2d2d2d;border-radius:16px;border:2px dashed #4d4d4d;">
-        <div style="font-size:64px;margin-bottom:20px;opacity:0.5;">🔍</div>
-        <h2 style="color:#d4af37;margin:0 0 12px 0;font-size:24px;font-weight:700;">No Products Found</h2>
-        <p style="color:#999;margin:0;font-size:14px;">Try adjusting your search or filter</p>
-      </div>
+        <!-- Empty State -->
+        <div *ngIf="!loading && filteredProducts.length === 0"
+             style="text-align:center;padding:80px 20px;background:#fff;border-radius:16px;border:2px dashed #e5e5e5;">
+          <div style="font-size:64px;margin-bottom:20px;opacity:0.5;">🔍</div>
+          <h2 style="color:#333;margin:0 0 12px 0;font-size:24px;font-weight:700;">No Products Found</h2>
+          <p style="color:#666;margin:0;font-size:14px;">Try adjusting your search or filter</p>
+        </div>
 
-      <!-- Pagination -->
-      <div *ngIf="!loading && filteredProducts.length > 0" style="margin-top:24px;">
-        <app-pagination
-          [currentPage]="currentPage"
-          [pageSize]="pageSize"
-          [totalCount]="totalCount"
-          [totalPages]="totalPages"
-          (pageChange)="onPageChange($event)"
-          (pageSizeChange)="onPageSizeChange($event)">
-        </app-pagination>
-      </div>
-
+        <!-- Pagination -->
+        <div *ngIf="!loading && filteredProducts.length > 0" style="margin-top:24px;">
+          <app-pagination
+            [currentPage]="currentPage"
+            [pageSize]="pageSize"
+            [totalCount]="totalCount"
+            [totalPages]="totalPages"
+            (pageChange)="onPageChange($event)"
+            (pageSizeChange)="onPageSizeChange($event)">
+          </app-pagination>
+        </div>
+      </main>
     </div>
 
     <!-- Product Modifiers Modal -->
     <div *ngIf="showModal && selectedProduct"
-         style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px;backdrop-filter:blur(10px);"
+         style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px;backdrop-filter:blur(10px);"
          (click)="closeModal()">
-      <div style="background:#2d2d2d;border-radius:20px;max-width:800px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,0.5);border:3px solid #d4af37;" (click)="$event.stopPropagation()">
+      <div style="background:#fff;border-radius:20px;max-width:800px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);border:3px solid #c4a75b;" (click)="$event.stopPropagation()">
 
         <!-- Modal Header -->
-        <div style="position:sticky;top:0;background:linear-gradient(135deg, #3d3d3d 0%, #2d2d2d 100%);padding:24px 32px;border-bottom:2px solid #d4af37;z-index:10;">
+        <div style="position:sticky;top:0;background:#f8f9fa;padding:24px 32px;border-bottom:2px solid #c4a75b;z-index:10;">
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <div>
-              <h2 style="margin:0 0 8px 0;color:#d4af37;font-size:24px;font-weight:800;">
+              <h2 style="margin:0 0 8px 0;color:#333;font-size:24px;font-weight:800;">
                 ⚙️ {{ selectedProduct.name }}
               </h2>
-              <p style="margin:0;color:#999;font-size:13px;">
+              <p style="margin:0;color:#666;font-size:13px;">
                 Assign modifier groups to customize this item
               </p>
             </div>
             <button
               (click)="closeModal()"
-              style="background:#dc3545;color:#fff;border:none;width:40px;height:40px;border-radius:10px;cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center;">
+              style="background:#c4a75b;color:#1a1a1a;border:none;width:40px;height:40px;border-radius:10px;cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center;">
               ✕
             </button>
           </div>
@@ -180,28 +173,28 @@ interface ProductWithModifiers extends Product {
 
           <!-- Available Modifier Groups -->
           <div *ngIf="availableModifierGroups.length > 0" style="margin-bottom:32px;">
-            <h3 style="margin:0 0 16px 0;color:#d4af37;font-size:18px;font-weight:700;">
+            <h3 style="margin:0 0 16px 0;color:#333;font-size:18px;font-weight:700;">
               📋 Available Modifier Groups
             </h3>
             <div style="display:grid;gap:12px;">
               <div
                 *ngFor="let group of availableModifierGroups"
-                style="background:#3d3d3d;padding:16px 20px;border-radius:12px;display:flex;justify-content:space-between;align-items:center;border:2px solid #4d4d4d;transition:all 0.3s ease;"
-                (mouseenter)="$event.currentTarget.style.borderColor='#d4af37'"
-                (mouseleave)="$event.currentTarget.style.borderColor='#4d4d4d'">
+                style="background:#f8f9fa;padding:16px 20px;border-radius:12px;display:flex;justify-content:space-between;align-items:center;border:2px solid #e5e5e5;transition:all 0.3s ease;"
+                (mouseenter)="$event.currentTarget.style.borderColor='#c4a75b'"
+                (mouseleave)="$event.currentTarget.style.borderColor='#e5e5e5'">
                 <div>
-                  <div style="color:#fff;font-weight:700;font-size:15px;margin-bottom:4px;">
+                  <div style="color:#333;font-weight:700;font-size:15px;margin-bottom:4px;">
                     {{ group.name }}
                   </div>
-                  <div style="color:#999;font-size:12px;">
+                  <div style="color:#666;font-size:12px;">
                     {{ group.modifiers?.length || 0 }} options
-                    <span *ngIf="group.isRequired" style="color:#dc3545;margin-left:8px;">• Required</span>
+                    <span *ngIf="group.isRequired" style="color:#c4a75b;margin-left:8px;">• Required</span>
                   </div>
                 </div>
                 <button
                   (click)="assignModifier(group.id)"
                   [disabled]="processing"
-                  style="background:linear-gradient(135deg, #d4af37 0%, #c19a2e 100%);color:#1a1a1a;border:none;padding:10px 20px;border-radius:10px;font-weight:700;cursor:pointer;font-size:13px;"
+                  style="background:linear-gradient(135deg, #c4a75b 0%, #a38a4a 100%);color:#1a1a1a;border:none;padding:10px 20px;border-radius:10px;font-weight:700;cursor:pointer;font-size:13px;"
                   [style.opacity]="processing ? '0.5' : '1'">
                   ➕ Assign
                 </button>
@@ -217,20 +210,20 @@ interface ProductWithModifiers extends Product {
             <div style="display:grid;gap:12px;">
               <div
                 *ngFor="let group of assignedModifierGroups"
-                style="background:#3d3d3d;padding:16px 20px;border-radius:12px;border:2px solid #28a745;">
+                style="background:#f8f9fa;padding:16px 20px;border-radius:12px;border:2px solid #28a745;">
                 <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px;">
                   <div>
                     <div style="color:#28a745;font-weight:700;font-size:15px;margin-bottom:4px;">
                       {{ group.name }}
                     </div>
-                    <div style="color:#999;font-size:12px;">
+                    <div style="color:#666;font-size:12px;">
                       {{ group.modifiers?.length || 0 }} options available
                     </div>
                   </div>
                   <button
                     (click)="unassignModifier(group.id)"
                     [disabled]="processing"
-                    style="background:#dc3545;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-weight:700;cursor:pointer;font-size:12px;"
+                    style="background:#c4a75b;color:#1a1a1a;border:none;padding:8px 16px;border-radius:8px;font-weight:700;cursor:pointer;font-size:12px;"
                     [style.opacity]="processing ? '0.5' : '1'">
                     🗑️ Remove
                   </button>
@@ -238,10 +231,10 @@ interface ProductWithModifiers extends Product {
 
                 <!-- Show modifiers in this group -->
                 <div *ngIf="group.modifiers && group.modifiers.length > 0"
-                     style="display:flex;flex-wrap:wrap;gap:8px;padding-top:12px;border-top:1px solid #4d4d4d;">
+                     style="display:flex;flex-wrap:wrap;gap:8px;padding-top:12px;border-top:1px solid #e5e5e5;">
                   <span
                     *ngFor="let mod of group.modifiers"
-                    style="background:#4d4d4d;color:#d4af37;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;">
+                    style="background:#e5e5e5;color:#333;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;">
                     {{ mod.name }} <span style="color:#28a745;">{{ (mod.priceAdjustment || mod.price || 0) == 0 ? '' : '+$' + (+(mod.priceAdjustment || mod.price || 0)).toFixed(2) }}</span>
                   </span>
                 </div>
@@ -251,7 +244,7 @@ interface ProductWithModifiers extends Product {
 
           <!-- No Modifiers State -->
           <div *ngIf="assignedModifierGroups.length === 0 && availableModifierGroups.length === 0"
-               style="text-align:center;padding:60px 20px;color:#666;">
+               style="text-align:center;padding:60px 20px;color:#999;">
             <div style="font-size:48px;margin-bottom:16px;opacity:0.5;">⚙️</div>
             <p style="margin:0;font-size:14px;">No modifier groups available.<br>Create modifier groups first.</p>
           </div>

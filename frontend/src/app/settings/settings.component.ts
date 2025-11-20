@@ -8,9 +8,9 @@ import { SettingsService, AllSettings, StoreSettings, TaxSettings, ReceiptSettin
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div style="min-height:100vh;background:#f5f6f8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+    <div style="min-height:100vh;background:#f8f6f4;">
       <!-- Header -->
-      <header style="background:#DC3545;color:#fff;padding:20px 32px;box-shadow:0 2px 8px rgba(220,53,69,0.15);">
+      <header style="background:linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);color:#c4a75b;padding:20px 32px;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
         <h1 style="margin:0;font-size:24px;font-weight:700;">⚙️ Settings & Configuration</h1>
       </header>
 
@@ -22,8 +22,8 @@ import { SettingsService, AllSettings, StoreSettings, TaxSettings, ReceiptSettin
             <button
               *ngFor="let tab of tabs"
               (click)="activeTab = tab.id"
-              [style.background]="activeTab === tab.id ? '#DC3545' : '#fff'"
-              [style.color]="activeTab === tab.id ? '#fff' : '#666'"
+              [style.background]="activeTab === tab.id ? '#c4a75b' : '#fff'"
+              [style.color]="activeTab === tab.id ? '#1a1a1a' : '#666'"
               style="flex:1;min-width:150px;padding:16px 24px;border:none;font-weight:600;cursor:pointer;font-size:14px;transition:all 0.3s;white-space:nowrap;">
               {{ tab.icon }} {{ tab.label }}
             </button>
@@ -121,7 +121,7 @@ import { SettingsService, AllSettings, StoreSettings, TaxSettings, ReceiptSettin
             <button
               type="submit"
               [disabled]="saving"
-              style="background:#DC3545;color:#fff;border:none;padding:14px 32px;border-radius:8px;font-weight:600;cursor:pointer;font-size:16px;">
+              style="background:#c4a75b;color:#1a1a1a;border:none;padding:14px 32px;border-radius:8px;font-weight:600;cursor:pointer;font-size:16px;">
               {{ saving ? 'Saving...' : 'Save Store Settings' }}
             </button>
           </form>
@@ -183,7 +183,7 @@ import { SettingsService, AllSettings, StoreSettings, TaxSettings, ReceiptSettin
             <button
               type="submit"
               [disabled]="saving"
-              style="background:#DC3545;color:#fff;border:none;padding:14px 32px;border-radius:8px;font-weight:600;cursor:pointer;font-size:16px;">
+              style="background:#c4a75b;color:#1a1a1a;border:none;padding:14px 32px;border-radius:8px;font-weight:600;cursor:pointer;font-size:16px;">
               {{ saving ? 'Saving...' : 'Save Tax Settings' }}
             </button>
           </form>
@@ -261,7 +261,7 @@ import { SettingsService, AllSettings, StoreSettings, TaxSettings, ReceiptSettin
             <button
               type="submit"
               [disabled]="saving"
-              style="background:#DC3545;color:#fff;border:none;padding:14px 32px;border-radius:8px;font-weight:600;cursor:pointer;font-size:16px;">
+              style="background:#c4a75b;color:#1a1a1a;border:none;padding:14px 32px;border-radius:8px;font-weight:600;cursor:pointer;font-size:16px;">
               {{ saving ? 'Saving...' : 'Save Receipt Settings' }}
             </button>
           </form>
@@ -332,7 +332,7 @@ import { SettingsService, AllSettings, StoreSettings, TaxSettings, ReceiptSettin
 
             <div style="background:#f8f9fa;padding:16px;border-radius:8px;margin-bottom:24px;">
               <div style="font-size:13px;color:#666;margin-bottom:8px;">Preview:</div>
-              <div style="font-size:20px;font-weight:700;color:#DC3545;">
+              <div style="font-size:20px;font-weight:700;color:#c4a75b;">
                 {{ formatCurrencyPreview(1234567.89) }}
               </div>
             </div>
@@ -340,7 +340,7 @@ import { SettingsService, AllSettings, StoreSettings, TaxSettings, ReceiptSettin
             <button
               type="submit"
               [disabled]="saving"
-              style="background:#DC3545;color:#fff;border:none;padding:14px 32px;border-radius:8px;font-weight:600;cursor:pointer;font-size:16px;">
+              style="background:#c4a75b;color:#1a1a1a;border:none;padding:14px 32px;border-radius:8px;font-weight:600;cursor:pointer;font-size:16px;">
               {{ saving ? 'Saving...' : 'Save Currency Settings' }}
             </button>
           </form>
@@ -419,7 +419,7 @@ import { SettingsService, AllSettings, StoreSettings, TaxSettings, ReceiptSettin
             <button
               type="submit"
               [disabled]="saving"
-              style="background:#DC3545;color:#fff;border:none;padding:14px 32px;border-radius:8px;font-weight:600;cursor:pointer;font-size:16px;">
+              style="background:#c4a75b;color:#1a1a1a;border:none;padding:14px 32px;border-radius:8px;font-weight:600;cursor:pointer;font-size:16px;">
               {{ saving ? 'Saving...' : 'Save System Settings' }}
             </button>
           </form>
@@ -456,7 +456,7 @@ import { SettingsService, AllSettings, StoreSettings, TaxSettings, ReceiptSettin
             <button
               (click)="restoreDatabase()"
               [disabled]="!backupFile || saving"
-              style="background:#dc3545;color:#fff;border:none;padding:12px 24px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;"
+              style="background:#c4a75b;color:#1a1a1a;border:none;padding:12px 24px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;"
               [style.opacity]="!backupFile || saving ? '0.5' : '1'">
               {{ saving ? 'Restoring...' : '🔄 Restore Database' }}
             </button>
@@ -469,7 +469,7 @@ import { SettingsService, AllSettings, StoreSettings, TaxSettings, ReceiptSettin
         </div>
 
         <!-- Error Message -->
-        <div *ngIf="errorMessage" style="position:fixed;top:24px;right:24px;background:#dc3545;color:#fff;padding:16px 24px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:1000;animation:slideIn 0.3s;">
+        <div *ngIf="errorMessage" style="position:fixed;top:24px;right:24px;background:#c4a75b;color:#1a1a1a;padding:16px 24px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:1000;animation:slideIn 0.3s;">
           ✗ {{ errorMessage }}
         </div>
       </main>

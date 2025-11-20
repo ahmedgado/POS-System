@@ -1,22 +1,20 @@
-<div class="tables-container">
-  <div class="page-header">
-    <div>
-      <h1>Table Management</h1>
-      <p class="subtitle" *ngIf="selectedFloorId && floors.length > 0">
-        {{ getSelectedFloorName() }}
-      </p>
-    </div>
+<!-- Header -->
+<header style="background:linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);color:#c4a75b;padding:20px 32px;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
+  <div style="display:flex;align-items:center;justify-content:space-between;">
+    <h1 style="margin:0;font-size:24px;font-weight:700;">🪑 Table Management</h1>
     <div class="header-actions">
       <select class="form-select" [(ngModel)]="selectedFloorId" (change)="filterByFloor(selectedFloorId || '')">
         <option value="">All Floors</option>
         <option *ngFor="let floor of floors" [value]="floor.id">{{ floor.name }}</option>
       </select>
-      <button class="btn btn-primary" (click)="openCreateModal()">
-        <i class="fa fa-plus"></i> Add Table
+      <button (click)="openCreateModal()" style="background:#c4a75b;color:#1a1a1a;border:none;padding:12px 24px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;">
+        ➕ Add Table
       </button>
     </div>
   </div>
+</header>
 
+<div class="tables-container">
   <div class="loading-spinner" *ngIf="loading && tables.length === 0">
     <i class="fa fa-spinner fa-spin"></i> Loading tables...
   </div>

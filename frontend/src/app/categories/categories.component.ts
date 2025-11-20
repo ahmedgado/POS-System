@@ -9,14 +9,14 @@ import { Category, CategoryService } from '../services/category.service';
   standalone: true,
   imports: [CommonModule, FormsModule, TranslateModule],
   template: `
-    <div style="min-height:100vh;background:#f5f6f8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+    <div style="min-height:100vh;background:#f8f6f4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
       <!-- Header -->
-      <header style="background:linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);color:#d4af37;padding:20px 32px;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
+      <header style="background:linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);color:#c4a75b;padding:20px 32px;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
         <div style="display:flex;align-items:center;justify-content:space-between;">
           <h1 style="margin:0;font-size:24px;font-weight:700;">🏷️ {{ 'categories.title' | translate }}</h1>
           <button
             (click)="openAddModal()"
-            style="background:#fff;color:#DC3545;border:none;padding:12px 24px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;">
+            style="background:#c4a75b;color:#1a1a1a;border:none;padding:12px 24px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;">
             ➕ {{ 'categories.addCategory' | translate }}
           </button>
         </div>
@@ -33,7 +33,7 @@ import { Category, CategoryService } from '../services/category.service';
               (input)="applyFilter()"
               [placeholder]="'common.filter' | translate"
               style="flex:1;padding:12px 16px;border:2px solid #ddd;border-radius:8px;font-size:14px;outline:none;"
-              [style.border-color]="searchTerm ? '#DC3545' : '#ddd'"
+              [style.border-color]="searchTerm ? '#c4a75b' : '#ddd'"
             />
             <select
               [(ngModel)]="filterActive"
@@ -48,9 +48,9 @@ import { Category, CategoryService } from '../services/category.service';
 
         <!-- Statistics -->
         <section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;margin-bottom:24px;">
-          <div style="background:#fff;padding:24px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-left:4px solid #DC3545;">
+          <div style="background:#fff;padding:24px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-left:4px solid #c4a75b;">
             <div style="color:#666;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">{{ 'categories.totalCategories' | translate }}</div>
-            <div style="font-size:32px;font-weight:700;color:#DC3545;">{{ categories.length }}</div>
+            <div style="font-size:32px;font-weight:700;color:#c4a75b;">{{ categories.length }}</div>
           </div>
 
           <div style="background:#fff;padding:24px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-left:4px solid #28a745;">
@@ -58,9 +58,9 @@ import { Category, CategoryService } from '../services/category.service';
             <div style="font-size:32px;font-weight:700;color:#28a745;">{{ getActiveCount() }}</div>
           </div>
 
-          <div style="background:#fff;padding:24px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-left:4px solid #dc3545;">
+          <div style="background:#fff;padding:24px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-left:4px solid #c4a75b;">
             <div style="color:#666;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">{{ 'categories.inactive' | translate }}</div>
-            <div style="font-size:32px;font-weight:700;color:#dc3545;">{{ getInactiveCount() }}</div>
+            <div style="font-size:32px;font-weight:700;color:#c4a75b;">{{ getInactiveCount() }}</div>
           </div>
         </section>
 
@@ -73,11 +73,11 @@ import { Category, CategoryService } from '../services/category.service';
             <div style="font-size:16px;">{{ 'common.noData' | translate }}</div>
           </div>
 
-          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:24px;">
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:24px;">
             <div
               *ngFor="let category of filteredCategories"
               style="background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,0.08);overflow:hidden;transition:all 0.2s;border:2px solid transparent;"
-              (mouseenter)="$event.currentTarget.style.borderColor='#DC3545'; $event.currentTarget.style.boxShadow='0 4px 20px rgba(220,53,69,0.15)'"
+              (mouseenter)="$event.currentTarget.style.borderColor='#c4a75b'; $event.currentTarget.style.boxShadow='0 4px 20px rgba(196, 167, 91, 0.15)'"
               (mouseleave)="$event.currentTarget.style.borderColor='transparent'; $event.currentTarget.style.boxShadow='0 2px 12px rgba(0,0,0,0.08)'">
 
               <!-- Card Body -->
@@ -100,7 +100,7 @@ import { Category, CategoryService } from '../services/category.service';
                       (change)="toggleActive(category)"
                       style="opacity:0;width:0;height:0;">
                     <span
-                      [style.background]="category.active ? '#DC3545' : '#ddd'"
+                      [style.background]="category.active ? '#c4a75b' : '#ddd'"
                       style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;border-radius:28px;transition:0.3s;box-shadow:inset 0 1px 3px rgba(0,0,0,0.2);">
                       <span
                         [style.transform]="category.active ? 'translateX(24px)' : 'translateX(0)'"
@@ -121,9 +121,9 @@ import { Category, CategoryService } from '../services/category.service';
                 </div>
 
                 <!-- Products Count Card -->
-                <div style="background:linear-gradient(135deg, #DC3545 0%, #c82333 100%);padding:16px;border-radius:12px;margin-bottom:20px;text-align:center;box-shadow:0 4px 8px rgba(220,53,69,0.2);">
-                  <div style="color:rgba(255,255,255,0.9);font-size:12px;font-weight:600;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">{{ 'categories.products' | translate }}</div>
-                  <div style="color:#fff;font-weight:800;font-size:32px;line-height:1;">{{ category.productCount || 0 }}</div>
+                <div style="background:linear-gradient(135deg, #c4a75b 0%, #a38a4a 100%);padding:16px;border-radius:12px;margin-bottom:20px;text-align:center;box-shadow:0 4px 8px rgba(196, 167, 91, 0.2);">
+                  <div style="color:rgba(0,0,0,0.9);font-size:12px;font-weight:600;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">{{ 'categories.products' | translate }}</div>
+                  <div style="color:#1a1a1a;font-weight:800;font-size:32px;line-height:1;">{{ category.productCount || 0 }}</div>
                 </div>
 
                 <!-- Action Buttons -->
@@ -142,9 +142,9 @@ import { Category, CategoryService } from '../services/category.service';
                     [style.opacity]="(category.productCount || 0) > 0 ? '0.5' : '1'"
                     [style.cursor]="(category.productCount || 0) > 0 ? 'not-allowed' : 'pointer'"
                     [style.pointerEvents]="(category.productCount || 0) > 0 ? 'none' : 'auto'"
-                    style="background:#fff;color:#dc3545;border:2px solid #dc3545;padding:10px 16px;border-radius:8px;font-size:14px;font-weight:600;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:6px;"
-                    onmouseover="if (!this.disabled) { this.style.background='#dc3545'; this.style.color='#fff'; }"
-                    onmouseout="if (!this.disabled) { this.style.background='#fff'; this.style.color='#dc3545'; }">
+                    style="background:#fff;color:#c4a75b;border:2px solid #c4a75b;padding:10px 16px;border-radius:8px;font-size:14px;font-weight:600;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:6px;"
+                    onmouseover="if (!this.disabled) { this.style.background='#c4a75b'; this.style.color='#1a1a1a'; }"
+                    onmouseout="if (!this.disabled) { this.style.background='#fff'; this.style.color='#c4a75b'; }">
                     <span>🗑️</span>
                     <span>{{ 'common.delete' | translate }}</span>
                   </button>
@@ -162,7 +162,7 @@ import { Category, CategoryService } from '../services/category.service';
          (click)="closeModal()">
       <div style="background:#fff;border-radius:16px;max-width:500px;width:100%;" (click)="$event.stopPropagation()">
         <!-- Modal Header -->
-        <div style="padding:24px;border-bottom:2px solid #DC3545;">
+        <div style="padding:24px;border-bottom:2px solid #c4a75b;">
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <h2 style="margin:0;color:#333;font-size:20px;font-weight:700;">
               {{ editingCategory ? ('common.edit' | translate) + ' ' + ('categories.title' | translate) : ('categories.addCategory' | translate) }}
@@ -180,7 +180,7 @@ import { Category, CategoryService } from '../services/category.service';
           <form (submit)="saveCategory(); $event.preventDefault()">
             <div style="margin-bottom:20px;">
               <label style="display:block;font-size:14px;font-weight:600;color:#333;margin-bottom:8px;">
-                {{ 'categories.name' | translate }} <span style="color:#dc3545;">*</span>
+                {{ 'categories.name' | translate }} <span style="color:#c4a75b;">*</span>
               </label>
               <input
                 type="text"
@@ -189,7 +189,7 @@ import { Category, CategoryService } from '../services/category.service';
                 [placeholder]="'categories.name' | translate"
                 required
                 style="width:100%;padding:12px;border:2px solid #ddd;border-radius:8px;font-size:14px;outline:none;"
-                [style.border-color]="formCategory.name ? '#DC3545' : '#ddd'"
+                [style.border-color]="formCategory.name ? '#c4a75b' : '#ddd'"
               />
             </div>
 
@@ -222,7 +222,7 @@ import { Category, CategoryService } from '../services/category.service';
               <button
                 type="submit"
                 [disabled]="!formCategory.name || saving"
-                style="flex:1;background:#DC3545;color:#fff;border:none;padding:14px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;"
+                style="flex:1;background:#c4a75b;color:#1a1a1a;border:none;padding:14px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;"
                 [style.opacity]="!formCategory.name || saving ? '0.5' : '1'"
                 [style.cursor]="!formCategory.name || saving ? 'not-allowed' : 'pointer'">
                 {{ saving ? ('common.loading' | translate) : ('common.save' | translate) }}

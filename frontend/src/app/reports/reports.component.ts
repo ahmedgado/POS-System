@@ -10,9 +10,9 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
   standalone: true,
   imports: [CommonModule, FormsModule, TranslateModule, CurrencyFormatPipe],
   template: `
-    <div style="min-height:100vh;background:#f5f6f8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+    <div style="min-height:100vh;background:#f8f6f4;">
       <!-- Header -->
-      <header style="background:linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);color:#d4af37;padding:20px 32px;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
+      <header style="background:linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);color:#c4a75b;padding:20px 32px;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
         <h1 style="margin:0;font-size:24px;font-weight:700;">📈 {{ 'reports.title' | translate }}</h1>
       </header>
 
@@ -24,8 +24,8 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
             <button
               *ngFor="let tab of tabs"
               (click)="activeTab = tab.id"
-              [style.background]="activeTab === tab.id ? '#DC3545' : '#fff'"
-              [style.color]="activeTab === tab.id ? '#fff' : '#666'"
+              [style.background]="activeTab === tab.id ? '#c4a75b' : '#fff'"
+              [style.color]="activeTab === tab.id ? '#1a1a1a' : '#666'"
               style="flex:1;padding:16px 24px;border:none;font-weight:600;cursor:pointer;font-size:14px;transition:all 0.3s;">
               {{ tab.icon }} {{ tab.label }}
             </button>
@@ -52,22 +52,22 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
             <button
               (click)="loadReport()"
               [disabled]="loading"
-              style="background:#DC3545;color:#fff;border:none;padding:12px 24px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;">
+              style="background:#c4a75b;color:#1a1a1a;border:none;padding:12px 24px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;">
               {{ loading ? ('common.loading' | translate) : ('reports.generateReport' | translate) }}
             </button>
             <button
               (click)="setQuickDate('today')"
-              style="background:#fff;color:#DC3545;border:2px solid #DC3545;padding:12px 16px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;">
+              style="background:#fff;color:#c4a75b;border:2px solid #c4a75b;padding:12px 16px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;">
               {{ 'reports.today' | translate }}
             </button>
             <button
               (click)="setQuickDate('week')"
-              style="background:#fff;color:#DC3545;border:2px solid #DC3545;padding:12px 16px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;">
+              style="background:#fff;color:#c4a75b;border:2px solid #c4a75b;padding:12px 16px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;">
               {{ 'reports.thisWeek' | translate }}
             </button>
             <button
               (click)="setQuickDate('month')"
-              style="background:#fff;color:#DC3545;border:2px solid #DC3545;padding:12px 16px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;">
+              style="background:#fff;color:#c4a75b;border:2px solid #c4a75b;padding:12px 16px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;">
               {{ 'reports.thisMonth' | translate }}
             </button>
           </div>
@@ -77,9 +77,9 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
         <div *ngIf="activeTab === 'sales' && salesReport">
           <!-- Summary Cards -->
           <section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;margin-bottom:24px;">
-            <div style="background:#fff;padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-left:4px solid #DC3545;">
+            <div style="background:#fff;padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-left:4px solid #c4a75b;">
               <div style="color:#666;font-size:13px;margin-bottom:8px;">{{ 'reports.totalSales' | translate }}</div>
-              <div style="font-size:32px;font-weight:700;color:#DC3545;">{{ salesReport.totalSales }}</div>
+              <div style="font-size:32px;font-weight:700;color:#c4a75b;">{{ salesReport.totalSales }}</div>
             </div>
             <div style="background:#fff;padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-left:4px solid #28a745;">
               <div style="color:#666;font-size:13px;margin-bottom:8px;">{{ 'reports.totalRevenue' | translate }}</div>
@@ -100,7 +100,7 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
             <div style="display:flex;gap:12px;">
               <button
                 (click)="exportPDF('sales')"
-                style="background:#dc3545;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;">
+                style="background:#c4a75b;color:#1a1a1a;border:none;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;">
                 📄 {{ 'reports.exportPDF' | translate }}
               </button>
               <button
@@ -117,7 +117,7 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;">
               <div *ngFor="let pm of salesReport.paymentMethods" style="background:#f8f9fa;padding:16px;border-radius:8px;">
                 <div style="color:#666;font-size:13px;margin-bottom:4px;">{{ pm.method }}</div>
-                <div style="font-size:24px;font-weight:700;color:#DC3545;">{{ pm.total | currencyFormat }}</div>
+                <div style="font-size:24px;font-weight:700;color:#c4a75b;">{{ pm.total | currencyFormat }}</div>
                 <div style="font-size:13px;color:#666;">{{ pm.count }} transactions</div>
               </div>
             </div>
@@ -157,8 +157,8 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
                       </div>
                     </td>
                     <td style="padding:12px 16px;text-align:right;font-weight:600;color:#666;">{{ txn.subtotal | currencyFormat }}</td>
-                    <td style="padding:12px 16px;text-align:right;font-weight:600;color:#DC3545;">{{ txn.discount | currencyFormat }}</td>
-                    <td style="padding:12px 16px;text-align:right;font-weight:600;color:#856404;">{{ txn.tax | currencyFormat }}</td>
+                    <td style="padding:12px 16px;text-align:right;font-weight:600;color:#c4a75b;">{{ txn.discount | currencyFormat }}</td>
+                    <td style="padding:12px 16px;text-align:right;font-weight:600;color:#a38a4a;">{{ txn.tax | currencyFormat }}</td>
                     <td style="padding:12px 16px;text-align:right;font-weight:700;font-size:14px;color:#28a745;">{{ txn.total | currencyFormat }}</td>
                     <td style="padding:12px 16px;text-align:center;">
                       <span style="background:#f0f0f0;color:#666;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:600;text-transform:uppercase;">
@@ -228,13 +228,13 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
             <button
               (click)="loadInventoryReport()"
               [disabled]="loading"
-              style="background:#DC3545;color:#fff;border:none;padding:12px 24px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;margin-right:12px;">
+              style="background:#c4a75b;color:#1a1a1a;border:none;padding:12px 24px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;margin-right:12px;">
               {{ loading ? ('common.loading' | translate) : ('reports.generateReport' | translate) }}
             </button>
             <button
               *ngIf="inventoryReport"
               (click)="exportPDF('inventory')"
-              style="background:#dc3545;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer;margin-right:12px;">
+              style="background:#c4a75b;color:#1a1a1a;border:none;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer;margin-right:12px;">
               📄 {{ 'reports.exportPDF' | translate }}
             </button>
             <button
@@ -248,9 +248,9 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
           <div *ngIf="inventoryReport">
             <!-- Summary Cards -->
             <section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;margin-bottom:24px;">
-              <div style="background:#fff;padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-left:4px solid #DC3545;">
+              <div style="background:#fff;padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-left:4px solid #c4a75b;">
                 <div style="color:#666;font-size:13px;margin-bottom:8px;">Total Products</div>
-                <div style="font-size:32px;font-weight:700;color:#DC3545;">{{ inventoryReport.totalProducts }}</div>
+                <div style="font-size:32px;font-weight:700;color:#c4a75b;">{{ inventoryReport.totalProducts }}</div>
               </div>
               <div style="background:#fff;padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-left:4px solid #28a745;">
                 <div style="color:#666;font-size:13px;margin-bottom:8px;">Total Stock Value</div>
@@ -260,9 +260,9 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
                 <div style="color:#666;font-size:13px;margin-bottom:8px;">Low Stock Items</div>
                 <div style="font-size:32px;font-weight:700;color:#ffc107;">{{ inventoryReport.lowStockCount }}</div>
               </div>
-              <div style="background:#fff;padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-left:4px solid #dc3545;">
+              <div style="background:#fff;padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-left:4px solid #c4a75b;">
                 <div style="color:#666;font-size:13px;margin-bottom:8px;">Out of Stock</div>
-                <div style="font-size:32px;font-weight:700;color:#dc3545;">{{ inventoryReport.outOfStockCount }}</div>
+                <div style="font-size:32px;font-weight:700;color:#c4a75b;">{{ inventoryReport.outOfStockCount }}</div>
               </div>
             </section>
 
@@ -279,7 +279,7 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
                   <div style="font-size:12px;color:#666;">Low Stock</div>
                 </div>
                 <div style="text-align:center;padding:16px;background:#f8f9fa;border-radius:8px;">
-                  <div style="font-size:28px;font-weight:700;color:#dc3545;margin-bottom:4px;">{{ inventoryReport.stockStatus.outOfStock }}</div>
+                  <div style="font-size:28px;font-weight:700;color:#c4a75b;margin-bottom:4px;">{{ inventoryReport.stockStatus.outOfStock }}</div>
                   <div style="font-size:12px;color:#666;">Out of Stock</div>
                 </div>
               </div>
@@ -301,7 +301,7 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
                   <tbody>
                     <tr *ngFor="let cat of inventoryReport.byCategory" style="border-top:1px solid #f0f0f0;">
                       <td style="padding:12px 16px;font-weight:600;">{{ cat.category }}</td>
-                      <td style="padding:12px 16px;text-align:right;color:#DC3545;font-weight:600;">{{ cat.count }}</td>
+                      <td style="padding:12px 16px;text-align:right;color:#c4a75b;font-weight:600;">{{ cat.count }}</td>
                       <td style="padding:12px 16px;text-align:right;color:#007bff;font-weight:600;">{{ cat.stock }}</td>
                       <td style="padding:12px 16px;text-align:right;color:#28a745;font-weight:600;">{{ cat.value | currencyFormat }}</td>
                     </tr>
@@ -339,7 +339,7 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
                           {{ item.category }}
                         </span>
                       </td>
-                      <td style="padding:12px 24px;text-align:right;font-weight:600;" [style.color]="item.stock <= item.lowStockAlert ? '#dc3545' : '#28a745'">
+                      <td style="padding:12px 24px;text-align:right;font-weight:600;" [style.color]="item.stock <= item.lowStockAlert ? '#c4a75b' : '#28a745'">
                         {{ item.stock }}
                       </td>
                       <td style="padding:12px 24px;text-align:right;color:#666;">{{ item.lowStockAlert }}</td>
@@ -385,13 +385,13 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
               <button
                 (click)="loadCashierReport()"
                 [disabled]="loading"
-                style="background:#DC3545;color:#fff;border:none;padding:12px 24px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;">
+                style="background:#c4a75b;color:#1a1a1a;border:none;padding:12px 24px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;">
                 {{ loading ? ('common.loading' | translate) : ('reports.generateReport' | translate) }}
               </button>
               <button
                 *ngIf="cashierReport"
                 (click)="exportPDF('cashier')"
-                style="background:#dc3545;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer;">
+                style="background:#c4a75b;color:#1a1a1a;border:none;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer;">
                 📄 {{ 'reports.exportPDF' | translate }}
               </button>
               <button
@@ -414,9 +414,9 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
                 <div style="color:#666;font-size:13px;margin-bottom:8px;">Total Orders</div>
                 <div style="font-size:32px;font-weight:700;color:#007bff;">{{ cashierReport.totalOrders }}</div>
               </div>
-              <div style="background:#fff;padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-left:4px solid #DC3545;">
+              <div style="background:#fff;padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-left:4px solid #c4a75b;">
                 <div style="color:#666;font-size:13px;margin-bottom:8px;">Active Cashiers</div>
-                <div style="font-size:32px;font-weight:700;color:#DC3545;">{{ cashierReport.activeCashiers }}</div>
+                <div style="font-size:32px;font-weight:700;color:#c4a75b;">{{ cashierReport.activeCashiers }}</div>
               </div>
               <div style="background:#fff;padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-left:4px solid #ffc107;">
                 <div style="color:#666;font-size:13px;margin-bottom:8px;">Avg Revenue/Cashier</div>
@@ -444,7 +444,7 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
                     <tr *ngFor="let perf of cashierReport.performance" style="border-top:1px solid #f0f0f0;">
                       <td style="padding:12px 24px;font-weight:600;">{{ perf.name }}</td>
                       <td style="padding:12px 24px;color:#666;">{{ perf.email }}</td>
-                      <td style="padding:12px 24px;text-align:right;color:#DC3545;font-weight:600;">{{ perf.totalSales }}</td>
+                      <td style="padding:12px 24px;text-align:right;color:#c4a75b;font-weight:600;">{{ perf.totalSales }}</td>
                       <td style="padding:12px 24px;text-align:right;color:#28a745;font-weight:600;">{{ perf.totalRevenue | currencyFormat }}</td>
                       <td style="padding:12px 24px;text-align:right;color:#007bff;font-weight:600;">{{ perf.averageOrderValue | currencyFormat }}</td>
                     </tr>
@@ -478,13 +478,13 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
               <button
                 (click)="loadFinancialReport()"
                 [disabled]="loading"
-                style="background:#DC3545;color:#fff;border:none;padding:12px 24px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;">
+                style="background:#c4a75b;color:#1a1a1a;border:none;padding:12px 24px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;">
                 {{ loading ? ('common.loading' | translate) : ('reports.generateReport' | translate) }}
               </button>
               <button
                 *ngIf="financialReport"
                 (click)="exportPDF('financial')"
-                style="background:#dc3545;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer;">
+                style="background:#c4a75b;color:#1a1a1a;border:none;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer;">
                 📄 {{ 'reports.exportPDF' | translate }}
               </button>
               <button
@@ -503,9 +503,9 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
                 <div style="color:#666;font-size:13px;margin-bottom:8px;">Total Revenue</div>
                 <div style="font-size:32px;font-weight:700;color:#28a745;">{{ financialReport.totalRevenue | currencyFormat }}</div>
               </div>
-              <div style="background:#fff;padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-left:4px solid #dc3545;">
+              <div style="background:#fff;padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-left:4px solid #c4a75b;">
                 <div style="color:#666;font-size:13px;margin-bottom:8px;">Total Cost</div>
-                <div style="font-size:32px;font-weight:700;color:#dc3545;">{{ financialReport.totalCost | currencyFormat }}</div>
+                <div style="font-size:32px;font-weight:700;color:#c4a75b;">{{ financialReport.totalCost | currencyFormat }}</div>
               </div>
               <div style="background:#fff;padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-left:4px solid #007bff;">
                 <div style="color:#666;font-size:13px;margin-bottom:8px;">Gross Profit</div>
@@ -551,7 +551,7 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
                   </div>
                   <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #f0f0f0;">
                     <span style="color:#666;font-weight:600;">Cost of Goods:</span>
-                    <span style="color:#dc3545;font-weight:700;font-size:18px;">-{{ financialReport.totalCost | currencyFormat }}</span>
+                    <span style="color:#c4a75b;font-weight:700;font-size:18px;">-{{ financialReport.totalCost | currencyFormat }}</span>
                   </div>
                   <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:2px solid #333;">
                     <span style="color:#333;font-weight:700;">Gross Profit:</span>
@@ -765,9 +765,9 @@ export class ReportsComponent implements OnInit {
   }
 
   getStatusColor(status: string): { bg: string; text: string } {
-    if (status === 'Out of Stock') return { bg: '#ffe0e0', text: '#dc3545' };
-    if (status === 'Low Stock') return { bg: '#fff3cd', text: '#856404' };
-    return { bg: '#d4edda', text: '#155724' };
+    if (status === 'Out of Stock') return { bg: '#c4a75b', text: '#1a1a1a' };
+    if (status === 'Low Stock') return { bg: '#a38a4a', text: '#1a1a1a' };
+    return { bg: '#28a745', text: '#fff' };
   }
 
   exportPDF(type: string) {

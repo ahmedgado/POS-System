@@ -25,109 +25,110 @@ interface ProductStationLink {
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div style="min-height:calc(100vh - 60px);background:#f8f6f4;padding:24px;">
+    <div style="min-height:calc(100vh - 60px);background:#f8f6f4;">
       <!-- Header -->
-      <div style="background:linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);border-radius:16px;padding:32px;margin-bottom:24px;box-shadow:0 4px 24px rgba(0,0,0,0.15);">
-        <h1 style="color:#d4af37;font-size:32px;font-weight:700;margin:0 0 8px 0;letter-spacing:-0.5px;">Kitchen Station Assignment</h1>
-        <p style="color:#999;font-size:16px;margin:0;">Link products to kitchen stations for automatic ticket creation</p>
-      </div>
+      <header style="background:linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);color:#c4a75b;padding:20px 32px;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
+        <h1 style="margin:0;font-size:24px;font-weight:700;">🍳 Station Assignment</h1>
+      </header>
 
-      <!-- Link Products Section -->
-      <div style="background:#fff;border-radius:12px;padding:24px;margin-bottom:24px;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
-        <h2 style="font-size:20px;font-weight:700;margin:0 0 20px 0;color:#1a1a1a;">Link Product to Station</h2>
+      <main style="padding:32px;">
+        <!-- Link Products Section -->
+        <div style="background:#fff;border-radius:12px;padding:24px;margin-bottom:24px;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+          <h2 style="font-size:20px;font-weight:700;margin:0 0 20px 0;color:#333;">Link Product to Station</h2>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:16px;align-items:end;">
-          <div>
-            <label style="display:block;font-size:14px;font-weight:600;color:#666;margin-bottom:8px;">Product</label>
-            <select [(ngModel)]="selectedProductId" style="width:100%;padding:12px;border:2px solid #e5e5e5;border-radius:8px;font-size:14px;">
-              <option value="">Select a product...</option>
-              <option *ngFor="let product of products" [value]="product.id">
-                {{ product.name }} ({{ product.category.name }})
-              </option>
-            </select>
+          <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:16px;align-items:end;">
+            <div>
+              <label style="display:block;font-size:14px;font-weight:600;color:#666;margin-bottom:8px;">Product</label>
+              <select [(ngModel)]="selectedProductId" style="width:100%;padding:12px;border:2px solid #e5e5e5;border-radius:8px;font-size:14px;">
+                <option value="">Select a product...</option>
+                <option *ngFor="let product of products" [value]="product.id">
+                  {{ product.name }} ({{ product.category.name }})
+                </option>
+              </select>
+            </div>
+
+            <div>
+              <label style="display:block;font-size:14px;font-weight:600;color:#666;margin-bottom:8px;">Kitchen Station</label>
+              <select [(ngModel)]="selectedStationId" style="width:100%;padding:12px;border:2px solid #e5e5e5;border-radius:8px;font-size:14px;">
+                <option value="">Select a station...</option>
+                <option *ngFor="let station of stations" [value]="station.id">
+                  {{ station.name }}
+                </option>
+              </select>
+            </div>
+
+            <button (click)="linkProductToStation()"
+              [disabled]="!selectedProductId || !selectedStationId || linking"
+              style="padding:12px 24px;background:linear-gradient(135deg, #c4a75b 0%, #a38a4a 100%);color:#1a1a1a;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px;box-shadow:0 2px 8px rgba(196, 167, 91, 0.3);">
+              {{ linking ? 'Linking...' : 'Link' }}
+            </button>
           </div>
 
-          <div>
-            <label style="display:block;font-size:14px;font-weight:600;color:#666;margin-bottom:8px;">Kitchen Station</label>
-            <select [(ngModel)]="selectedStationId" style="width:100%;padding:12px;border:2px solid #e5e5e5;border-radius:8px;font-size:14px;">
-              <option value="">Select a station...</option>
-              <option *ngFor="let station of stations" [value]="station.id">
-                {{ station.name }}
-              </option>
-            </select>
+          <div *ngIf="linkMessage" [style.background]="linkSuccess ? '#d4edda' : '#f8d7da'"
+            [style.color]="linkSuccess ? '#155724' : '#721c24'"
+            style="margin-top:16px;padding:12px;border-radius:8px;font-size:14px;">
+            {{ linkMessage }}
+          </div>
+        </div>
+
+        <!-- Existing Links -->
+        <div style="background:#fff;border-radius:12px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+            <h2 style="font-size:20px;font-weight:700;margin:0;color:#333;">Current Product-Station Links</h2>
+            <div style="color:#666;font-size:14px;">{{ links.length }} links</div>
           </div>
 
-          <button (click)="linkProductToStation()"
-            [disabled]="!selectedProductId || !selectedStationId || linking"
-            style="padding:12px 24px;background:linear-gradient(135deg, #d4af37 0%, #c19a2e 100%);color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px;box-shadow:0 2px 8px rgba(212,175,55,0.3);">
-            {{ linking ? 'Linking...' : 'Link' }}
-          </button>
-        </div>
+          <!-- Loading -->
+          <div *ngIf="loading" style="text-align:center;padding:40px;color:#999;">
+            <div style="font-size:32px;margin-bottom:8px;">⏳</div>
+            <div>Loading links...</div>
+          </div>
 
-        <div *ngIf="linkMessage" [style.background]="linkSuccess ? '#d4edda' : '#f8d7da'"
-          [style.color]="linkSuccess ? '#155724' : '#721c24'"
-          style="margin-top:16px;padding:12px;border-radius:8px;font-size:14px;">
-          {{ linkMessage }}
-        </div>
-      </div>
+          <!-- Empty State -->
+          <div *ngIf="!loading && links.length === 0" style="text-align:center;padding:40px;color:#999;">
+            <div style="font-size:48px;margin-bottom:12px;">🔗</div>
+            <div style="font-size:16px;font-weight:600;margin-bottom:4px;">No links yet</div>
+            <div style="font-size:14px;">Start by linking products to kitchen stations above</div>
+          </div>
 
-      <!-- Existing Links -->
-      <div style="background:#fff;border-radius:12px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-          <h2 style="font-size:20px;font-weight:700;margin:0;color:#1a1a1a;">Current Product-Station Links</h2>
-          <div style="color:#666;font-size:14px;">{{ links.length }} links</div>
+          <!-- Links Table -->
+          <div *ngIf="!loading && links.length > 0" style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;">
+              <thead>
+                <tr style="background:#f8f9fa;border-bottom:2px solid #e5e5e5;">
+                  <th style="text-align:left;padding:12px 16px;font-weight:600;color:#666;">Product</th>
+                  <th style="text-align:left;padding:12px 16px;font-weight:600;color:#666;">Category</th>
+                  <th style="text-align:left;padding:12px 16px;font-weight:600;color:#666;">Kitchen Station</th>
+                  <th style="text-align:center;padding:12px 16px;font-weight:600;color:#666;">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let link of links" style="border-bottom:1px solid #f0f0f0;">
+                  <td style="padding:16px;font-weight:600;color:#333;">{{ link.product.name }}</td>
+                  <td style="padding:16px;color:#666;">{{ link.product.category.name }}</td>
+                  <td style="padding:16px;">
+                    <span style="background:#c4a75b;color:#1a1a1a;padding:4px 12px;border-radius:6px;font-size:13px;font-weight:600;">
+                      {{ link.kitchenStation.name }}
+                    </span>
+                  </td>
+                  <td style="padding:16px;text-align:center;">
+                    <button (click)="unlinkProduct(link.id)" [disabled]="unlinking === link.id"
+                      style="background:#c4a75b;color:#1a1a1a;border:none;padding:8px 16px;border-radius:6px;font-weight:600;cursor:pointer;font-size:13px;">
+                      {{ unlinking === link.id ? 'Unlinking...' : 'Unlink' }}
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
-
-        <!-- Loading -->
-        <div *ngIf="loading" style="text-align:center;padding:40px;color:#999;">
-          <div style="font-size:32px;margin-bottom:8px;">⏳</div>
-          <div>Loading links...</div>
-        </div>
-
-        <!-- Empty State -->
-        <div *ngIf="!loading && links.length === 0" style="text-align:center;padding:40px;color:#999;">
-          <div style="font-size:48px;margin-bottom:12px;">🔗</div>
-          <div style="font-size:16px;font-weight:600;margin-bottom:4px;">No links yet</div>
-          <div style="font-size:14px;">Start by linking products to kitchen stations above</div>
-        </div>
-
-        <!-- Links Table -->
-        <div *ngIf="!loading && links.length > 0" style="overflow-x:auto;">
-          <table style="width:100%;border-collapse:collapse;">
-            <thead>
-              <tr style="background:#f8f9fa;border-bottom:2px solid #e5e5e5;">
-                <th style="text-align:left;padding:12px 16px;font-weight:600;color:#666;">Product</th>
-                <th style="text-align:left;padding:12px 16px;font-weight:600;color:#666;">Category</th>
-                <th style="text-align:left;padding:12px 16px;font-weight:600;color:#666;">Kitchen Station</th>
-                <th style="text-align:center;padding:12px 16px;font-weight:600;color:#666;">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let link of links" style="border-bottom:1px solid #f0f0f0;">
-                <td style="padding:16px;font-weight:600;color:#1a1a1a;">{{ link.product.name }}</td>
-                <td style="padding:16px;color:#666;">{{ link.product.category.name }}</td>
-                <td style="padding:16px;">
-                  <span style="background:#DC3545;color:#fff;padding:4px 12px;border-radius:6px;font-size:13px;font-weight:600;">
-                    {{ link.kitchenStation.name }}
-                  </span>
-                </td>
-                <td style="padding:16px;text-align:center;">
-                  <button (click)="unlinkProduct(link.id)" [disabled]="unlinking === link.id"
-                    style="background:#dc3545;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-weight:600;cursor:pointer;font-size:13px;">
-                    {{ unlinking === link.id ? 'Unlinking...' : 'Unlink' }}
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+      </main>
     </div>
   `,
   styles: [`
     select:focus, button:focus {
       outline: none;
-      border-color: #d4af37;
+      border-color: #c4a75b;
     }
     button:not(:disabled):hover {
       opacity: 0.9;

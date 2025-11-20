@@ -9,14 +9,14 @@ import { AuthService } from '../services/auth.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div style="min-height:100vh;background:#f5f6f8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+    <div style="min-height:100vh;background:#f8f6f4;">
       <!-- Header -->
-      <header style="background:#DC3545;color:#fff;padding:20px 32px;box-shadow:0 2px 8px rgba(220,53,69,0.15);">
+      <header style="background:linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);color:#c4a75b;padding:20px 32px;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
         <div style="display:flex;align-items:center;justify-content:space-between;">
           <h1 style="margin:0;font-size:24px;font-weight:700;">👤 Users & Staff Management</h1>
           <button
             (click)="openAddModal()"
-            style="background:#fff;color:#DC3545;border:none;padding:12px 24px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;">
+            style="background:#c4a75b;color:#1a1a1a;border:none;padding:12px 24px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;">
             + Add New User
           </button>
         </div>
@@ -26,9 +26,9 @@ import { AuthService } from '../services/auth.service';
       <main style="padding:32px;">
         <!-- Statistics -->
         <section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;margin-bottom:24px;">
-          <div style="background:#fff;padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-left:4px solid #DC3545;">
+          <div style="background:#fff;padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-left:4px solid #c4a75b;">
             <div style="color:#666;font-size:13px;margin-bottom:8px;">Total Users</div>
-            <div style="font-size:32px;font-weight:700;color:#DC3545;">{{ users.length }}</div>
+            <div style="font-size:32px;font-weight:700;color:#c4a75b;">{{ users.length }}</div>
           </div>
           <div style="background:#fff;padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-left:4px solid #28a745;">
             <div style="color:#666;font-size:13px;margin-bottom:8px;">Active Users</div>
@@ -179,7 +179,7 @@ import { AuthService } from '../services/auth.service';
          style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px;"
          (click)="closeModal()">
       <div style="background:#fff;border-radius:16px;max-width:600px;width:100%;max-height:90vh;overflow-y:auto;" (click)="$event.stopPropagation()">
-        <div style="padding:24px;border-bottom:2px solid #DC3545;">
+        <div style="padding:24px;border-bottom:2px solid #c4a75b;">
           <h2 style="margin:0;color:#333;font-size:20px;font-weight:700;">{{ isEditMode ? 'Edit User' : 'Add New User' }}</h2>
         </div>
 
@@ -187,7 +187,7 @@ import { AuthService } from '../services/auth.service';
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
             <div>
               <label style="display:block;font-size:14px;font-weight:600;color:#333;margin-bottom:8px;">
-                First Name <span style="color:#dc3545;">*</span>
+                First Name <span style="color:#c4a75b;">*</span>
               </label>
               <input
                 type="text"
@@ -198,7 +198,7 @@ import { AuthService } from '../services/auth.service';
             </div>
             <div>
               <label style="display:block;font-size:14px;font-weight:600;color:#333;margin-bottom:8px;">
-                Last Name <span style="color:#dc3545;">*</span>
+                Last Name <span style="color:#c4a75b;">*</span>
               </label>
               <input
                 type="text"
@@ -211,7 +211,7 @@ import { AuthService } from '../services/auth.service';
 
           <div style="margin-bottom:20px;">
             <label style="display:block;font-size:14px;font-weight:600;color:#333;margin-bottom:8px;">
-              Email <span style="color:#dc3545;">*</span>
+              Email <span style="color:#c4a75b;">*</span>
             </label>
             <input
               type="email"
@@ -234,7 +234,7 @@ import { AuthService } from '../services/auth.service';
 
           <div style="margin-bottom:20px;">
             <label style="display:block;font-size:14px;font-weight:600;color:#333;margin-bottom:8px;">
-              Role <span style="color:#dc3545;">*</span>
+              Role <span style="color:#c4a75b;">*</span>
             </label>
             <select
               [(ngModel)]="formUser.role"
@@ -250,7 +250,7 @@ import { AuthService } from '../services/auth.service';
 
           <div *ngIf="!isEditMode" style="margin-bottom:20px;">
             <label style="display:block;font-size:14px;font-weight:600;color:#333;margin-bottom:8px;">
-              Password <span style="color:#dc3545;">*</span>
+              Password <span style="color:#c4a75b;">*</span>
             </label>
             <input
               type="password"
@@ -277,7 +277,7 @@ import { AuthService } from '../services/auth.service';
             <button
               type="submit"
               [disabled]="processing"
-              style="flex:1;background:#DC3545;color:#fff;border:none;padding:14px;border-radius:8px;font-weight:600;cursor:pointer;font-size:16px;"
+              style="flex:1;background:#c4a75b;color:#1a1a1a;border:none;padding:14px;border-radius:8px;font-weight:600;cursor:pointer;font-size:16px;"
               [style.opacity]="processing ? '0.5' : '1'">
               {{ processing ? 'Saving...' : isEditMode ? 'Update User' : 'Create User' }}
             </button>
@@ -307,7 +307,7 @@ import { AuthService } from '../services/auth.service';
         <form (submit)="resetPassword(); $event.preventDefault()">
           <div style="margin-bottom:24px;">
             <label style="display:block;font-size:14px;font-weight:600;color:#333;margin-bottom:8px;">
-              New Password <span style="color:#dc3545;">*</span>
+              New Password <span style="color:#c4a75b;">*</span>
             </label>
             <input
               type="password"
@@ -323,7 +323,7 @@ import { AuthService } from '../services/auth.service';
             <button
               type="submit"
               [disabled]="processing || !newPassword || newPassword.length < 6"
-              style="flex:1;background:#ffc107;color:#fff;border:none;padding:14px;border-radius:8px;font-weight:600;cursor:pointer;font-size:16px;"
+              style="flex:1;background:#c4a75b;color:#1a1a1a;border:none;padding:14px;border-radius:8px;font-weight:600;cursor:pointer;font-size:16px;"
               [style.opacity]="processing || !newPassword || newPassword.length < 6 ? '0.5' : '1'">
               {{ processing ? 'Resetting...' : 'Reset Password' }}
             </button>
@@ -433,7 +433,7 @@ export class UsersComponent implements OnInit {
 
   getRoleBadgeColor(role: string): string {
     const colors: any = {
-      'ADMIN': '#dc3545',
+      'ADMIN': '#c4a75b',
       'MANAGER': '#007bff',
       'CASHIER': '#28a745',
       'INVENTORY_CLERK': '#ffc107'

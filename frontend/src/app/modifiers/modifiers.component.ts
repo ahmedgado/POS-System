@@ -9,174 +9,165 @@ import { PaginationComponent } from '../components/pagination.component';
   standalone: true,
   imports: [CommonModule, FormsModule, PaginationComponent],
   template: `
-    <div style="min-height:100vh;background:linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);padding:24px;">
-
+    <div style="min-height:100vh;background:#f8f6f4;">
       <!-- Header -->
-      <div style="background:linear-gradient(135deg, #d4af37 0%, #c19a2e 100%);border-radius:16px;padding:32px;margin-bottom:24px;box-shadow:0 8px 32px rgba(212,175,55,0.3);">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <div>
-            <h1 style="margin:0;color:#1a1a1a;font-size:32px;font-weight:800;letter-spacing:-0.5px;">
-              ⚙️ Menu Modifiers
-            </h1>
-            <p style="margin:8px 0 0 0;color:#2d2d2d;font-size:14px;opacity:0.9;">
-              Manage customization options for your menu items
-            </p>
-          </div>
+      <header style="background:linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);color:#c4a75b;padding:20px 32px;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <h1 style="margin:0;font-size:24px;font-weight:700;">⚙️ Menu Modifiers</h1>
           <button
             (click)="showGroupModal = true; editingGroup = null; resetGroupForm()"
-            style="background:#1a1a1a;color:#d4af37;border:none;padding:14px 28px;border-radius:12px;font-weight:700;cursor:pointer;font-size:15px;box-shadow:0 4px 16px rgba(0,0,0,0.3);transition:all 0.3s ease;"
-            (mouseenter)="$event.target.style.transform='translateY(-2px)'"
-            (mouseleave)="$event.target.style.transform='translateY(0)'">
+            style="background:#c4a75b;color:#1a1a1a;border:none;padding:12px 24px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;">
             ➕ New Group
           </button>
         </div>
-      </div>
+      </header>
 
-      <!-- Loading State -->
-      <div *ngIf="loading" style="text-align:center;padding:80px 20px;color:#d4af37;">
-        <div style="font-size:48px;margin-bottom:16px;">⏳</div>
-        <div style="font-size:18px;font-weight:600;">Loading modifiers...</div>
-      </div>
+      <main style="padding:32px;">
+        <!-- Loading State -->
+        <div *ngIf="loading" style="text-align:center;padding:80px 20px;color:#c4a75b;">
+          <div style="font-size:48px;margin-bottom:16px;">⏳</div>
+          <div style="font-size:18px;font-weight:600;">Loading modifiers...</div>
+        </div>
 
-      <!-- Modifier Groups Grid -->
-      <div *ngIf="!loading" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(400px,1fr));gap:24px;">
-        <div
-          *ngFor="let group of modifierGroups"
-          style="background:#2d2d2d;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.4);border:2px solid #3d3d3d;transition:all 0.3s ease;"
-          (mouseenter)="$event.currentTarget.style.borderColor='#d4af37'; $event.currentTarget.style.transform='translateY(-4px)'"
-          (mouseleave)="$event.currentTarget.style.borderColor='#3d3d3d'; $event.currentTarget.style.transform='translateY(0)'">
+        <!-- Modifier Groups Grid -->
+        <div *ngIf="!loading" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(400px,1fr));gap:24px;">
+          <div
+            *ngFor="let group of modifierGroups"
+            style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.1);border:2px solid #e5e5e5;transition:all 0.3s ease;"
+            (mouseenter)="$event.currentTarget.style.borderColor='#c4a75b'; $event.currentTarget.style.transform='translateY(-4px)'"
+            (mouseleave)="$event.currentTarget.style.borderColor='#e5e5e5'; $event.currentTarget.style.transform='translateY(0)'">
 
-          <!-- Group Header -->
-          <div style="background:linear-gradient(135deg, #3d3d3d 0%, #2d2d2d 100%);padding:20px;border-bottom:2px solid #4d4d4d;">
-            <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px;">
-              <div style="flex:1;">
-                <h3 style="margin:0 0 8px 0;color:#d4af37;font-size:20px;font-weight:700;">
-                  {{ group.name }}
-                </h3>
-                <p *ngIf="group.description" style="margin:0;color:#999;font-size:13px;">
-                  {{ group.description }}
-                </p>
-              </div>
-              <div style="display:flex;gap:8px;">
-                <button
-                  (click)="editGroup(group)"
-                  style="background:#d4af37;color:#1a1a1a;border:none;width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;"
-                  title="Edit Group">
-                  ✏️
-                </button>
-                <button
-                  (click)="deleteGroupConfirm(group)"
-                  style="background:#dc3545;color:#fff;border:none;width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;"
-                  title="Delete Group">
-                  🗑️
-                </button>
-              </div>
-            </div>
-
-            <!-- Group Info Tags -->
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">
-              <span style="background:#d4af37;color:#1a1a1a;padding:4px 12px;border-radius:12px;font-size:11px;font-weight:700;">
-                {{ group.isRequired ? '⚠️ REQUIRED' : '📌 OPTIONAL' }}
-              </span>
-              <span *ngIf="group.maxSelection || group.maxSelections" style="background:#4d4d4d;color:#d4af37;padding:4px 12px;border-radius:12px;font-size:11px;font-weight:700;">
-                Max: {{ group.maxSelection || group.maxSelections }}
-              </span>
-              <span style="background:{{ group.isActive ? '#28a745' : '#6c757d' }};color:#fff;padding:4px 12px;border-radius:12px;font-size:11px;font-weight:700;">
-                {{ group.isActive ? '✓ Active' : '✗ Inactive' }}
-              </span>
-            </div>
-          </div>
-
-          <!-- Modifiers List -->
-          <div style="padding:20px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-              <span style="color:#d4af37;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">
-                Options ({{ group.modifiers?.length || 0 }})
-              </span>
-              <button
-                (click)="showModifierModal = true; editingModifier = null; selectedGroupId = group.id; resetModifierForm()"
-                style="background:#4d4d4d;color:#d4af37;border:none;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;"
-                title="Add Option">
-                ➕ Add
-              </button>
-            </div>
-
-            <div *ngIf="!group.modifiers || group.modifiers.length === 0"
-                 style="text-align:center;padding:30px;color:#666;font-size:13px;">
-              No options added yet
-            </div>
-
-            <div *ngFor="let modifier of group.modifiers"
-                 style="background:#3d3d3d;padding:12px 16px;border-radius:10px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;border:1px solid #4d4d4d;">
-              <div style="flex:1;">
-                <div style="color:#fff;font-weight:600;font-size:14px;margin-bottom:2px;">
-                  {{ modifier.name }}
+            <!-- Group Header -->
+            <div style="background:#f8f9fa;padding:20px;border-bottom:2px solid #e5e5e5;">
+              <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px;">
+                <div style="flex:1;">
+                  <h3 style="margin:0 0 8px 0;color:#333;font-size:20px;font-weight:700;">
+                    {{ group.name }}
+                  </h3>
+                  <p *ngIf="group.description" style="margin:0;color:#666;font-size:13px;">
+                    {{ group.description }}
+                  </p>
                 </div>
-                <div style="color:#d4af37;font-size:13px;font-weight:700;">
-                  {{ (modifier.priceAdjustment || modifier.price || 0) === 0 ? 'Free' : '+$' + (+(modifier.priceAdjustment || modifier.price || 0)).toFixed(2) }}
+                <div style="display:flex;gap:8px;">
+                  <button
+                    (click)="editGroup(group)"
+                    style="background:#c4a75b;color:#1a1a1a;border:none;width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;"
+                    title="Edit Group">
+                    ✏️
+                  </button>
+                  <button
+                    (click)="deleteGroupConfirm(group)"
+                    style="background:#c4a75b;color:#1a1a1a;border:none;width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;"
+                    title="Delete Group">
+                    🗑️
+                  </button>
                 </div>
               </div>
-              <div style="display:flex;gap:6px;align-items:center;">
-                <span *ngIf="!modifier.isActive" style="color:#dc3545;font-size:11px;font-weight:700;margin-right:8px;">
-                  Disabled
+
+              <!-- Group Info Tags -->
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <span style="background:#c4a75b;color:#1a1a1a;padding:4px 12px;border-radius:12px;font-size:11px;font-weight:700;">
+                  {{ group.isRequired ? '⚠️ REQUIRED' : '📌 OPTIONAL' }}
+                </span>
+                <span *ngIf="group.maxSelection || group.maxSelections" style="background:#e5e5e5;color:#333;padding:4px 12px;border-radius:12px;font-size:11px;font-weight:700;">
+                  Max: {{ group.maxSelection || group.maxSelections }}
+                </span>
+                <span style="background:{{ group.isActive ? '#28a745' : '#6c757d' }};color:#fff;padding:4px 12px;border-radius:12px;font-size:11px;font-weight:700;">
+                  {{ group.isActive ? '✓ Active' : '✗ Inactive' }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Modifiers List -->
+            <div style="padding:20px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                <span style="color:#333;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">
+                  Options ({{ group.modifiers?.length || 0 }})
                 </span>
                 <button
-                  (click)="editModifier(modifier, group.id)"
-                  style="background:#4d4d4d;color:#d4af37;border:none;width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:14px;"
-                  title="Edit">
-                  ✏️
+                  (click)="showModifierModal = true; editingModifier = null; selectedGroupId = group.id; resetModifierForm()"
+                  style="background:#e5e5e5;color:#333;border:none;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;"
+                  title="Add Option">
+                  ➕ Add
                 </button>
-                <button
-                  (click)="deleteModifierConfirm(modifier)"
-                  style="background:#dc3545;color:#fff;border:none;width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:14px;"
-                  title="Delete">
-                  🗑️
-                </button>
+              </div>
+
+              <div *ngIf="!group.modifiers || group.modifiers.length === 0"
+                   style="text-align:center;padding:30px;color:#999;font-size:13px;">
+                No options added yet
+              </div>
+
+              <div *ngFor="let modifier of group.modifiers"
+                   style="background:#f8f9fa;padding:12px 16px;border-radius:10px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;border:1px solid #e5e5e5;">
+                <div style="flex:1;">
+                  <div style="color:#333;font-weight:600;font-size:14px;margin-bottom:2px;">
+                    {{ modifier.name }}
+                  </div>
+                  <div style="color:#c4a75b;font-size:13px;font-weight:700;">
+                    {{ (modifier.priceAdjustment || modifier.price || 0) === 0 ? 'Free' : '+$' + (+(modifier.priceAdjustment || modifier.price || 0)).toFixed(2) }}
+                  </div>
+                </div>
+                <div style="display:flex;gap:6px;align-items:center;">
+                  <span *ngIf="!modifier.isActive" style="color:#c4a75b;font-size:11px;font-weight:700;margin-right:8px;">
+                    Disabled
+                  </span>
+                  <button
+                    (click)="editModifier(modifier, group.id)"
+                    style="background:#e5e5e5;color:#333;border:none;width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:14px;"
+                    title="Edit">
+                    ✏️
+                  </button>
+                  <button
+                    (click)="deleteModifierConfirm(modifier)"
+                    style="background:#e5e5e5;color:#333;border:none;width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:14px;"
+                    title="Delete">
+                    🗑️
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Empty State -->
-      <div *ngIf="!loading && modifierGroups.length === 0"
-           style="text-align:center;padding:80px 20px;background:#2d2d2d;border-radius:16px;border:2px dashed #4d4d4d;">
-        <div style="font-size:64px;margin-bottom:20px;opacity:0.5;">⚙️</div>
-        <h2 style="color:#d4af37;margin:0 0 12px 0;font-size:24px;font-weight:700;">No Modifier Groups Yet</h2>
-        <p style="color:#999;margin:0 0 24px 0;font-size:14px;">Create your first modifier group to start customizing menu items</p>
-        <button
-          (click)="showGroupModal = true; editingGroup = null; resetGroupForm()"
-          style="background:#d4af37;color:#1a1a1a;border:none;padding:14px 32px;border-radius:12px;font-weight:700;cursor:pointer;font-size:15px;">
-          ➕ Create First Group
-        </button>
-      </div>
+        <!-- Empty State -->
+        <div *ngIf="!loading && modifierGroups.length === 0"
+             style="text-align:center;padding:80px 20px;background:#fff;border-radius:16px;border:2px dashed #e5e5e5;">
+          <div style="font-size:64px;margin-bottom:20px;opacity:0.5;">⚙️</div>
+          <h2 style="color:#333;margin:0 0 12px 0;font-size:24px;font-weight:700;">No Modifier Groups Yet</h2>
+          <p style="color:#666;margin:0 0 24px 0;font-size:14px;">Create your first modifier group to start customizing menu items</p>
+          <button
+            (click)="showGroupModal = true; editingGroup = null; resetGroupForm()"
+            style="background:#c4a75b;color:#1a1a1a;border:none;padding:14px 32px;border-radius:12px;font-weight:700;cursor:pointer;font-size:15px;">
+            ➕ Create First Group
+          </button>
+        </div>
 
-      <!-- Pagination -->
-      <div *ngIf="!loading && modifierGroups.length > 0" style="margin-top:24px;">
-        <app-pagination
-          [currentPage]="currentPage"
-          [pageSize]="pageSize"
-          [totalCount]="totalCount"
-          [totalPages]="totalPages"
-          (pageChange)="onPageChange($event)"
-          (pageSizeChange)="onPageSizeChange($event)">
-        </app-pagination>
-      </div>
-
+        <!-- Pagination -->
+        <div *ngIf="!loading && modifierGroups.length > 0" style="margin-top:24px;">
+          <app-pagination
+            [currentPage]="currentPage"
+            [pageSize]="pageSize"
+            [totalCount]="totalCount"
+            [totalPages]="totalPages"
+            (pageChange)="onPageChange($event)"
+            (pageSizeChange)="onPageSizeChange($event)">
+          </app-pagination>
+        </div>
+      </main>
     </div>
 
     <!-- Modifier Group Modal -->
     <div *ngIf="showGroupModal"
-         style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(8px);"
+         style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(8px);"
          (click)="showGroupModal = false">
-      <div style="background:#2d2d2d;border-radius:20px;max-width:600px;width:100%;padding:40px;box-shadow:0 20px 60px rgba(0,0,0,0.5);border:2px solid #d4af37;" (click)="$event.stopPropagation()">
-        <h2 style="margin:0 0 24px 0;color:#d4af37;font-size:28px;font-weight:800;text-align:center;">
+      <div style="background:#fff;border-radius:20px;max-width:600px;width:100%;padding:40px;box-shadow:0 20px 60px rgba(0,0,0,0.3);border:2px solid #c4a75b;" (click)="$event.stopPropagation()">
+        <h2 style="margin:0 0 24px 0;color:#333;font-size:28px;font-weight:800;text-align:center;">
           {{ editingGroup ? '✏️ Edit Group' : '➕ New Modifier Group' }}
         </h2>
 
         <form (submit)="saveGroup(); $event.preventDefault()">
           <div style="margin-bottom:20px;">
-            <label style="display:block;color:#d4af37;font-size:13px;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">
+            <label style="display:block;color:#333;font-size:13px;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">
               Group Name *
             </label>
             <input
@@ -185,12 +176,12 @@ import { PaginationComponent } from '../components/pagination.component';
               name="name"
               placeholder="e.g., Size Options, Toppings, Extras"
               required
-              style="width:100%;padding:14px;background:#3d3d3d;border:2px solid #4d4d4d;border-radius:10px;color:#fff;font-size:15px;outline:none;"
-              [style.border-color]="groupForm.name ? '#d4af37' : '#4d4d4d'">
+              style="width:100%;padding:14px;background:#f8f9fa;border:2px solid #e5e5e5;border-radius:10px;color:#333;font-size:15px;outline:none;"
+              [style.border-color]="groupForm.name ? '#c4a75b' : '#e5e5e5'">
           </div>
 
           <div style="margin-bottom:20px;">
-            <label style="display:block;color:#d4af37;font-size:13px;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">
+            <label style="display:block;color:#333;font-size:13px;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">
               Description
             </label>
             <textarea
@@ -198,12 +189,12 @@ import { PaginationComponent } from '../components/pagination.component';
               name="description"
               placeholder="Optional description..."
               rows="2"
-              style="width:100%;padding:14px;background:#3d3d3d;border:2px solid #4d4d4d;border-radius:10px;color:#fff;font-size:15px;outline:none;resize:vertical;"></textarea>
+              style="width:100%;padding:14px;background:#f8f9fa;border:2px solid #e5e5e5;border-radius:10px;color:#333;font-size:15px;outline:none;resize:vertical;"></textarea>
           </div>
 
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
             <div>
-              <label style="display:block;color:#d4af37;font-size:13px;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">
+              <label style="display:block;color:#333;font-size:13px;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">
                 Max Selections
               </label>
               <input
@@ -212,10 +203,10 @@ import { PaginationComponent } from '../components/pagination.component';
                 name="maxSelections"
                 placeholder="0 = unlimited"
                 min="0"
-                style="width:100%;padding:14px;background:#3d3d3d;border:2px solid #4d4d4d;border-radius:10px;color:#fff;font-size:15px;outline:none;">
+                style="width:100%;padding:14px;background:#f8f9fa;border:2px solid #e5e5e5;border-radius:10px;color:#333;font-size:15px;outline:none;">
             </div>
             <div>
-              <label style="display:block;color:#d4af37;font-size:13px;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">
+              <label style="display:block;color:#333;font-size:13px;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">
                 Sort Order
               </label>
               <input
@@ -223,30 +214,30 @@ import { PaginationComponent } from '../components/pagination.component';
                 [(ngModel)]="groupForm.sortOrder"
                 name="sortOrder"
                 min="0"
-                style="width:100%;padding:14px;background:#3d3d3d;border:2px solid #4d4d4d;border-radius:10px;color:#fff;font-size:15px;outline:none;">
+                style="width:100%;padding:14px;background:#f8f9fa;border:2px solid #e5e5e5;border-radius:10px;color:#333;font-size:15px;outline:none;">
             </div>
           </div>
 
           <div style="display:flex;gap:16px;margin-bottom:20px;">
-            <label style="flex:1;background:#3d3d3d;padding:16px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:12px;border:2px solid"
-                   [style.border-color]="groupForm.isRequired ? '#d4af37' : '#4d4d4d'"
-                   [style.background]="groupForm.isRequired ? '#d4af3710' : '#3d3d3d'">
+            <label style="flex:1;background:#f8f9fa;padding:16px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:12px;border:2px solid"
+                   [style.border-color]="groupForm.isRequired ? '#c4a75b' : '#e5e5e5'"
+                   [style.background]="groupForm.isRequired ? '#fffaf0' : '#f8f9fa'">
               <input
                 type="checkbox"
                 [(ngModel)]="groupForm.isRequired"
                 name="isRequired"
                 style="width:20px;height:20px;cursor:pointer;">
-              <span style="color:#d4af37;font-weight:700;font-size:14px;">Required Selection</span>
+              <span style="color:#333;font-weight:700;font-size:14px;">Required Selection</span>
             </label>
-            <label style="flex:1;background:#3d3d3d;padding:16px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:12px;border:2px solid"
-                   [style.border-color]="groupForm.isActive ? '#28a745' : '#4d4d4d'"
-                   [style.background]="groupForm.isActive ? '#28a74510' : '#3d3d3d'">
+            <label style="flex:1;background:#f8f9fa;padding:16px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:12px;border:2px solid"
+                   [style.border-color]="groupForm.isActive ? '#28a745' : '#e5e5e5'"
+                   [style.background]="groupForm.isActive ? '#e8f5e9' : '#f8f9fa'">
               <input
                 type="checkbox"
                 [(ngModel)]="groupForm.isActive"
                 name="isActive"
                 style="width:20px;height:20px;cursor:pointer;">
-              <span style="color:#28a745;font-weight:700;font-size:14px;">Active</span>
+              <span style="color:#333;font-weight:700;font-size:14px;">Active</span>
             </label>
           </div>
 
@@ -254,14 +245,14 @@ import { PaginationComponent } from '../components/pagination.component';
             <button
               type="submit"
               [disabled]="processing || !groupForm.name"
-              style="flex:1;background:linear-gradient(135deg, #d4af37 0%, #c19a2e 100%);color:#1a1a1a;border:none;padding:16px;border-radius:12px;font-weight:800;cursor:pointer;font-size:16px;"
+              style="flex:1;background:linear-gradient(135deg, #c4a75b 0%, #a38a4a 100%);color:#1a1a1a;border:none;padding:16px;border-radius:12px;font-weight:800;cursor:pointer;font-size:16px;"
               [style.opacity]="processing || !groupForm.name ? '0.5' : '1'">
               {{ processing ? 'Saving...' : (editingGroup ? 'Update Group' : 'Create Group') }}
             </button>
             <button
               type="button"
               (click)="showGroupModal = false"
-              style="flex:1;background:#4d4d4d;color:#fff;border:none;padding:16px;border-radius:12px;font-weight:700;cursor:pointer;font-size:16px;">
+              style="flex:1;background:#e5e5e5;color:#333;border:none;padding:16px;border-radius:12px;font-weight:700;cursor:pointer;font-size:16px;">
               Cancel
             </button>
           </div>
@@ -271,16 +262,16 @@ import { PaginationComponent } from '../components/pagination.component';
 
     <!-- Modifier Modal -->
     <div *ngIf="showModifierModal"
-         style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(8px);"
+         style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(8px);"
          (click)="showModifierModal = false">
-      <div style="background:#2d2d2d;border-radius:20px;max-width:500px;width:100%;padding:40px;box-shadow:0 20px 60px rgba(0,0,0,0.5);border:2px solid #d4af37;" (click)="$event.stopPropagation()">
-        <h2 style="margin:0 0 24px 0;color:#d4af37;font-size:28px;font-weight:800;text-align:center;">
+      <div style="background:#fff;border-radius:20px;max-width:500px;width:100%;padding:40px;box-shadow:0 20px 60px rgba(0,0,0,0.3);border:2px solid #c4a75b;" (click)="$event.stopPropagation()">
+        <h2 style="margin:0 0 24px 0;color:#333;font-size:28px;font-weight:800;text-align:center;">
           {{ editingModifier ? '✏️ Edit Option' : '➕ New Option' }}
         </h2>
 
         <form (submit)="saveModifier(); $event.preventDefault()">
           <div style="margin-bottom:20px;">
-            <label style="display:block;color:#d4af37;font-size:13px;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">
+            <label style="display:block;color:#333;font-size:13px;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">
               Option Name *
             </label>
             <input
@@ -289,13 +280,13 @@ import { PaginationComponent } from '../components/pagination.component';
               name="name"
               placeholder="e.g., Large, Extra Cheese, Medium Rare"
               required
-              style="width:100%;padding:14px;background:#3d3d3d;border:2px solid #4d4d4d;border-radius:10px;color:#fff;font-size:15px;outline:none;"
-              [style.border-color]="modifierForm.name ? '#d4af37' : '#4d4d4d'">
+              style="width:100%;padding:14px;background:#f8f9fa;border:2px solid #e5e5e5;border-radius:10px;color:#333;font-size:15px;outline:none;"
+              [style.border-color]="modifierForm.name ? '#c4a75b' : '#e5e5e5'">
           </div>
 
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
             <div>
-              <label style="display:block;color:#d4af37;font-size:13px;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">
+              <label style="display:block;color:#333;font-size:13px;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">
                 Extra Price *
               </label>
               <input
@@ -306,10 +297,10 @@ import { PaginationComponent } from '../components/pagination.component';
                 step="0.01"
                 min="0"
                 required
-                style="width:100%;padding:14px;background:#3d3d3d;border:2px solid #4d4d4d;border-radius:10px;color:#fff;font-size:15px;outline:none;">
+                style="width:100%;padding:14px;background:#f8f9fa;border:2px solid #e5e5e5;border-radius:10px;color:#333;font-size:15px;outline:none;">
             </div>
             <div>
-              <label style="display:block;color:#d4af37;font-size:13px;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">
+              <label style="display:block;color:#333;font-size:13px;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">
                 Sort Order
               </label>
               <input
@@ -317,20 +308,20 @@ import { PaginationComponent } from '../components/pagination.component';
                 [(ngModel)]="modifierForm.sortOrder"
                 name="sortOrder"
                 min="0"
-                style="width:100%;padding:14px;background:#3d3d3d;border:2px solid #4d4d4d;border-radius:10px;color:#fff;font-size:15px;outline:none;">
+                style="width:100%;padding:14px;background:#f8f9fa;border:2px solid #e5e5e5;border-radius:10px;color:#333;font-size:15px;outline:none;">
             </div>
           </div>
 
           <div style="margin-bottom:20px;">
-            <label style="background:#3d3d3d;padding:16px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:12px;border:2px solid"
-                   [style.border-color]="modifierForm.isActive ? '#28a745' : '#4d4d4d'"
-                   [style.background]="modifierForm.isActive ? '#28a74510' : '#3d3d3d'">
+            <label style="background:#f8f9fa;padding:16px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:12px;border:2px solid"
+                   [style.border-color]="modifierForm.isActive ? '#28a745' : '#e5e5e5'"
+                   [style.background]="modifierForm.isActive ? '#e8f5e9' : '#f8f9fa'">
               <input
                 type="checkbox"
                 [(ngModel)]="modifierForm.isActive"
                 name="isActive"
                 style="width:20px;height:20px;cursor:pointer;">
-              <span style="color:#28a745;font-weight:700;font-size:14px;">Active</span>
+              <span style="color:#333;font-weight:700;font-size:14px;">Active</span>
             </label>
           </div>
 
@@ -338,14 +329,14 @@ import { PaginationComponent } from '../components/pagination.component';
             <button
               type="submit"
               [disabled]="processing || !modifierForm.name || modifierForm.price === null"
-              style="flex:1;background:linear-gradient(135deg, #d4af37 0%, #c19a2e 100%);color:#1a1a1a;border:none;padding:16px;border-radius:12px;font-weight:800;cursor:pointer;font-size:16px;"
+              style="flex:1;background:linear-gradient(135deg, #c4a75b 0%, #a38a4a 100%);color:#1a1a1a;border:none;padding:16px;border-radius:12px;font-weight:800;cursor:pointer;font-size:16px;"
               [style.opacity]="processing || !modifierForm.name || modifierForm.price === null ? '0.5' : '1'">
               {{ processing ? 'Saving...' : (editingModifier ? 'Update Option' : 'Add Option') }}
             </button>
             <button
               type="button"
               (click)="showModifierModal = false"
-              style="flex:1;background:#4d4d4d;color:#fff;border:none;padding:16px;border-radius:12px;font-weight:700;cursor:pointer;font-size:16px;">
+              style="flex:1;background:#e5e5e5;color:#333;border:none;padding:16px;border-radius:12px;font-weight:700;cursor:pointer;font-size:16px;">
               Cancel
             </button>
           </div>

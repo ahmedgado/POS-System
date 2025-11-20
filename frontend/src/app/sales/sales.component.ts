@@ -392,15 +392,16 @@ export class SalesComponent implements OnInit {
         return '-';
       }
 
-      // Format: MM/DD/YYYY, HH:MM AM/PM
-      return date.toLocaleString('en-US', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true
-      });
+// Format: DD/MM/YYYY, HH:MM AM/PM
+        return date.toLocaleString('en-GB', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
+
     } catch (error) {
       console.error('Date formatting error:', error);
       return '-';

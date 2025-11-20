@@ -10,6 +10,7 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
  import { TableService, Table } from '../services/table.service';
 import { FloorService, Floor } from '../services/floor.service';
 import { ShiftService, Shift } from '../services/shift.service';
+import { ModifierService, ModifierGroup, Modifier } from '../services/modifier.service';
 
 interface CartItem {
   productId: string;
@@ -17,6 +18,14 @@ interface CartItem {
   price: number;
   quantity: number;
   subtotal: number;
+  modifiers?: SelectedModifier[];
+  modifierTotal?: number;
+}
+
+interface SelectedModifier {
+  modifierId: string;
+  name: string;
+  price: number;
 }
 
 @Component({
@@ -24,7 +33,7 @@ interface CartItem {
   standalone: true,
   imports: [CommonModule, FormsModule, TranslateModule, CurrencyFormatPipe],
   template: `
-    <div style="display:flex;height:100vh;background:#f8f6f4;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',sans-serif;">
+    <div style="display:flex;min-height:calc(100vh - 60px);background:#f8f6f4;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',sans-serif;">
 
       <!-- Left Panel - Products -->
       <div style="flex:1;display:flex;flex-direction:column;background:#ffffff;border-right:1px solid #e5e0db;">
@@ -86,7 +95,7 @@ interface CartItem {
               (mouseleave)="$event.currentTarget.style.borderColor='#e5e0db'; $event.currentTarget.style.transform='translateY(0)'; $event.currentTarget.style.boxShadow='0 2px 8px rgba(0,0,0,0.06)'">
               <div style="width:100%;height:90px;margin-bottom:10px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#fafaf9;border-radius:12px;">
                 <img
-                  [src]="product.imageUrl || 'https://via.placeholder.com/120x120?text=No+Image'"
+                  [src]="getProductImageUrl(product.id)"
                   [alt]="product.name"
                   style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;"
                   (error)="$event.target.src='https://via.placeholder.com/120x120?text=No+Image'">
@@ -168,6 +177,11 @@ interface CartItem {
               <div style="flex:1;">
                 <div style="font-weight:600;color:#1a1a1a;margin-bottom:6px;">{{ item.name }}</div>
                 <div style="color:#8b7355;font-size:13px;">{{ item.price | currencyFormat }} {{ 'pos.each' | translate }}</div>
+                <div *ngIf="item.modifiers && item.modifiers.length > 0" style="margin-top:6px;padding:6px 10px;background:#f0e6d2;border-radius:6px;font-size:11px;">
+                  <div *ngFor="let mod of item.modifiers" style="color:#6d5a45;margin-bottom:2px;">
+                    + {{ mod.name }} <span *ngIf="mod.price > 0">({{ mod.price | currencyFormat }})</span>
+                  </div>
+                </div>
               </div>
               <button
                 (click)="removeFromCart(i)"
@@ -322,6 +336,72 @@ interface CartItem {
         </button>
       </div>
     </div>
+
+    <!-- Modifier Selection Modal -->
+    <div *ngIf="showModifierModal"
+         style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(26,26,26,0.75);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:1000;"
+         (click)="closeModifierModal()">
+      <div style="background:#ffffff;border-radius:24px;padding:32px;max-width:550px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);border:1px solid #d4af37;" (click)="$event.stopPropagation()">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #d4af37;">
+          <h2 style="margin:0;color:#1a1a1a;font-size:22px;font-weight:700;">Customize {{ selectedProduct?.name }}</h2>
+          <button
+            (click)="closeModifierModal()"
+            style="background:#f0e6d2;border:none;width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;color:#8b7355;font-weight:700;">
+            ×
+          </button>
+        </div>
+
+        <div *ngFor="let group of productModifiers" style="margin-bottom:24px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <div>
+              <span style="font-weight:700;color:#1a1a1a;font-size:16px;">{{ group.name }}</span>
+              <span *ngIf="group.isRequired" style="color:#d4af37;margin-left:6px;font-size:12px;font-weight:600;">(Required)</span>
+            </div>
+            <span *ngIf="group.maxSelection || group.maxSelections" style="font-size:12px;color:#8b7355;">Max {{ group.maxSelection || group.maxSelections }}</span>
+          </div>
+
+          <div *ngFor="let modifier of group.modifiers" style="margin-bottom:8px;">
+            <label style="display:flex;align-items:center;padding:12px;background:#fafaf9;border:1px solid #e5e0db;border-radius:10px;cursor:pointer;transition:all 0.2s;"
+                   [style.border-color]="isModifierSelected(group.id!, modifier.id!) ? '#d4af37' : '#e5e0db'"
+                   [style.background]="isModifierSelected(group.id!, modifier.id!) ? '#f0e6d2' : '#fafaf9'">
+              <input
+                type="checkbox"
+                [checked]="isModifierSelected(group.id!, modifier.id!)"
+                (change)="toggleModifier(group.id!, modifier, group)"
+                style="width:20px;height:20px;margin-right:12px;accent-color:#d4af37;cursor:pointer;"
+              />
+              <div style="flex:1;">
+                <div style="font-weight:600;color:#1a1a1a;font-size:14px;">{{ modifier.name }}</div>
+                <div *ngIf="modifier.description" style="font-size:12px;color:#8b7355;margin-top:2px;">{{ modifier.description }}</div>
+              </div>
+              <div *ngIf="(modifier.priceAdjustment || modifier.price || 0) > 0" style="font-weight:700;color:#d4af37;font-size:15px;">
+                +{{ (+(modifier.priceAdjustment || modifier.price || 0)) | currencyFormat }}
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div style="border-top:2px solid #e5e0db;padding-top:20px;margin-top:20px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:16px;font-size:16px;">
+            <span style="color:#8b7355;">Item Price:</span>
+            <span style="font-weight:600;color:#1a1a1a;">{{ selectedProduct?.price | currencyFormat }}</span>
+          </div>
+          <div *ngIf="getModifierTotal() > 0" style="display:flex;justify-content:space-between;margin-bottom:16px;font-size:16px;">
+            <span style="color:#8b7355;">Modifiers:</span>
+            <span style="font-weight:600;color:#1a1a1a;">{{ getModifierTotal() | currencyFormat }}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:20px;font-size:19px;padding-top:12px;border-top:1px solid #e5e0db;">
+            <span style="font-weight:700;color:#1a1a1a;">Total:</span>
+            <span style="font-weight:700;color:#d4af37;font-size:24px;">{{ (selectedProduct?.price || 0) + getModifierTotal() | currencyFormat }}</span>
+          </div>
+          <button
+            (click)="confirmModifierSelection()"
+            style="width:100%;background:linear-gradient(135deg, #d4af37 0%, #c19a2e 100%);color:#ffffff;border:none;padding:16px;border-radius:12px;font-weight:700;font-size:17px;cursor:pointer;box-shadow:0 4px 12px rgba(212,175,55,0.3);">
+            Add to Cart
+          </button>
+        </div>
+      </div>
+    </div>
   `
 })
 export class POSComponent implements OnInit {
@@ -355,6 +435,12 @@ export class POSComponent implements OnInit {
   showTableSelector = false;
   currentShift: Shift | null = null;
 
+  // Modifier selection
+  showModifierModal = false;
+  selectedProduct: Product | null = null;
+  productModifiers: ModifierGroup[] = [];
+  selectedModifiers: Map<string, SelectedModifier[]> = new Map();
+
   constructor(
     private productService: ProductService,
     private saleService: SaleService,
@@ -362,7 +448,8 @@ export class POSComponent implements OnInit {
     private categoryService: CategoryService,
     private tableService: TableService,
     private floorService: FloorService,
-    private shiftService: ShiftService
+    private shiftService: ShiftService,
+    private modifierService: ModifierService
   ) {
     this.cashierName = this.authService.currentUser?.firstName || 'Cashier';
   }
@@ -445,7 +532,36 @@ export class POSComponent implements OnInit {
       return;
     }
 
-    const existingItem = this.cartItems.find(item => item.productId === product.id);
+    // Check if product has modifiers
+    this.modifierService.getProductModifiers(product.id).subscribe({
+      next: (modifiers) => {
+        if (modifiers && modifiers.length > 0) {
+          // Show modifier selection modal
+          this.selectedProduct = product;
+          this.productModifiers = modifiers;
+          this.selectedModifiers.clear();
+          this.showModifierModal = true;
+        } else {
+          // Add directly to cart without modifiers
+          this.addItemToCart(product, []);
+        }
+      },
+      error: (err) => {
+        console.error('Failed to load modifiers:', err);
+        // Add to cart anyway if modifier fetch fails
+        this.addItemToCart(product, []);
+      }
+    });
+  }
+
+  addItemToCart(product: Product, modifiers: SelectedModifier[]) {
+    const existingItem = this.cartItems.find(item =>
+      item.productId === product.id &&
+      JSON.stringify(item.modifiers || []) === JSON.stringify(modifiers)
+    );
+
+    const modifierTotal = modifiers.reduce((sum, m) => sum + m.price, 0);
+    const itemPrice = product.price + modifierTotal;
 
     if (existingItem) {
       if (existingItem.quantity + 1 > product.stock) {
@@ -453,14 +569,16 @@ export class POSComponent implements OnInit {
         return;
       }
       existingItem.quantity++;
-      existingItem.subtotal = existingItem.quantity * existingItem.price;
+      existingItem.subtotal = existingItem.quantity * itemPrice;
     } else {
       this.cartItems.push({
         productId: product.id,
         name: product.name,
         price: product.price,
         quantity: 1,
-        subtotal: product.price
+        subtotal: itemPrice,
+        modifiers: modifiers.length > 0 ? modifiers : undefined,
+        modifierTotal: modifierTotal > 0 ? modifierTotal : undefined
       });
     }
 
@@ -595,5 +713,93 @@ export class POSComponent implements OnInit {
     this.selectedTable = null;
     this.loadTablesAndFloors(); // Reload to get updated table statuses
     this.onSearch();
+  }
+
+  toggleModifier(groupId: string, modifier: Modifier, group: ModifierGroup) {
+    const groupModifiers = this.selectedModifiers.get(groupId) || [];
+    const existingIndex = groupModifiers.findIndex(m => m.modifierId === modifier.id);
+    const maxSelections = group.maxSelection || group.maxSelections || 999;
+    const modifierPrice = +(modifier.priceAdjustment || modifier.price || 0);
+
+    if (existingIndex !== -1) {
+      // Remove modifier
+      groupModifiers.splice(existingIndex, 1);
+    } else {
+      // Check max selections for radio-style groups
+      if (maxSelections === 1) {
+        // Clear previous selection (radio behavior)
+        this.selectedModifiers.set(groupId, [{
+          modifierId: modifier.id!,
+          name: modifier.name,
+          price: modifierPrice
+        }]);
+        return;
+      }
+
+      // Check if max selections reached
+      if (groupModifiers.length >= maxSelections) {
+        alert(`You can only select up to ${maxSelections} options for ${group.name}`);
+        return;
+      }
+
+      // Add modifier
+      groupModifiers.push({
+        modifierId: modifier.id!,
+        name: modifier.name,
+        price: modifierPrice
+      });
+    }
+
+    this.selectedModifiers.set(groupId, groupModifiers);
+  }
+
+  isModifierSelected(groupId: string, modifierId: string): boolean {
+    const groupModifiers = this.selectedModifiers.get(groupId) || [];
+    return groupModifiers.some(m => m.modifierId === modifierId);
+  }
+
+  confirmModifierSelection() {
+    // Validate required groups
+    for (const group of this.productModifiers) {
+      if (group.isRequired) {
+        const selections = this.selectedModifiers.get(group.id!) || [];
+        if (selections.length === 0) {
+          alert(`Please select at least one option for ${group.name}`);
+          return;
+        }
+      }
+    }
+
+    // Flatten all selected modifiers into a single array
+    const allModifiers: SelectedModifier[] = [];
+    this.selectedModifiers.forEach((modifiers) => {
+      allModifiers.push(...modifiers);
+    });
+
+    // Add to cart with modifiers
+    if (this.selectedProduct) {
+      this.addItemToCart(this.selectedProduct, allModifiers);
+    }
+
+    this.closeModifierModal();
+  }
+
+  closeModifierModal() {
+    this.showModifierModal = false;
+    this.selectedProduct = null;
+    this.productModifiers = [];
+    this.selectedModifiers.clear();
+  }
+
+  getModifierTotal(): number {
+    let total = 0;
+    this.selectedModifiers.forEach((modifiers) => {
+      total += modifiers.reduce((sum, m) => sum + m.price, 0);
+    });
+    return total;
+  }
+
+  getProductImageUrl(productId: string): string {
+    return `/api/products/${productId}/image`;
   }
 }

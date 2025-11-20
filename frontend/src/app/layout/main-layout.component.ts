@@ -35,6 +35,8 @@ import { CommonModule } from '@angular/common';
           </div>
           <a routerLink="/app/restaurant/floors" routerLinkActive="active" style="display:block;padding:12px 16px;border-radius:10px;color:#f8f6f4;text-decoration:none;margin-bottom:6px;font-weight:500;font-size:15px;transition:all 0.2s;">🏢 Floors</a>
           <a routerLink="/app/restaurant/tables" routerLinkActive="active" style="display:block;padding:12px 16px;border-radius:10px;color:#f8f6f4;text-decoration:none;margin-bottom:6px;font-weight:500;font-size:15px;transition:all 0.2s;">🪑 Tables</a>
+          <a routerLink="/app/restaurant/modifiers" routerLinkActive="active" style="display:block;padding:12px 16px;border-radius:10px;color:#f8f6f4;text-decoration:none;margin-bottom:6px;font-weight:500;font-size:15px;transition:all 0.2s;">⚙️ Modifiers</a>
+          <a routerLink="/app/restaurant/product-modifiers" routerLinkActive="active" style="display:block;padding:12px 16px;border-radius:10px;color:#f8f6f4;text-decoration:none;margin-bottom:6px;font-weight:500;font-size:15px;transition:all 0.2s;">🔗 Product Modifiers</a>
           <div style="margin:20px 0 12px 0;padding:0 16px;">
             <div style="font-size:11px;font-weight:700;color:#d4af37;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">System</div>
           </div>

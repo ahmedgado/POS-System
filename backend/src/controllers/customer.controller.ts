@@ -34,7 +34,7 @@ export class CustomerController {
   // Get all customers
   async getCustomers(req: Request, res: Response) {
     try {
-      const { search, page = 1, limit = 20 } = req.query;
+      const { search, page = 1, limit = 25 } = req.query;
 
       const where: any = {};
 
@@ -46,6 +46,9 @@ export class CustomerController {
           { phone: { contains: search as string } }
         ];
       }
+
+      // Get total count
+      const totalCount = await prisma.customer.count({ where });
 
       const customers = await prisma.customer.findMany({
         where,
@@ -76,8 +79,17 @@ export class CustomerController {
         }))
       }));
 
-      // Return customers array directly for frontend compatibility
-      res.json(customersWithNumbers);
+      // Return with pagination metadata
+      res.json({
+        data: customersWithNumbers,
+        pagination: {
+          page: Number(page),
+          limit: Number(limit),
+          total: totalCount,
+          totalPages: Math.ceil(totalCount / Number(limit)),
+          hasMore: (Number(page) * Number(limit)) < totalCount
+        }
+      });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }

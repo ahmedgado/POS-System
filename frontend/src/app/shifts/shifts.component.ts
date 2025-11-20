@@ -4,11 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { Shift, ShiftService } from '../services/shift.service';
 import { AuthService } from '../services/auth.service';
+import { PaginationComponent } from '../components/pagination.component';
 
 @Component({
   selector: 'app-shifts',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule],
+  imports: [CommonModule, FormsModule, TranslateModule, PaginationComponent],
   template: `
     <div style="min-height:100vh;background:#f5f6f8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
       <!-- Header -->
@@ -139,6 +140,17 @@ import { AuthService } from '../services/auth.service';
               </tbody>
             </table>
           </div>
+
+          <!-- Pagination -->
+          <app-pagination
+            *ngIf="!loading && shifts.length > 0"
+            [currentPage]="currentPage"
+            [pageSize]="pageSize"
+            [totalCount]="totalCount"
+            [totalPages]="totalPages"
+            (pageChange)="onPageChange($event)"
+            (pageSizeChange)="onPageSizeChange($event)">
+          </app-pagination>
         </section>
       </main>
     </div>
@@ -362,6 +374,12 @@ export class ShiftsComponent implements OnInit {
   loading = false;
   processing = false;
 
+  // Pagination
+  currentPage = 1;
+  pageSize = 25;
+  totalCount = 0;
+  totalPages = 1;
+
   showOpenShiftModal = false;
   showCloseShiftModal = false;
 
@@ -398,9 +416,11 @@ export class ShiftsComponent implements OnInit {
 
   loadShifts() {
     this.loading = true;
-    this.shiftService.getAll().subscribe({
-      next: (data) => {
-        this.shifts = data.filter(s => s.status === 'CLOSED');
+    this.shiftService.getAll(this.currentPage, this.pageSize, 'CLOSED').subscribe({
+      next: (response) => {
+        this.shifts = response.data || [];
+        this.totalCount = response.pagination?.total || 0;
+        this.totalPages = response.pagination?.totalPages || 1;
         this.loading = false;
       },
       error: (err) => {
@@ -408,6 +428,18 @@ export class ShiftsComponent implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  onPageChange(page: number) {
+    this.currentPage = page;
+    this.loadShifts();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  onPageSizeChange(size: number) {
+    this.pageSize = size;
+    this.currentPage = 1;
+    this.loadShifts();
   }
 
   openShift() {

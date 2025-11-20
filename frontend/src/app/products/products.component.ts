@@ -1,15 +1,16 @@
-import { Component, OnInit, HostListener } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { Product, ProductService } from '../services/product.service';
 import { Category, CategoryService } from '../services/category.service';
 import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
+import { PaginationComponent } from '../components/pagination.component';
 
 @Component({
   selector: 'app-products',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule, CurrencyFormatPipe],
+  imports: [CommonModule, FormsModule, TranslateModule, CurrencyFormatPipe, PaginationComponent],
   template: `
     <div style="min-height:100vh;background:#f5f6f8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
       <!-- Header -->
@@ -101,8 +102,8 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
             </table>
           </div>
 
-          <!-- Scrollable Table Body -->
-          <div (scroll)="onScroll($event)" style="overflow-y:auto;overflow-x:auto;max-height:600px;">
+          <!-- Table Body -->
+          <div style="overflow-x:auto;">
             <table style="width:100%;border-collapse:collapse;">
               <tbody>
                 <tr *ngFor="let p of products; let i = index" style="border-top:1px solid #F0F0F0;transition:background 0.2s;"
@@ -110,9 +111,10 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
                   <td style="padding:16px;text-align:center;width:50px;">
                     <input type="checkbox" [checked]="isProductSelected(p.id)" (change)="toggleSelectProduct(p.id)" style="width:18px;height:18px;cursor:pointer;">
                   </td>
-                  <td style="padding:16px;color:#666;width:50px;">{{ i + 1 }}</td>
+                  <td style="padding:16px;color:#666;width:50px;">{{ (currentPage - 1) * pageSize + i + 1 }}</td>
                   <td style="padding:16px;width:80px;">
-                    <img [src]="p.imageUrl || 'https://via.placeholder.com/60x60/ddd/999?text=No+Image'"
+                    <img [src]="getProductImageUrl(p.id)"
+                         (error)="$event.target.src='https://via.placeholder.com/60x60/ddd/999?text=No+Image'"
                          [alt]="p.name"
                          style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid #E5E5E5;">
                   </td>
@@ -154,33 +156,32 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
                 </tr>
               </tbody>
             </table>
+
+            <!-- Initial Loading -->
+            <div *ngIf="loading" style="text-align:center;padding:60px;color:#666;">
+              <div style="font-size:32px;margin-bottom:12px;">⏳</div>
+              <div>{{ 'common.loading' | translate }}...</div>
+            </div>
+
+            <!-- Empty State -->
+            <div *ngIf="!loading && products.length === 0 && !error" style="text-align:center;padding:80px;">
+              <div style="font-size:64px;margin-bottom:16px;">📦</div>
+              <h3 style="color:#333;margin-bottom:8px;">{{ 'common.noData' | translate }}</h3>
+              <button (click)="openAddModal()" style="background:#DC3545;color:#fff;border:none;padding:12px 24px;border-radius:8px;font-weight:600;cursor:pointer;">
+                {{ 'products.addProduct' | translate }}
+              </button>
+            </div>
           </div>
 
-          <!-- Loading More Indicator -->
-          <div *ngIf="loadingMore" style="text-align:center;padding:24px;color:#666;">
-            <div style="font-size:24px;margin-bottom:8px;">⏳</div>
-            <div>{{ 'common.loading' | translate }}...</div>
-          </div>
-
-          <!-- End of List -->
-          <div *ngIf="!hasMore && products.length > 0" style="text-align:center;padding:24px;color:#999;font-size:14px;">
-            {{ 'products.endOfList' | translate }} ({{ 'products.showing' | translate }} {{ products.length }} {{ 'products.of' | translate }} {{ totalCount }})
-          </div>
-
-          <!-- Initial Loading -->
-          <div *ngIf="loading && products.length === 0" style="text-align:center;padding:60px;color:#666;">
-            <div style="font-size:32px;margin-bottom:12px;">⏳</div>
-            <div>{{ 'common.loading' | translate }}...</div>
-          </div>
-
-          <!-- Empty State -->
-          <div *ngIf="!loading && products.length === 0 && !error" style="text-align:center;padding:80px;">
-            <div style="font-size:64px;margin-bottom:16px;">📦</div>
-            <h3 style="color:#333;margin-bottom:8px;">{{ 'common.noData' | translate }}</h3>
-            <button (click)="openAddModal()" style="background:#DC3545;color:#fff;border:none;padding:12px 24px;border-radius:8px;font-weight:600;cursor:pointer;">
-              {{ 'products.addProduct' | translate }}
-            </button>
-          </div>
+          <!-- Pagination -->
+          <app-pagination
+            [currentPage]="currentPage"
+            [pageSize]="pageSize"
+            [totalCount]="totalCount"
+            [totalPages]="totalPages"
+            (pageChange)="onPageChange($event)"
+            (pageSizeChange)="onPageSizeChange($event)">
+          </app-pagination>
         </div>
       </main>
 
@@ -237,8 +238,34 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
               </div>
             </div>
             <div style="margin-bottom:24px;">
-              <label style="display:block;font-weight:600;color:#333;margin-bottom:8px;">{{ 'products.imageUrl' | translate }}</label>
-              <input [(ngModel)]="formProduct.imageUrl" name="imageUrl" type="url" placeholder="https://example.com/image.jpg" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;">
+              <label style="display:block;font-weight:600;color:#333;margin-bottom:8px;">Product Image</label>
+              <div style="display:flex;align-items:start;gap:16px;">
+                <!-- Image Preview - Always show -->
+                <div style="width:120px;height:120px;border:2px dashed #ddd;border-radius:8px;overflow:hidden;background:#f8f9fa;display:flex;align-items:center;justify-content:center;">
+                  <!-- Selected image preview -->
+                  <img *ngIf="imagePreview" [src]="imagePreview" style="width:100%;height:100%;object-fit:cover;">
+                  <!-- Existing product image -->
+                  <img *ngIf="!imagePreview && formProduct.id" [src]="getProductImageUrl(formProduct.id)" style="width:100%;height:100%;object-fit:cover;">
+                  <!-- No image placeholder for new products -->
+                  <div *ngIf="!imagePreview && !formProduct.id" style="text-align:center;padding:10px;">
+                    <div style="font-size:32px;margin-bottom:4px;opacity:0.3;">📷</div>
+                    <div style="color:#999;font-size:11px;">No Image</div>
+                  </div>
+                </div>
+                <!-- Upload Button -->
+                <div style="flex:1;">
+                  <input #fileInput type="file" accept="image/*" (change)="onImageSelected($event)" style="display:none;">
+                  <button type="button" (click)="fileInput.click()" style="background:#007BFF;color:#fff;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;margin-bottom:8px;width:100%;">
+                    📤 {{ selectedImageFile ? 'Change Image' : 'Upload Image' }}
+                  </button>
+                  <div *ngIf="selectedImageFile" style="font-size:12px;color:#666;">
+                    Selected: {{ selectedImageFile.name }} ({{ (selectedImageFile.size / 1024).toFixed(1) }} KB)
+                  </div>
+                  <div *ngIf="!selectedImageFile && !formProduct.id" style="font-size:11px;color:#999;">
+                    Max size: 5MB. Formats: JPG, PNG, GIF, WebP
+                  </div>
+                </div>
+              </div>
             </div>
             <div style="display:flex;gap:12px;justify-content:flex-end;">
               <button type="button" (click)="closeModal()" style="background:#6C757D;color:#fff;border:none;padding:10px 24px;border-radius:8px;font-weight:600;cursor:pointer;">
@@ -272,16 +299,15 @@ export class ProductsComponent implements OnInit {
   products: Product[] = [];
   categories: Category[] = [];
   loading = false;
-  loadingMore = false;
   error = '';
   searchTerm = '';
   filterCategory = '';
 
   // Pagination
   currentPage = 1;
-  pageSize = 100;
+  pageSize = 25;
   totalCount = 0;
-  hasMore = true;
+  totalPages = 1;
 
   // Modal
   showModal = false;
@@ -293,6 +319,10 @@ export class ProductsComponent implements OnInit {
   selectedProducts: Set<string> = new Set();
   deleting = false;
   processing = false;
+
+  // Image upload
+  selectedImageFile: File | null = null;
+  imagePreview: string | null = null;
 
   private searchTimeout: any;
 
@@ -317,37 +347,20 @@ export class ProductsComponent implements OnInit {
     });
   }
 
-  loadProducts(reset: boolean = false) {
-    if (reset) {
-      this.currentPage = 1;
-      this.products = [];
-    }
-
-    if (this.currentPage === 1) {
-      this.loading = true;
-    } else {
-      this.loadingMore = true;
-    }
-
+  loadProducts() {
+    this.loading = true;
     this.error = '';
 
     this.productService.getAll(this.currentPage, this.pageSize, this.searchTerm, this.filterCategory).subscribe({
       next: (response) => {
-        if (reset) {
-          this.products = response.data;
-        } else {
-          this.products = [...this.products, ...response.data];
-        }
-
+        this.products = response.data;
         this.totalCount = response.pagination.total;
-        this.hasMore = response.pagination.hasMore;
+        this.totalPages = response.pagination.totalPages;
         this.loading = false;
-        this.loadingMore = false;
       },
       error: (err) => {
         this.error = err?.error?.message || 'Failed to load products';
         this.loading = false;
-        this.loadingMore = false;
       }
     });
   }
@@ -356,22 +369,22 @@ export class ProductsComponent implements OnInit {
     // Debounce search
     clearTimeout(this.searchTimeout);
     this.searchTimeout = setTimeout(() => {
-      this.loadProducts(true);
+      this.currentPage = 1; // Reset to first page on search
+      this.loadProducts();
     }, 500);
   }
 
-  onScroll(event: any): void {
-    if (this.loadingMore || !this.hasMore) return;
+  onPageChange(page: number) {
+    this.currentPage = page;
+    this.loadProducts();
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 
-    const element = event.target;
-    const scrollPosition = element.scrollTop + element.clientHeight;
-    const scrollHeight = element.scrollHeight;
-
-    // Load more when user scrolls to 80% of container
-    if (scrollPosition >= scrollHeight * 0.8) {
-      this.currentPage++;
-      this.loadProducts();
-    }
+  onPageSizeChange(size: number) {
+    this.pageSize = size;
+    this.currentPage = 1; // Reset to first page
+    this.loadProducts();
   }
 
   getTotalValue(): number {
@@ -417,6 +430,8 @@ export class ProductsComponent implements OnInit {
     this.showModal = false;
     this.editingProduct = null;
     this.formProduct = {};
+    this.selectedImageFile = null;
+    this.imagePreview = null;
   }
 
   saveProduct() {
@@ -426,10 +441,17 @@ export class ProductsComponent implements OnInit {
       : this.productService.create(this.formProduct);
 
     operation.subscribe({
-      next: () => {
-        this.saving = false;
-        this.closeModal();
-        this.loadProducts(true); // Refresh list
+      next: (response: any) => {
+        const productId = this.editingProduct?.id || response?.data?.id || response?.id;
+
+        // If image was selected, upload it
+        if (this.selectedImageFile && productId) {
+          this.uploadProductImage(productId);
+        } else {
+          this.saving = false;
+          this.closeModal();
+          this.loadProducts(); // Refresh list
+        }
       },
       error: (err) => {
         this.error = err?.error?.message || 'Failed to save product';
@@ -438,11 +460,34 @@ export class ProductsComponent implements OnInit {
     });
   }
 
+  uploadProductImage(productId: string) {
+    if (!this.selectedImageFile) {
+      this.saving = false;
+      this.closeModal();
+      this.loadProducts();
+      return;
+    }
+
+    this.productService.uploadImage(productId, this.selectedImageFile).subscribe({
+      next: () => {
+        this.saving = false;
+        this.closeModal();
+        this.loadProducts();
+      },
+      error: (err) => {
+        console.error('Failed to upload image:', err);
+        this.saving = false;
+        this.closeModal();
+        this.loadProducts(); // Still close and refresh even if image upload fails
+      }
+    });
+  }
+
   deleteProduct(id: string) {
     if (!confirm('Are you sure you want to delete this product?')) return;
 
     this.productService.delete(id).subscribe({
-      next: () => this.loadProducts(true),
+      next: () => this.loadProducts(),
       error: (err) => this.error = err?.error?.message || 'Failed to delete product'
     });
   }
@@ -499,7 +544,7 @@ export class ProductsComponent implements OnInit {
       next: (response) => {
         this.deleting = false;
         this.selectedProducts.clear();
-        this.loadProducts(true);
+        this.loadProducts();
 
         // Show message about results
         if (response.data && response.data.unableToDeleteCount > 0) {
@@ -537,7 +582,7 @@ export class ProductsComponent implements OnInit {
       next: (response) => {
         this.processing = false;
         this.selectedProducts.clear();
-        this.loadProducts(true);
+        this.loadProducts();
 
         if (response.data && response.data.message) {
           alert(response.data.message);
@@ -550,5 +595,35 @@ export class ProductsComponent implements OnInit {
         console.error(err);
       }
     });
+  }
+
+  onImageSelected(event: any) {
+    const file = event.target.files[0];
+    if (file) {
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image size must be less than 5MB');
+        return;
+      }
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select a valid image file');
+        return;
+      }
+
+      this.selectedImageFile = file;
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        this.imagePreview = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  getProductImageUrl(productId: string): string {
+    return `/api/products/${productId}/image`;
   }
 }

@@ -2,11 +2,12 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Customer, CustomerService } from '../services/customer.service';
+import { PaginationComponent } from '../components/pagination.component';
 
 @Component({
   selector: 'app-customers',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PaginationComponent],
   template: `
     <div style="min-height:100vh;background:#f5f6f8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
       <!-- Header -->
@@ -89,7 +90,7 @@ import { Customer, CustomerService } from '../services/customer.service';
                   style="border-bottom:1px solid #f0f0f0;transition:background 0.2s;"
                   (mouseenter)="$event.currentTarget.style.background='#f8f9fa'"
                   (mouseleave)="$event.currentTarget.style.background='#fff'">
-                  <td style="padding:16px 24px;color:#666;font-size:14px;">{{ i + 1 }}</td>
+                  <td style="padding:16px 24px;color:#666;font-size:14px;">{{ (currentPage - 1) * pageSize + i + 1 }}</td>
                   <td style="padding:16px 24px;color:#333;font-weight:600;font-size:14px;">{{ customer.name }}</td>
                   <td style="padding:16px 24px;color:#666;font-size:14px;">{{ customer.phone }}</td>
                   <td style="padding:16px 24px;color:#666;font-size:14px;">{{ customer.email || '-' }}</td>
@@ -124,6 +125,17 @@ import { Customer, CustomerService } from '../services/customer.service';
               </tbody>
             </table>
           </div>
+
+          <!-- Pagination -->
+          <app-pagination
+            *ngIf="!loading && filteredCustomers.length > 0"
+            [currentPage]="currentPage"
+            [pageSize]="pageSize"
+            [totalCount]="totalCount"
+            [totalPages]="totalPages"
+            (pageChange)="onPageChange($event)"
+            (pageSizeChange)="onPageSizeChange($event)">
+          </app-pagination>
         </section>
       </main>
     </div>
@@ -335,6 +347,13 @@ export class CustomersComponent implements OnInit {
   saving = false;
 
   searchTerm = '';
+  private searchTimeout: any;
+
+  // Pagination
+  currentPage = 1;
+  pageSize = 25;
+  totalCount = 0;
+  totalPages = 1;
 
   showModal = false;
   editingCustomer: Customer | null = null;
@@ -357,10 +376,12 @@ export class CustomersComponent implements OnInit {
 
   loadCustomers() {
     this.loading = true;
-    this.customerService.getAll().subscribe({
-      next: (data) => {
-        this.customers = data;
-        this.filteredCustomers = data;
+    this.customerService.getAll(this.currentPage, this.pageSize, this.searchTerm).subscribe({
+      next: (response) => {
+        this.customers = response.data;
+        this.filteredCustomers = response.data;
+        this.totalCount = response.pagination.total;
+        this.totalPages = response.pagination.totalPages;
         this.loading = false;
       },
       error: (err) => {
@@ -371,12 +392,23 @@ export class CustomersComponent implements OnInit {
   }
 
   applyFilter() {
-    const term = this.searchTerm.toLowerCase();
-    this.filteredCustomers = this.customers.filter(customer =>
-      customer.name.toLowerCase().includes(term) ||
-      customer.phone.includes(term) ||
-      customer.email?.toLowerCase().includes(term)
-    );
+    clearTimeout(this.searchTimeout);
+    this.searchTimeout = setTimeout(() => {
+      this.currentPage = 1;
+      this.loadCustomers();
+    }, 500);
+  }
+
+  onPageChange(page: number) {
+    this.currentPage = page;
+    this.loadCustomers();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  onPageSizeChange(size: number) {
+    this.pageSize = size;
+    this.currentPage = 1;
+    this.loadCustomers();
   }
 
   getActiveCount(): number {

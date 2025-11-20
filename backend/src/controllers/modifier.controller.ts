@@ -13,20 +13,43 @@ const prisma = new PrismaClient();
 // Get all modifier groups with their modifiers
 export const getModifierGroups = async (req: Request, res: Response) => {
   try {
+    const { page = 1, limit = 25, search } = req.query;
+
+    const where: any = { isActive: true };
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search as string, mode: 'insensitive' } },
+        { description: { contains: search as string, mode: 'insensitive' } }
+      ];
+    }
+
+    // Get total count
+    const totalCount = await prisma.modifierGroup.count({ where });
+
     const groups = await prisma.modifierGroup.findMany({
-      where: { isActive: true },
+      where,
       include: {
         modifiers: {
           where: { isActive: true },
           orderBy: { sortOrder: 'asc' }
         }
       },
-      orderBy: { sortOrder: 'asc' }
+      orderBy: { sortOrder: 'asc' },
+      skip: (Number(page) - 1) * Number(limit),
+      take: Number(limit)
     });
 
     res.json({
       success: true,
       data: groups,
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / Number(limit)),
+        hasMore: (Number(page) * Number(limit)) < totalCount
+      },
       message: `Found ${groups.length} modifier groups`
     });
   } catch (error: any) {

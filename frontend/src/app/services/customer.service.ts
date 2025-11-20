@@ -22,8 +22,12 @@ export class CustomerService {
 
   constructor(private http: HttpClient) {}
 
-  getAll(): Observable<Customer[]> {
-    return this.http.get<Customer[]>(this.baseUrl);
+  getAll(page: number = 1, limit: number = 25, search: string = ''): Observable<any> {
+    let params: any = { page: page.toString(), limit: limit.toString() };
+    if (search) {
+      params.search = search;
+    }
+    return this.http.get<any>(this.baseUrl, { params });
   }
 
   getById(id: string): Observable<Customer> {

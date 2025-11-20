@@ -15,6 +15,8 @@ import { ReportsComponent } from './reports/reports.component';
 import { SettingsComponent } from './settings/settings.component';
 import { FloorsComponent } from './restaurant/floors/floors.component';
 import { TablesComponent } from './restaurant/tables/tables.component';
+import { ModifiersComponent } from './modifiers/modifiers.component';
+import { ProductModifiersComponent } from './modifiers/product-modifiers.component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -36,7 +38,9 @@ const routes: Routes = [
       { path: 'reports', component: ReportsComponent },
       { path: 'settings', component: SettingsComponent },
       { path: 'restaurant/floors', component: FloorsComponent },
-      { path: 'restaurant/tables', component: TablesComponent }
+      { path: 'restaurant/tables', component: TablesComponent },
+      { path: 'restaurant/modifiers', component: ModifiersComponent },
+      { path: 'restaurant/product-modifiers', component: ProductModifiersComponent }
     ]
   },
   { path: '**', redirectTo: 'login' }

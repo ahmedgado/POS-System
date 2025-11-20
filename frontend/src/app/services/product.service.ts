@@ -76,4 +76,14 @@ export class ProductService {
   bulkInactive(ids: string[], active: boolean = false): Observable<any> {
     return this.http.post<any>(`${this.baseUrl}/bulk-inactive`, { ids, active });
   }
+
+  uploadImage(productId: string, imageFile: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('image', imageFile);
+    return this.http.post<any>(`${this.baseUrl}/${productId}/image`, formData);
+  }
+
+  getImageUrl(productId: string): string {
+    return `${this.baseUrl}/${productId}/image`;
+  }
 }

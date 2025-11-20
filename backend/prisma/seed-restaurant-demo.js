@@ -119,7 +119,7 @@ function generateEmail(name, index) {
 
 // Food category image mapping using Unsplash food photos
 function getCategoryImage(itemName, subcategory) {
-  const imageMap: { [key] } = {
+  const imageMap = {
     // Cold Mezze
     'Hummus': 'https://images.unsplash.com/photo-1632778149955-e80f8ceca2e8?w=400&h=300&fit=crop',
     'Baba Ghanoush': 'https://images.unsplash.com/photo-1606923829579-0cb981a83e2e?w=400&h=300&fit=crop',
@@ -554,6 +554,61 @@ async function main() {
   }
   console.log(`✓ Created ${products.length} menu items\n`);
 
+  // Download and convert images to blob
+  console.log('🖼️  Downloading and converting product images to blob...');
+  let imageCounter = 0;
+  let imageErrors = 0;
+
+  for (const product of products) {
+    if (product.imageUrl) {
+      try {
+        // Fetch image from URL
+        const response = await fetch(product.imageUrl);
+        if (response.ok) {
+          const arrayBuffer = await response.arrayBuffer();
+          const buffer = Buffer.from(arrayBuffer);
+          const contentType = response.headers.get('content-type') || 'image/jpeg';
+
+          // Update product with image blob
+          await prisma.product.update({
+            where: { id: product.id },
+            data: {
+              imageData: buffer,
+              imageMimeType: contentType,
+              imageUrl: null // Clear the URL since we now have blob
+            }
+          });
+
+          imageCounter++;
+          if (imageCounter % 20 === 0) {
+            console.log(`  → Downloaded ${imageCounter} images...`);
+          }
+        } else {
+          // Clear imageUrl even if download fails to avoid redirect issues
+          await prisma.product.update({
+            where: { id: product.id },
+            data: { imageUrl: null }
+          });
+          imageErrors++;
+        }
+      } catch (err) {
+        // Clear imageUrl even if error occurs to avoid redirect issues
+        await prisma.product.update({
+          where: { id: product.id },
+          data: { imageUrl: null }
+        });
+        imageErrors++;
+        console.log(`  ⚠️  Failed to download image for ${product.name}`);
+      }
+    }
+  }
+  console.log(`✓ Converted ${imageCounter} images to blob format`);
+  if (imageErrors > 0) {
+    console.log(`  ⚠️  ${imageErrors} images failed to download\n`);
+  } else {
+    console.log('');
+  }
+
   // Link modifiers to products
   console.log('🔗 Linking modifiers to products...');
   let linkCounter = 0;
@@ -567,8 +622,18 @@ async function main() {
       linkCounter++;
     }
 
+    // Beverages (Coffee, Tea, Juice, Smoothie) get size modifiers
+    if (product.name.includes('Coffee') || product.name.includes('Tea') || product.name.includes('Latte') ||
+        product.name.includes('Cappuccino') || product.name.includes('Juice') || product.name.includes('Smoothie')) {
+      await prisma.productModifierGroup.create({
+        data: { productId: product.id, modifierGroupId: sizeGroup.id }
+      });
+      linkCounter++;
+    }
+
     // Grilled items get cooking style modifiers
-    if (product.name.includes('Steak') || product.name.includes('Beef') || product.name.includes('Lamb')) {
+    if (product.name.includes('Steak') || product.name.includes('Beef') || product.name.includes('Lamb') ||
+        product.name.includes('Chops')) {
       await prisma.productModifierGroup.create({
         data: { productId: product.id, modifierGroupId: cookingGroup.id }
       });
@@ -576,7 +641,8 @@ async function main() {
     }
 
     // Spicy items get spice level modifiers
-    if (product.name.includes('Chicken') || product.name.includes('Grilled')) {
+    if (product.name.includes('Chicken') || product.name.includes('Grilled') || product.name.includes('Spicy') ||
+        product.name.includes('Kafta') || product.name.includes('Tawook')) {
       await prisma.productModifierGroup.create({
         data: { productId: product.id, modifierGroupId: spiceLevelGroup.id }
       });
@@ -584,7 +650,7 @@ async function main() {
     }
 
     // Burgers and Pizza get extras
-    if (product.name.includes('Burger') || product.name.includes('Pizza')) {
+    if (product.name.includes('Burger') || product.name.includes('Pizza') || product.name.includes('Pasta')) {
       await prisma.productModifierGroup.create({
         data: { productId: product.id, modifierGroupId: extrasGroup.id }
       });
@@ -676,7 +742,7 @@ async function main() {
         orderType: orderType,
         orderStatus: orderStatus,
         waiterId: waiter.id,
-        paymentMethod: ['CASH', 'CARD', 'MOBILE_PAYMENT'][randomInt(0, 2)],
+        paymentMethod: ['CASH', 'CARD', 'MOBILE_WALLET'][randomInt(0, 2)],
         status: 'COMPLETED',
         notes: Math.random() < 0.1 ? 'Customer allergic to nuts' : undefined,
         items: {
@@ -703,6 +769,7 @@ async function main() {
   console.log(`✓ Modifiers: 15`);
   console.log(`✓ Categories: ${RESTAURANT_CATEGORIES.length}`);
   console.log(`✓ Menu Items: ${products.length}`);
+  console.log(`✓ Product Images: ${imageCounter} (stored as blob in database)`);
   console.log(`✓ Product-Modifier Links: ${linkCounter}`);
   console.log(`✓ Customers: ${customers.length}`);
   console.log(`✓ Orders: 50`);

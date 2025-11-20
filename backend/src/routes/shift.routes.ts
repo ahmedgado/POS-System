@@ -21,6 +21,17 @@ router.post(
   asyncHandler(shiftController.openShift.bind(shiftController))
 );
 
+// POST /api/shifts/close - Close current user's open shift
+router.post(
+  '/close',
+  authorize(UserRole.CASHIER, UserRole.MANAGER, UserRole.ADMIN),
+  validate([
+    body('endingCash').isFloat({ min: 0 }).withMessage('Ending cash must be a positive number'),
+    body('notes').optional().isString()
+  ]),
+  asyncHandler(shiftController.closeCurrentShift.bind(shiftController))
+);
+
 // POST /api/shifts/:id/close
 router.post(
   '/:id/close',

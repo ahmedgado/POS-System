@@ -64,6 +64,73 @@ export class ShiftController {
     return ApiResponse.success(res, shift, 'Shift opened successfully', 201);
   }
 
+  // POST /api/shifts/close - Close current user's open shift
+  async closeCurrentShift(req: AuthRequest, res: Response) {
+    const { endingCash, notes } = req.body;
+
+    // Find user's open shift
+    const shift = await prisma.shift.findFirst({
+      where: {
+        cashierId: req.user!.id,
+        status: 'OPEN'
+      },
+      include: {
+        sales: {
+          where: { status: 'COMPLETED' }
+        }
+      }
+    });
+
+    if (!shift) {
+      throw new AppError('No open shift found', 404);
+    }
+
+    // Calculate expected cash
+    const cashSales = shift.sales.filter((s: any) => s.paymentMethod === 'CASH');
+    const expectedCash = Number(shift.startingCash) + cashSales.reduce((sum: number, sale: any) => sum + Number(sale.totalAmount), 0);
+    const discrepancy = Number(endingCash) - expectedCash;
+
+    // Close shift
+    const updatedShift = await prisma.shift.update({
+      where: { id: shift.id },
+      data: {
+        endingCash,
+        expectedCash,
+        discrepancy,
+        status: 'CLOSED',
+        closedAt: new Date(),
+        notes
+      },
+      include: {
+        cashier: {
+          select: {
+            id: true,
+            username: true,
+            firstName: true,
+            lastName: true
+          }
+        }
+      }
+    });
+
+    // Log audit
+    await prisma.auditLog.create({
+      data: {
+        userId: req.user!.id,
+        action: 'SHIFT_CLOSE',
+        entity: 'Shift',
+        entityId: shift.id,
+        changes: { endingCash, expectedCash, discrepancy, notes },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      }
+    });
+
+    logger.info(`Shift closed: ${shift.shiftNumber} by ${req.user?.email}`);
+
+    return ApiResponse.success(res, updatedShift, 'Shift closed successfully');
+  }
+
   // POST /api/shifts/:id/close - Close shift
   async closeShift(req: AuthRequest, res: Response) {
     const { id } = req.params;
@@ -181,7 +248,16 @@ export class ShiftController {
       prisma.shift.count({ where })
     ]);
 
-    return ApiResponse.paginated(res, shifts, Number(page), Number(limit), total);
+    // Map shifts to include cashierName and difference fields for frontend
+    const mappedShifts = shifts.map((shift: any) => ({
+      ...shift,
+      cashierName: shift.cashier ? `${shift.cashier.firstName} ${shift.cashier.lastName}` : 'Unknown',
+      difference: shift.discrepancy,
+      startTime: shift.openedAt,
+      endTime: shift.closedAt
+    }));
+
+    return ApiResponse.paginated(res, mappedShifts, Number(page), Number(limit), total);
   }
 
   // GET /api/shifts/:id - Get shift details

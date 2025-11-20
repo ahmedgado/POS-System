@@ -81,6 +81,8 @@ model Product {
   lowStockAlert   Int                      @default(10)
   unit            String                   @default("piece")
   imageUrl        String?
+  imageData       Bytes?                   // Store image as blob
+  imageMimeType   String?                  // Store image MIME type (image/jpeg, image/png, etc)
   isActive        Boolean                  @default(true)
   createdAt       DateTime                 @default(now())
   updatedAt       DateTime                 @updatedAt

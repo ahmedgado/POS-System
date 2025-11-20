@@ -26,10 +26,12 @@ export class ShiftService {
 
   constructor(private http: HttpClient) {}
 
-  getAll(): Observable<Shift[]> {
-    return this.http.get<any>(this.baseUrl).pipe(
-      map(response => response.data || [])
-    );
+  getAll(page: number = 1, limit: number = 25, status?: string): Observable<any> {
+    let params: any = { page: page.toString(), limit: limit.toString() };
+    if (status) {
+      params.status = status;
+    }
+    return this.http.get<any>(this.baseUrl, { params });
   }
 
   getCurrent(): Observable<Shift | null> {

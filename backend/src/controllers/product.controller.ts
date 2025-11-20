@@ -631,4 +631,77 @@ export class ProductController {
 
     return ApiResponse.success(res, products);
   }
+
+  // POST /api/products/:id/image - Upload product image
+  async uploadImage(req: AuthRequest, res: Response) {
+    const { id } = req.params;
+
+    if (!req.file) {
+      throw new AppError('No image file uploaded', 400);
+    }
+
+    const product = await prisma.product.findUnique({ where: { id } });
+    if (!product) {
+      throw new AppError('Product not found', 404);
+    }
+
+    // Store image as blob
+    const updatedProduct = await prisma.product.update({
+      where: { id },
+      data: {
+        imageData: req.file.buffer,
+        imageMimeType: req.file.mimetype,
+        imageUrl: null // Clear old URL if exists
+      }
+    });
+
+    logger.info(`Image uploaded for product ${id}`);
+    return ApiResponse.success(res, {
+      message: 'Image uploaded successfully',
+      productId: id
+    });
+  }
+
+  // GET /api/products/:id/image - Serve product image
+  async getImage(req: AuthRequest, res: Response) {
+    const { id } = req.params;
+
+    const product = await prisma.product.findUnique({
+      where: { id },
+      select: {
+        imageData: true,
+        imageMimeType: true,
+        imageUrl: true
+      }
+    });
+
+    if (!product) {
+      throw new AppError('Product not found', 404);
+    }
+
+    // If image is stored as blob, serve it
+    if (product.imageData && product.imageMimeType) {
+      res.set('Content-Type', product.imageMimeType);
+      res.set('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
+      return res.send(product.imageData);
+    }
+
+    // If still using URL, redirect
+    if (product.imageUrl) {
+      return res.redirect(product.imageUrl);
+    }
+
+    // No image found - generate a simple SVG placeholder
+    const placeholderSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+      <rect width="400" height="400" fill="#f0f0f0"/>
+      <text x="50%" y="45%" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" fill="#999">No Image</text>
+      <text x="50%" y="55%" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#ccc">Product Image</text>
+      <path d="M150 150 L250 150 L200 220 Z" fill="#ddd"/>
+      <circle cx="170" cy="170" r="10" fill="#ccc"/>
+    </svg>`;
+
+    res.set('Content-Type', 'image/svg+xml');
+    res.set('Cache-Control', 'public, max-age=86400'); // Cache for 1 day
+    return res.send(placeholderSvg);
+  }
 }

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { body, query } from 'express-validator';
+import multer from 'multer';
 import { ProductController } from '../controllers/product.controller';
 import { validate } from '../middleware/validation';
 import { authenticate, authorize } from '../middleware/auth';
@@ -8,6 +9,29 @@ import { UserRole } from '@prisma/client';
 
 const router = Router();
 const productController = new ProductController();
+
+// Configure multer for memory storage (store in RAM then save to DB)
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    // Accept only images
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
+  }
+});
+
+// GET /api/products/:id/image - Get product image (Public - no auth required)
+// Must be BEFORE authenticate middleware so images can be loaded without auth
+router.get(
+  '/:id/image',
+  asyncHandler(productController.getImage.bind(productController))
+);
 
 // All routes require authentication
 router.use(authenticate);
@@ -119,6 +143,14 @@ router.post(
     body('notes').optional().isString()
   ]),
   asyncHandler(productController.adjustStock.bind(productController))
+);
+
+// POST /api/products/:id/image - Upload product image (Admin, Manager, Inventory Clerk)
+router.post(
+  '/:id/image',
+  authorize(UserRole.ADMIN, UserRole.MANAGER, UserRole.INVENTORY_CLERK),
+  upload.single('image'),
+  asyncHandler(productController.uploadImage.bind(productController))
 );
 
 export default router;

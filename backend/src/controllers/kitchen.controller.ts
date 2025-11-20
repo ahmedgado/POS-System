@@ -175,6 +175,86 @@ export const linkProductToStation = async (req: Request, res: Response) => {
   }
 };
 
+// Get all product-station links
+export const getProductStationLinks = async (req: Request, res: Response) => {
+  try {
+    const links = await prisma.productKitchenStation.findMany({
+      include: {
+        product: {
+          select: {
+            id: true,
+            name: true,
+            category: {
+              select: { name: true }
+            }
+          }
+        },
+        kitchenStation: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
+      },
+      orderBy: [
+        { product: { name: 'asc' } }
+      ]
+    });
+
+    res.json({
+      success: true,
+      data: links
+    });
+  } catch (error: any) {
+    logger.error('Get product-station links error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get product-station links',
+      error: error.message
+    });
+  }
+};
+
+// Unlink product from kitchen station
+export const unlinkProductFromStation = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const link = await prisma.productKitchenStation.findUnique({
+      where: { id },
+      include: {
+        product: { select: { name: true } },
+        kitchenStation: { select: { name: true } }
+      }
+    });
+
+    if (!link) {
+      return res.status(404).json({
+        success: false,
+        message: 'Link not found'
+      });
+    }
+
+    await prisma.productKitchenStation.delete({
+      where: { id }
+    });
+
+    logger.info(`Product ${link.product.name} unlinked from station ${link.kitchenStation.name}`);
+
+    res.json({
+      success: true,
+      message: 'Product unlinked from kitchen station successfully'
+    });
+  } catch (error: any) {
+    logger.error('Unlink product from station error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to unlink product from station',
+      error: error.message
+    });
+  }
+};
+
 // ==================== KITCHEN TICKETS ====================
 
 // Get all kitchen tickets (with filters)
@@ -182,14 +262,21 @@ export const getKitchenTickets = async (req: Request, res: Response) => {
   try {
     const { stationId, status } = req.query;
 
+    const where: any = {
+      ...(stationId && { kitchenStationId: stationId as string })
+    };
+
+    // If status filter is provided, use it; otherwise show active tickets only
+    if (status) {
+      where.status = status as KitchenTicketStatus;
+    } else {
+      where.status = {
+        in: ['NEW', 'IN_PROGRESS', 'READY'] // Don't show COMPLETED or CANCELLED by default
+      };
+    }
+
     const tickets = await prisma.kitchenTicket.findMany({
-      where: {
-        ...(stationId && { kitchenStationId: stationId as string }),
-        ...(status && { status: status as KitchenTicketStatus }),
-        status: {
-          in: ['NEW', 'IN_PROGRESS', 'READY'] // Don't show SERVED or CANCELLED by default
-        }
-      },
+      where,
       include: {
         kitchenStation: {
           select: {

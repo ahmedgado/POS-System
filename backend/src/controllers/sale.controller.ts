@@ -45,7 +45,7 @@ export class SaleController {
 
         // Create sale items and update stock
         for (const item of items) {
-          await tx.saleItem.create({
+          const saleItem = await tx.saleItem.create({
             data: {
               saleId: newSale.id,
               productId: item.productId,
@@ -66,6 +66,23 @@ export class SaleController {
               }
             }
           });
+
+          // Create kitchen tickets for this item if product has kitchen stations
+          const productStations = await tx.productKitchenStation.findMany({
+            where: { productId: item.productId }
+          });
+
+          for (const station of productStations) {
+            await tx.kitchenTicket.create({
+              data: {
+                saleId: newSale.id,
+                saleItemId: saleItem.id,
+                kitchenStationId: station.kitchenStationId,
+                status: 'NEW',
+                priority: 0
+              }
+            });
+          }
         }
 
         // Update customer loyalty points if applicable

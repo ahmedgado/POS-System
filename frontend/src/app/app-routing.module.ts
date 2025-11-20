@@ -17,6 +17,8 @@ import { FloorsComponent } from './restaurant/floors/floors.component';
 import { TablesComponent } from './restaurant/tables/tables.component';
 import { ModifiersComponent } from './modifiers/modifiers.component';
 import { ProductModifiersComponent } from './modifiers/product-modifiers.component';
+import { KdsComponent } from './kds/kds.component';
+import { ProductStationsComponent } from './restaurant/product-stations.component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -40,7 +42,9 @@ const routes: Routes = [
       { path: 'restaurant/floors', component: FloorsComponent },
       { path: 'restaurant/tables', component: TablesComponent },
       { path: 'restaurant/modifiers', component: ModifiersComponent },
-      { path: 'restaurant/product-modifiers', component: ProductModifiersComponent }
+      { path: 'restaurant/product-modifiers', component: ProductModifiersComponent },
+      { path: 'restaurant/product-stations', component: ProductStationsComponent },
+      { path: 'kds', component: KdsComponent }
     ]
   },
   { path: '**', redirectTo: 'login' }

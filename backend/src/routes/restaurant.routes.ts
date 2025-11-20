@@ -43,6 +43,8 @@ import {
   createKitchenStation,
   updateKitchenStation,
   linkProductToStation,
+  getProductStationLinks,
+  unlinkProductFromStation,
   getKitchenTickets,
   createKitchenTicket,
   updateTicketStatus,
@@ -92,7 +94,11 @@ router.delete('/products/:productId/modifiers/:modifierGroupId', authenticate, u
 router.get('/kitchen/stations', authenticate, getKitchenStations);
 router.post('/kitchen/stations', authenticate, createKitchenStation);
 router.put('/kitchen/stations/:id', authenticate, updateKitchenStation);
+
+// Product-Station Links
+router.get('/kitchen/stations/links', authenticate, getProductStationLinks);
 router.post('/kitchen/stations/link', authenticate, linkProductToStation);
+router.delete('/kitchen/stations/links/:id', authenticate, unlinkProductFromStation);
 
 // Kitchen Tickets (KDS)
 router.get('/kitchen/tickets', authenticate, getKitchenTickets);

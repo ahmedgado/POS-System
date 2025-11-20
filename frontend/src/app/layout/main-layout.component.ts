@@ -3,13 +3,16 @@ import { Router, RouterOutlet, RouterLink, RouterLinkActive } from '@angular/rou
 import { AuthService } from '../services/auth.service';
 import { TranslationService, Language } from '../services/translation.service';
 import { CommonModule } from '@angular/common';
+import { BackendStatusComponent } from '../components/backend-status.component';
 
 @Component({
   selector: 'app-main-layout',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, BackendStatusComponent],
   template: `
     <div style="display:flex;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',sans-serif;background:#f8f6f4;">
+      <!-- Backend Status Indicator -->
+      <app-backend-status></app-backend-status>
       <aside style="width:260px;background:linear-gradient(180deg, #1a1a1a 0%, #2d2d2d 100%);border-right:1px solid #3a3a3a;display:flex;flex-direction:column;box-shadow:4px 0 24px rgba(0,0,0,0.3);">
         <div style="padding:24px;border-bottom:1px solid #3a3a3a;display:flex;align-items:center;justify-content:space-between;">
           <span style="font-weight:700;color:#d4af37;font-size:18px;letter-spacing:1px;">ST. REGIS POS</span>

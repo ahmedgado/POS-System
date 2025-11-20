@@ -10,6 +10,7 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { LoginComponent } from './login/login.component';
 import { TokenInterceptor } from './interceptors/token.interceptor';
+import { BackendSwitchInterceptor } from './interceptors/backend-switch.interceptor';
 import { RestaurantModule } from './restaurant/restaurant.module';
 
 // AoT requires an exported function for factories
@@ -39,6 +40,7 @@ export function HttpLoaderFactory(http: HttpClient) {
     })
   ],
   providers: [
+    { provide: HTTP_INTERCEPTORS, useClass: BackendSwitchInterceptor, multi: true },
     { provide: HTTP_INTERCEPTORS, useClass: TokenInterceptor, multi: true }
   ],
   bootstrap: [AppComponent]

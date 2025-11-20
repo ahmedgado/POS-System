@@ -12,7 +12,7 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
   template: `
     <div style="min-height:100vh;background:#f5f6f8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
       <!-- Header -->
-      <header style="background:#DC3545;color:#fff;padding:20px 32px;box-shadow:0 2px 8px rgba(220,53,69,0.15);">
+      <header style="background:linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);color:#d4af37;padding:20px 32px;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
         <h1 style="margin:0;font-size:24px;font-weight:700;">📈 {{ 'reports.title' | translate }}</h1>
       </header>
 

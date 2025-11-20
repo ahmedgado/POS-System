@@ -88,7 +88,7 @@ interface SelectedModifier {
 
           <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:16px;">
             <div
-              *ngFor="let product of filteredProducts"
+              *ngFor="let product of paginatedProducts"
               (click)="addToCart(product)"
               style="background:#ffffff;border:1px solid #e5e0db;border-radius:16px;padding:14px;cursor:pointer;text-align:center;transition:all 0.3s;box-shadow:0 2px 8px rgba(0,0,0,0.06);"
               (mouseenter)="$event.currentTarget.style.borderColor='#d4af37'; $event.currentTarget.style.transform='translateY(-4px)'; $event.currentTarget.style.boxShadow='0 8px 24px rgba(212,175,55,0.15)'"
@@ -105,6 +105,38 @@ interface SelectedModifier {
               <div style="color:#d4af37;font-weight:700;font-size:17px;">{{ product.price | currencyFormat }}</div>
               <div style="color:#8b7355;font-size:11px;margin-top:6px;">{{ 'pos.stock' | translate }}: {{ product.stock }}</div>
             </div>
+          </div>
+
+          <!-- Pagination -->
+          <div *ngIf="totalPages > 1" style="margin-top:24px;display:flex;align-items:center;justify-content:center;gap:8px;">
+            <button 
+              (click)="previousPage()"
+              [disabled]="currentPage === 1"
+              style="background:linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);color:#d4af37;border:none;width:40px;height:40px;border-radius:10px;cursor:pointer;font-size:18px;font-weight:700;transition:all 0.2s;box-shadow:0 2px 6px rgba(0,0,0,0.15);"
+              [style.opacity]="currentPage === 1 ? '0.3' : '1'"
+              [style.cursor]="currentPage === 1 ? 'not-allowed' : 'pointer'">
+              ‹
+            </button>
+            
+            <div style="display:flex;gap:6px;">
+              <button 
+                *ngFor="let page of [].constructor(totalPages); let i = index"
+                (click)="goToPage(i + 1)"
+                [style.background]="currentPage === i + 1 ? 'linear-gradient(135deg, #d4af37 0%, #c19a2e 100%)' : 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)'"
+                [style.color]="currentPage === i + 1 ? '#ffffff' : '#d4af37'"
+                style="border:none;min-width:40px;height:40px;border-radius:10px;cursor:pointer;font-size:15px;font-weight:700;padding:0 12px;transition:all 0.2s;box-shadow:0 2px 6px rgba(0,0,0,0.15);">
+                {{ i + 1 }}
+              </button>
+            </div>
+
+            <button 
+              (click)="nextPage()"
+              [disabled]="currentPage === totalPages"
+              style="background:linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);color:#d4af37;border:none;width:40px;height:40px;border-radius:10px;cursor:pointer;font-size:18px;font-weight:700;transition:all 0.2s;box-shadow:0 2px 6px rgba(0,0,0,0.15);"
+              [style.opacity]="currentPage === totalPages ? '0.3' : '1'"
+              [style.cursor]="currentPage === totalPages ? 'not-allowed' : 'pointer'">
+              ›
+            </button>
           </div>
         </div>
       </div>
@@ -412,10 +444,16 @@ export class POSComponent implements OnInit {
 
   products: Product[] = [];
   filteredProducts: Product[] = [];
+  paginatedProducts: Product[] = [];
   cartItems: CartItem[] = [];
 
   loading = false;
   processing = false;
+
+  // Pagination
+  currentPage = 1;
+  itemsPerPage = 12;
+  totalPages = 1;
 
   paymentMethod: 'CASH' | 'CARD' | 'MOBILE' = 'CASH';
   taxRate = 0.15; // 15% tax
@@ -503,6 +541,7 @@ export class POSComponent implements OnInit {
       next: (response) => {
         this.products = response.data;
         this.filteredProducts = response.data;
+        this.updatePagination();
         this.loading = false;
       },
       error: (err) => {
@@ -524,6 +563,38 @@ export class POSComponent implements OnInit {
 
       return matchesSearch && matchesCategory;
     });
+
+    // Reset to first page when searching
+    this.currentPage = 1;
+    this.updatePagination();
+  }
+
+  updatePagination() {
+    this.totalPages = Math.ceil(this.filteredProducts.length / this.itemsPerPage);
+    const start = (this.currentPage - 1) * this.itemsPerPage;
+    const end = start + this.itemsPerPage;
+    this.paginatedProducts = this.filteredProducts.slice(start, end);
+  }
+
+  goToPage(page: number) {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+      this.updatePagination();
+    }
+  }
+
+  nextPage() {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+      this.updatePagination();
+    }
+  }
+
+  previousPage() {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      this.updatePagination();
+    }
   }
 
   addToCart(product: Product) {

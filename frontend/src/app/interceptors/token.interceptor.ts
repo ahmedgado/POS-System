@@ -9,8 +9,8 @@ export class TokenInterceptor implements HttpInterceptor {
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     const token = this.auth.token;
-    // Only attach token for API calls
-    if (token && req.url.startsWith('/api')) {
+    // Only attach token for API calls (check both relative and absolute URLs)
+    if (token && (req.url.startsWith('/api') || req.url.includes('/api/'))) {
       const authReq = req.clone({
         setHeaders: { Authorization: `Bearer ${token}` }
       });

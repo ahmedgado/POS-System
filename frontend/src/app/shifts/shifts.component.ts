@@ -11,20 +11,20 @@ import { PaginationComponent } from '../components/pagination.component';
   standalone: true,
   imports: [CommonModule, FormsModule, TranslateModule, PaginationComponent],
   template: `
-    <div style="min-height:100vh;background:#f5f6f8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+    <div style="min-height:100vh;background:#f8f6f4;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',sans-serif;">
       <!-- Header -->
-      <header style="background:#DC3545;color:#fff;padding:20px 32px;box-shadow:0 2px 8px rgba(220,53,69,0.15);">
+      <header style="background:linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);color:#d4af37;padding:20px 32px;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
         <div style="display:flex;align-items:center;justify-content:space-between;">
-          <h1 style="margin:0;font-size:24px;font-weight:700;">🕐 {{ 'shifts.title' | translate }}</h1>
-          <div style="color:rgba(255,255,255,0.9);">{{ cashierName }}</div>
+          <h1 style="margin:0;font-size:24px;font-weight:700;letter-spacing:0.5px;">🕐 {{ 'shifts.title' | translate }}</h1>
+          <div style="color:#f8f6f4;font-weight:500;">{{ cashierName }}</div>
         </div>
       </header>
 
       <!-- Main Content -->
       <main style="padding:32px;">
         <!-- Current Shift Status -->
-        <section style="background:#fff;padding:24px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);margin-bottom:24px;">
-          <h2 style="margin:0 0 20px 0;color:#333;font-size:18px;font-weight:600;">{{ 'shifts.currentShift' | translate }}</h2>
+        <section style="background:#fff;padding:24px;border-radius:16px;box-shadow:0 4px 16px rgba(0,0,0,0.08);margin-bottom:24px;border:1px solid #e5e0db;">
+          <h2 style="margin:0 0 20px 0;color:#1a1a1a;font-size:18px;font-weight:700;letter-spacing:0.3px;">{{ 'shifts.currentShift' | translate }}</h2>
 
           <!-- No Active Shift -->
           <div *ngIf="!currentShift && !loading" style="text-align:center;padding:40px 20px;">
@@ -32,14 +32,14 @@ import { PaginationComponent } from '../components/pagination.component';
             <div style="font-size:18px;color:#666;margin-bottom:24px;">{{ 'shifts.noActiveShift' | translate }}</div>
             <button
               (click)="showOpenShiftModal = true"
-              style="background:#28a745;color:#fff;border:none;padding:14px 32px;border-radius:8px;font-weight:600;cursor:pointer;font-size:16px;">
+              style="background:linear-gradient(135deg, #d4af37 0%, #c19a2e 100%);color:#fff;border:none;padding:14px 32px;border-radius:12px;font-weight:700;cursor:pointer;font-size:16px;box-shadow:0 4px 12px rgba(212,175,55,0.3);">
               🔓 {{ 'shifts.openNewShift' | translate }}
             </button>
           </div>
 
           <!-- Active Shift -->
           <div *ngIf="currentShift">
-            <div style="background:linear-gradient(135deg, #28a745 0%, #20c997 100%);color:#fff;padding:24px;border-radius:12px;margin-bottom:24px;">
+            <div style="background:linear-gradient(135deg, #d4af37 0%, #c19a2e 100%);color:#fff;padding:24px;border-radius:16px;margin-bottom:24px;box-shadow:0 6px 20px rgba(212,175,55,0.25);">
               <div style="display:flex;justify-content:space-between;align-items:center;">
                 <div>
                   <div style="font-size:14px;opacity:0.9;margin-bottom:8px;">{{ 'shifts.shiftStarted' | translate }}</div>
@@ -53,24 +53,24 @@ import { PaginationComponent } from '../components/pagination.component';
             </div>
 
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;margin-bottom:24px;">
-              <div style="background:#f8f9fa;padding:20px;border-radius:8px;text-align:center;">
-                <div style="color:#666;font-size:13px;margin-bottom:8px;">{{ 'shifts.totalSales' | translate }}</div>
-                <div style="font-size:28px;font-weight:700;color:#DC3545;">{{ currentShift.totalSales || 0 }}</div>
+              <div style="background:#fafaf9;padding:20px;border-radius:12px;text-align:center;border:1px solid #e5e0db;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+                <div style="color:#8b7355;font-size:13px;margin-bottom:8px;font-weight:600;">{{ 'shifts.totalSales' | translate }}</div>
+                <div style="font-size:28px;font-weight:700;color:#d4af37;">{{ currentShift.totalSales || 0 }}</div>
               </div>
-              <div style="background:#f8f9fa;padding:20px;border-radius:8px;text-align:center;">
-                <div style="color:#666;font-size:13px;margin-bottom:8px;">{{ 'shifts.totalOrders' | translate }}</div>
-                <div style="font-size:28px;font-weight:700;color:#007bff;">{{ currentShift.totalTransactions || currentShift.totalOrders || 0 }}</div>
+              <div style="background:#fafaf9;padding:20px;border-radius:12px;text-align:center;border:1px solid #e5e0db;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+                <div style="color:#8b7355;font-size:13px;margin-bottom:8px;font-weight:600;">{{ 'shifts.totalOrders' | translate }}</div>
+                <div style="font-size:28px;font-weight:700;color:#1a1a1a;">{{ currentShift.totalTransactions || currentShift.totalOrders || 0 }}</div>
               </div>
-              <div style="background:#f8f9fa;padding:20px;border-radius:8px;text-align:center;">
-                <div style="color:#666;font-size:13px;margin-bottom:8px;">{{ 'shifts.expectedCash' | translate }}</div>
-                <div style="font-size:28px;font-weight:700;color:#28a745;">\${{ toNumber(currentShift.expectedCash).toFixed(2) }}</div>
+              <div style="background:#fafaf9;padding:20px;border-radius:12px;text-align:center;border:1px solid #e5e0db;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+                <div style="color:#8b7355;font-size:13px;margin-bottom:8px;font-weight:600;">{{ 'shifts.expectedCash' | translate }}</div>
+                <div style="font-size:28px;font-weight:700;color:#2d7c3e;">\${{ toNumber(currentShift.expectedCash).toFixed(2) }}</div>
               </div>
             </div>
 
             <div style="text-align:center;">
               <button
                 (click)="showCloseShiftModal = true"
-                style="background:#dc3545;color:#fff;border:none;padding:14px 32px;border-radius:8px;font-weight:600;cursor:pointer;font-size:16px;">
+                style="background:linear-gradient(135deg, #8b7355 0%, #6d5a45 100%);color:#fff;border:none;padding:14px 32px;border-radius:12px;font-weight:700;cursor:pointer;font-size:16px;box-shadow:0 4px 12px rgba(139,115,85,0.3);">
                 🔒 {{ 'shifts.closeShift' | translate }}
               </button>
             </div>
@@ -78,9 +78,9 @@ import { PaginationComponent } from '../components/pagination.component';
         </section>
 
         <!-- Shift History -->
-        <section style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);overflow:hidden;">
-          <div style="padding:20px 24px;border-bottom:1px solid #eee;">
-            <h2 style="margin:0;color:#333;font-size:16px;font-weight:600;">{{ 'shifts.shiftHistory' | translate }}</h2>
+        <section style="background:#fff;border-radius:16px;box-shadow:0 4px 16px rgba(0,0,0,0.08);overflow:hidden;border:1px solid #e5e0db;">
+          <div style="padding:20px 24px;border-bottom:2px solid #d4af37;background:linear-gradient(135deg, #fafaf9 0%, #f8f6f4 100%);">
+            <h2 style="margin:0;color:#1a1a1a;font-size:18px;font-weight:700;letter-spacing:0.3px;">{{ 'shifts.shiftHistory' | translate }}</h2>
           </div>
 
           <div *ngIf="loading" style="text-align:center;padding:60px 20px;color:#999;">
@@ -95,9 +95,9 @@ import { PaginationComponent } from '../components/pagination.component';
           <div *ngIf="!loading && shifts.length > 0" style="overflow-x:auto;">
             <table style="width:100%;border-collapse:collapse;">
               <thead>
-                <tr style="background:#f8f9fa;border-bottom:2px solid #dee2e6;">
-                  <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;">#</th>
-                  <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;">{{ 'shifts.cashier' | translate }}</th>
+                <tr style="background:linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);border-bottom:2px solid #d4af37;">
+                  <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#d4af37;text-transform:uppercase;letter-spacing:0.5px;">#</th>
+                  <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#d4af37;text-transform:uppercase;letter-spacing:0.5px;">{{ 'shifts.cashier' | translate }}</th>
                   <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;">{{ 'shifts.startTime' | translate }}</th>
                   <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;">{{ 'shifts.endTime' | translate }}</th>
                   <th style="padding:16px 24px;text-align:left;font-size:13px;font-weight:700;color:#495057;text-transform:uppercase;">{{ 'shifts.startingCash' | translate }}</th>

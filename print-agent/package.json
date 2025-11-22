@@ -1,0 +1,29 @@
+{
+    "name": "pos-print-agent",
+    "version": "1.0.0",
+    "description": "Local print agent for POS system - handles printing to network printers",
+    "main": "index.js",
+    "scripts": {
+        "start": "node index.js",
+        "dev": "nodemon index.js"
+    },
+    "keywords": [
+        "pos",
+        "print",
+        "agent",
+        "thermal-printer",
+        "escpos"
+    ],
+    "author": "",
+    "license": "MIT",
+    "dependencies": {
+        "axios": "^1.6.0",
+        "escpos": "^3.0.0-alpha.6",
+        "escpos-network": "^3.0.0-alpha.6",
+        "pdf-to-printer": "^5.6.0",
+        "dotenv": "^16.3.1"
+    },
+    "devDependencies": {
+        "nodemon": "^3.0.1"
+    }
+}

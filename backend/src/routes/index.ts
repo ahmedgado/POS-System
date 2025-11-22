@@ -12,6 +12,7 @@ import settingsRoutes from './settings.routes';
 import restaurantRoutes from './restaurant.routes';
 import inventoryRoutes from './inventory.routes';
 import kitchenStationRoutes from './kitchen-station.routes';
+import printRoutes from './print.routes';
 
 const router = Router();
 
@@ -28,6 +29,7 @@ router.use('/users', userRoutes);
 router.use('/settings', settingsRoutes);
 router.use('/inventory', inventoryRoutes);
 router.use('/kitchen-stations', kitchenStationRoutes);
+router.use('/print', printRoutes);
 
 // Restaurant-specific routes
 router.use('/restaurant', restaurantRoutes);

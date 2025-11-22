@@ -103,7 +103,7 @@ interface ProductStationLink {
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let link of links" style="border-bottom:1px solid #f0f0f0;">
+                <tr *ngFor="let link of paginatedLinks" style="border-bottom:1px solid #f0f0f0;">
                   <td style="padding:16px;font-weight:600;color:#333;">{{ link.product.name }}</td>
                   <td style="padding:16px;color:#666;">{{ link.product.category.name }}</td>
                   <td style="padding:16px;">
@@ -120,6 +120,41 @@ interface ProductStationLink {
                 </tr>
               </tbody>
             </table>
+
+            <!-- Pagination -->
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;padding-top:20px;border-top:1px solid #e5e5e5;">
+              <div style="color:#666;font-size:14px;">
+                Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ Math.min(currentPage * pageSize, links.length) }} of {{ links.length }} links
+              </div>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <button (click)="goToPage(1)" [disabled]="currentPage === 1"
+                  style="padding:8px 12px;background:#fff;border:2px solid #e5e5e5;border-radius:6px;cursor:pointer;font-weight:600;color:#666;">
+                  ⏮️
+                </button>
+                <button (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1"
+                  style="padding:8px 12px;background:#fff;border:2px solid #e5e5e5;border-radius:6px;cursor:pointer;font-weight:600;color:#666;">
+                  ◀️
+                </button>
+                <span style="padding:8px 16px;background:#f8f9fa;border-radius:6px;font-weight:600;color:#333;">
+                  Page {{ currentPage }} of {{ totalPages }}
+                </span>
+                <button (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages"
+                  style="padding:8px 12px;background:#fff;border:2px solid #e5e5e5;border-radius:6px;cursor:pointer;font-weight:600;color:#666;">
+                  ▶️
+                </button>
+                <button (click)="goToPage(totalPages)" [disabled]="currentPage === totalPages"
+                  style="padding:8px 12px;background:#fff;border:2px solid #e5e5e5;border-radius:6px;cursor:pointer;font-weight:600;color:#666;">
+                  ⏭️
+                </button>
+                <select [(ngModel)]="pageSize" (change)="onPageSizeChange()"
+                  style="padding:8px 12px;border:2px solid #e5e5e5;border-radius:6px;font-weight:600;color:#666;cursor:pointer;">
+                  <option [value]="10">10 per page</option>
+                  <option [value]="25">25 per page</option>
+                  <option [value]="50">50 per page</option>
+                  <option [value]="100">100 per page</option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
       </main>
@@ -156,11 +191,26 @@ export class ProductStationsComponent implements OnInit {
   linkMessage = '';
   linkSuccess = false;
 
+  // Pagination
+  currentPage = 1;
+  pageSize = 25;
+  Math = Math;
+
+  get totalPages(): number {
+    return Math.ceil(this.links.length / this.pageSize);
+  }
+
+  get paginatedLinks(): ProductStationLink[] {
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    const endIndex = startIndex + this.pageSize;
+    return this.links.slice(startIndex, endIndex);
+  }
+
   constructor(
     private http: HttpClient,
     private productService: ProductService,
     private kitchenService: KitchenService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadProducts();
@@ -246,5 +296,15 @@ export class ProductStationsComponent implements OnInit {
         this.unlinking = null;
       }
     });
+  }
+
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+    }
+  }
+
+  onPageSizeChange(): void {
+    this.currentPage = 1; // Reset to first page when changing page size
   }
 }

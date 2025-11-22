@@ -12,8 +12,38 @@ export interface AuthRequest extends Request {
   };
 }
 
-export const authenticate = (req: AuthRequest, _res: Response, next: NextFunction) => {
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+export const authenticate = async (req: AuthRequest, _res: Response, next: NextFunction) => {
   try {
+    // 1. Check for API Key (Permanent Token)
+    const apiKey = req.headers['x-api-key'];
+    if (apiKey && typeof apiKey === 'string') {
+      const keyRecord = await prisma.apiKey.findUnique({
+        where: { key: apiKey }
+      });
+
+      if (keyRecord && keyRecord.isActive) {
+        // Update last used
+        await prisma.apiKey.update({
+          where: { id: keyRecord.id },
+          data: { lastUsedAt: new Date() }
+        });
+
+        // Assign a "system" user role for the agent
+        req.user = {
+          id: 'system-agent',
+          username: keyRecord.name,
+          email: 'agent@system.local',
+          role: 'ADMIN' // Agents need high privileges to update job status
+        };
+        return next();
+      }
+    }
+
+    // 2. Check for JWT (User Token)
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {

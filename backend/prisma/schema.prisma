@@ -512,6 +512,7 @@ model KitchenStation {
   // Relations
   tickets     KitchenTicket[]
   products    ProductKitchenStation[]
+  printJobs   PrintJob[]
 
   @@map("kitchen_stations")
 }
@@ -541,4 +542,63 @@ model KitchenTicket {
   notes            String?
 
   @@map("kitchen_tickets")
+}
+
+// ==================== PRINT QUEUE (Cloud/On-Premise) ====================
+
+enum PrintJobStatus {
+  PENDING    // Waiting to be picked up by agent
+  PRINTING   // Agent is processing
+  COMPLETED  // Successfully printed
+  FAILED     // Print failed
+  CANCELLED  // Job cancelled
+}
+
+enum PrinterType {
+  THERMAL    // ESC/POS thermal printer
+  REGULAR    // Regular network printer (PDF)
+}
+
+model PrintJob {
+  id               String         @id @default(uuid())
+  kitchenStationId String
+  kitchenStation   KitchenStation @relation(fields: [kitchenStationId], references: [id])
+  
+  // Print data
+  printerIp        String         // Target printer IP
+  printerType      PrinterType    @default(THERMAL)
+  documentData     Json           // Order/ticket data to print
+  pdfUrl           String?        // Generated PDF URL (for regular printers)
+  
+  // Status tracking
+  status           PrintJobStatus @default(PENDING)
+  attempts         Int            @default(0)
+  maxAttempts      Int            @default(3)
+  
+  // Metadata
+  priority         Int            @default(0) // Higher = more urgent
+  createdAt        DateTime       @default(now())
+  pickedUpAt       DateTime?      // When agent picked up the job
+  completedAt      DateTime?      // When successfully printed
+  failedAt         DateTime?      // When failed
+  errorMessage     String?        // Error details if failed
+  
+  // Agent tracking
+  agentId          String?        // ID of agent that picked up job
+  
+  @@index([status, createdAt])
+  @@index([kitchenStationId])
+  @@map("print_jobs")
+}
+
+model ApiKey {
+  id          String    @id @default(uuid())
+  key         String    @unique
+  name        String
+  description String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  lastUsedAt  DateTime?
+  
+  @@map("api_keys")
 }

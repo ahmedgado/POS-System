@@ -26,28 +26,47 @@ import { BackendStatusComponent } from '../components/backend-status.component';
           </button>
         </div>
         <nav style="padding:16px 12px;overflow-y:auto;flex:1;">
-          <a routerLink="/app/dashboard" routerLinkActive="active" style="display:block;padding:12px 16px;border-radius:10px;color:#f8f6f4;text-decoration:none;margin-bottom:6px;font-weight:500;font-size:15px;transition:all 0.2s;">🏠 {{ t('nav.dashboard') }}</a>
-          <a routerLink="/app/pos" routerLinkActive="active" style="display:block;padding:12px 16px;border-radius:10px;color:#f8f6f4;text-decoration:none;margin-bottom:6px;font-weight:500;font-size:15px;transition:all 0.2s;">🛒 {{ t('nav.pos') }}</a>
-          <a routerLink="/app/sales" routerLinkActive="active" style="display:block;padding:12px 16px;border-radius:10px;color:#f8f6f4;text-decoration:none;margin-bottom:6px;font-weight:500;font-size:15px;transition:all 0.2s;">📊 {{ t('nav.sales') }}</a>
-          <a routerLink="/app/shifts" routerLinkActive="active" style="display:block;padding:12px 16px;border-radius:10px;color:#f8f6f4;text-decoration:none;margin-bottom:6px;font-weight:500;font-size:15px;transition:all 0.2s;">🕐 {{ t('nav.shifts') }}</a>
-          <a routerLink="/app/customers" routerLinkActive="active" style="display:block;padding:12px 16px;border-radius:10px;color:#f8f6f4;text-decoration:none;margin-bottom:6px;font-weight:500;font-size:15px;transition:all 0.2s;">👥 {{ t('nav.customers') }}</a>
-          <a routerLink="/app/categories" routerLinkActive="active" style="display:block;padding:12px 16px;border-radius:10px;color:#f8f6f4;text-decoration:none;margin-bottom:6px;font-weight:500;font-size:15px;transition:all 0.2s;">🏷️ {{ t('nav.categories') }}</a>
-          <a routerLink="/app/products" routerLinkActive="active" style="display:block;padding:12px 16px;border-radius:10px;color:#f8f6f4;text-decoration:none;margin-bottom:6px;font-weight:500;font-size:15px;transition:all 0.2s;">📦 {{ t('nav.products') }}</a>
-          <div style="margin:20px 0 12px 0;padding:0 16px;">
+          <!-- Dashboard - Admin, Owner, Manager only -->
+          <a *ngIf="hasAccess(['ADMIN', 'OWNER', 'MANAGER'])" routerLink="/app/dashboard" routerLinkActive="active" style="display:block;padding:12px 16px;border-radius:10px;color:#f8f6f4;text-decoration:none;margin-bottom:6px;font-weight:500;font-size:15px;transition:all 0.2s;">🏠 {{ t('nav.dashboard') }}</a>
+          
+          <!-- POS - Cashier, Waiter, Manager, Admin -->
+          <a *ngIf="hasAccess(['ADMIN', 'MANAGER', 'CASHIER', 'WAITER'])" routerLink="/app/pos" routerLinkActive="active" style="display:block;padding:12px 16px;border-radius:10px;color:#f8f6f4;text-decoration:none;margin-bottom:6px;font-weight:500;font-size:15px;transition:all 0.2s;">🛒 {{ t('nav.pos') }}</a>
+          
+          <!-- Sales - Cashier, Manager, Admin -->
+          <a *ngIf="hasAccess(['ADMIN', 'MANAGER', 'CASHIER'])" routerLink="/app/sales" routerLinkActive="active" style="display:block;padding:12px 16px;border-radius:10px;color:#f8f6f4;text-decoration:none;margin-bottom:6px;font-weight:500;font-size:15px;transition:all 0.2s;">📊 {{ t('nav.sales') }}</a>
+          
+          <!-- Shifts - Cashier, Manager, Admin -->
+          <a *ngIf="hasAccess(['ADMIN', 'MANAGER', 'CASHIER'])" routerLink="/app/shifts" routerLinkActive="active" style="display:block;padding:12px 16px;border-radius:10px;color:#f8f6f4;text-decoration:none;margin-bottom:6px;font-weight:500;font-size:15px;transition:all 0.2s;">🕐 {{ t('nav.shifts') }}</a>
+          
+          <!-- Customers - All except Kitchen Staff -->
+          <a *ngIf="hasAccess(['ADMIN', 'MANAGER', 'CASHIER', 'WAITER', 'INVENTORY_CLERK'])" routerLink="/app/customers" routerLinkActive="active" style="display:block;padding:12px 16px;border-radius:10px;color:#f8f6f4;text-decoration:none;margin-bottom:6px;font-weight:500;font-size:15px;transition:all 0.2s;">👥 {{ t('nav.customers') }}</a>
+          
+          <!-- Categories - Admin, Manager, Inventory Clerk -->
+          <a *ngIf="hasAccess(['ADMIN', 'MANAGER', 'INVENTORY_CLERK'])" routerLink="/app/categories" routerLinkActive="active" style="display:block;padding:12px 16px;border-radius:10px;color:#f8f6f4;text-decoration:none;margin-bottom:6px;font-weight:500;font-size:15px;transition:all 0.2s;">🏷️ {{ t('nav.categories') }}</a>
+          
+          <!-- Products - Admin, Manager, Inventory Clerk, Cashier (view only) -->
+          <a *ngIf="hasAccess(['ADMIN', 'MANAGER', 'INVENTORY_CLERK', 'CASHIER'])" routerLink="/app/products" routerLinkActive="active" style="display:block;padding:12px 16px;border-radius:10px;color:#f8f6f4;text-decoration:none;margin-bottom:6px;font-weight:500;font-size:15px;transition:all 0.2s;">📦 {{ t('nav.products') }}</a>
+          
+          <!-- Restaurant Section - Admin, Manager, Waiter -->
+          <div *ngIf="hasAccess(['ADMIN', 'MANAGER', 'WAITER'])" style="margin:20px 0 12px 0;padding:0 16px;">
             <div style="font-size:11px;font-weight:700;color:#d4af37;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Restaurant</div>
           </div>
-          <a routerLink="/app/restaurant/floors" routerLinkActive="active" style="display:block;padding:12px 16px;border-radius:10px;color:#f8f6f4;text-decoration:none;margin-bottom:6px;font-weight:500;font-size:15px;transition:all 0.2s;">🏢 Floors</a>
-          <a routerLink="/app/restaurant/tables" routerLinkActive="active" style="display:block;padding:12px 16px;border-radius:10px;color:#f8f6f4;text-decoration:none;margin-bottom:6px;font-weight:500;font-size:15px;transition:all 0.2s;">🪑 Tables</a>
-          <a routerLink="/app/restaurant/modifiers" routerLinkActive="active" style="display:block;padding:12px 16px;border-radius:10px;color:#f8f6f4;text-decoration:none;margin-bottom:6px;font-weight:500;font-size:15px;transition:all 0.2s;">⚙️ Modifiers</a>
-          <a routerLink="/app/restaurant/product-modifiers" routerLinkActive="active" style="display:block;padding:12px 16px;border-radius:10px;color:#f8f6f4;text-decoration:none;margin-bottom:6px;font-weight:500;font-size:15px;transition:all 0.2s;">🔗 Product Modifiers</a>
-          <a routerLink="/app/restaurant/product-stations" routerLinkActive="active" style="display:block;padding:12px 16px;border-radius:10px;color:#f8f6f4;text-decoration:none;margin-bottom:6px;font-weight:500;font-size:15px;transition:all 0.2s;">🍳 Station Assignment</a>
-          <a routerLink="/app/kds" routerLinkActive="active" style="display:block;padding:12px 16px;border-radius:10px;color:#f8f6f4;text-decoration:none;margin-bottom:6px;font-weight:500;font-size:15px;transition:all 0.2s;">👨‍🍳 Kitchen Display</a>
-          <div style="margin:20px 0 12px 0;padding:0 16px;">
+          <a *ngIf="hasAccess(['ADMIN', 'MANAGER'])" routerLink="/app/restaurant/floors" routerLinkActive="active" style="display:block;padding:12px 16px;border-radius:10px;color:#f8f6f4;text-decoration:none;margin-bottom:6px;font-weight:500;font-size:15px;transition:all 0.2s;">🏢 Floors</a>
+          <a *ngIf="hasAccess(['ADMIN', 'MANAGER', 'WAITER'])" routerLink="/app/restaurant/tables" routerLinkActive="active" style="display:block;padding:12px 16px;border-radius:10px;color:#f8f6f4;text-decoration:none;margin-bottom:6px;font-weight:500;font-size:15px;transition:all 0.2s;">🪑 Tables</a>
+          <a *ngIf="hasAccess(['ADMIN', 'MANAGER'])" routerLink="/app/restaurant/modifiers" routerLinkActive="active" style="display:block;padding:12px 16px;border-radius:10px;color:#f8f6f4;text-decoration:none;margin-bottom:6px;font-weight:500;font-size:15px;transition:all 0.2s;">⚙️ Modifiers</a>
+          <a *ngIf="hasAccess(['ADMIN', 'MANAGER'])" routerLink="/app/restaurant/product-modifiers" routerLinkActive="active" style="display:block;padding:12px 16px;border-radius:10px;color:#f8f6f4;text-decoration:none;margin-bottom:6px;font-weight:500;font-size:15px;transition:all 0.2s;">🔗 Product Modifiers</a>
+          <a *ngIf="hasAccess(['ADMIN', 'MANAGER'])" routerLink="/app/restaurant/product-stations" routerLinkActive="active" style="display:block;padding:12px 16px;border-radius:10px;color:#f8f6f4;text-decoration:none;margin-bottom:6px;font-weight:500;font-size:15px;transition:all 0.2s;">🍳 Station Assignment</a>
+          
+          <!-- Kitchen Display - Kitchen Staff, Manager, Admin -->
+          <a *ngIf="hasAccess(['ADMIN', 'MANAGER', 'KITCHEN_STAFF'])" routerLink="/app/kds" routerLinkActive="active" style="display:block;padding:12px 16px;border-radius:10px;color:#f8f6f4;text-decoration:none;margin-bottom:6px;font-weight:500;font-size:15px;transition:all 0.2s;">👨‍🍳 Kitchen Display</a>
+          
+          <!-- System Section - Admin, Manager, Owner -->
+          <div *ngIf="hasAccess(['ADMIN', 'MANAGER', 'OWNER'])" style="margin:20px 0 12px 0;padding:0 16px;">
             <div style="font-size:11px;font-weight:700;color:#d4af37;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">System</div>
           </div>
-          <a routerLink="/app/users" routerLinkActive="active" style="display:block;padding:12px 16px;border-radius:10px;color:#f8f6f4;text-decoration:none;margin-bottom:6px;font-weight:500;font-size:15px;transition:all 0.2s;">👤 {{ t('nav.users') }}</a>
-          <a routerLink="/app/reports" routerLinkActive="active" style="display:block;padding:12px 16px;border-radius:10px;color:#f8f6f4;text-decoration:none;margin-bottom:6px;font-weight:500;font-size:15px;transition:all 0.2s;">📈 {{ t('nav.reports') }}</a>
-          <a routerLink="/app/settings" routerLinkActive="active" style="display:block;padding:12px 16px;border-radius:10px;color:#f8f6f4;text-decoration:none;margin-bottom:6px;font-weight:500;font-size:15px;transition:all 0.2s;">⚙️ {{ t('nav.settings') }}</a>
+          <a *ngIf="hasAccess(['ADMIN', 'MANAGER'])" routerLink="/app/users" routerLinkActive="active" style="display:block;padding:12px 16px;border-radius:10px;color:#f8f6f4;text-decoration:none;margin-bottom:6px;font-weight:500;font-size:15px;transition:all 0.2s;">👤 {{ t('nav.users') }}</a>
+          <a *ngIf="hasAccess(['ADMIN', 'MANAGER', 'OWNER'])" routerLink="/app/reports" routerLinkActive="active" style="display:block;padding:12px 16px;border-radius:10px;color:#f8f6f4;text-decoration:none;margin-bottom:6px;font-weight:500;font-size:15px;transition:all 0.2s;">📈 {{ t('nav.reports') }}</a>
+          <a *ngIf="hasAccess(['ADMIN', 'MANAGER'])" routerLink="/app/settings" routerLinkActive="active" style="display:block;padding:12px 16px;border-radius:10px;color:#f8f6f4;text-decoration:none;margin-bottom:6px;font-weight:500;font-size:15px;transition:all 0.2s;">⚙️ {{ t('nav.settings') }}</a>
         </nav>
         <div style="padding:20px;border-top:1px solid #3a3a3a;">
           <button (click)="logout()" style="width:100%;background:linear-gradient(135deg, #d4af37 0%, #c19a2e 100%);color:#ffffff;border:none;padding:14px;border-radius:10px;font-weight:700;cursor:pointer;font-size:15px;box-shadow:0 4px 12px rgba(212,175,55,0.3);transition:all 0.2s;"
@@ -73,18 +92,29 @@ import { BackendStatusComponent } from '../components/backend-status.component';
 })
 export class MainLayoutComponent implements OnInit {
   currentLang: Language = 'en';
+  userRole: string = '';
 
   constructor(
     private auth: AuthService,
     private router: Router,
     private translation: TranslationService
-  ) {}
+  ) { }
 
   ngOnInit() {
     this.currentLang = this.translation.getCurrentLanguage();
     this.translation.language$.subscribe(lang => {
       this.currentLang = lang;
     });
+
+    // Get current user role
+    const currentUser = this.auth.currentUser;
+    if (currentUser) {
+      this.userRole = currentUser.role;
+    }
+  }
+
+  hasAccess(allowedRoles: string[]): boolean {
+    return allowedRoles.includes(this.userRole);
   }
 
   toggleLanguage() {

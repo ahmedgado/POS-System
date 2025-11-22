@@ -64,8 +64,11 @@ import { AuthService } from '../services/auth.service';
                 style="width:100%;padding:10px 12px;border:2px solid #ddd;border-radius:8px;font-size:14px;outline:none;">
                 <option value="">All Roles</option>
                 <option value="ADMIN">Admin</option>
+                <option value="OWNER">Owner</option>
                 <option value="MANAGER">Manager</option>
                 <option value="CASHIER">Cashier</option>
+                <option value="WAITER">Waiter</option>
+                <option value="KITCHEN_STAFF">Kitchen Staff</option>
                 <option value="INVENTORY_CLERK">Inventory Clerk</option>
               </select>
             </div>
@@ -242,8 +245,11 @@ import { AuthService } from '../services/auth.service';
               required
               style="width:100%;padding:12px;border:2px solid #ddd;border-radius:8px;font-size:14px;outline:none;">
               <option value="ADMIN">Admin</option>
+              <option value="OWNER">Owner</option>
               <option value="MANAGER">Manager</option>
               <option value="CASHIER">Cashier</option>
+              <option value="WAITER">Waiter</option>
+              <option value="KITCHEN_STAFF">Kitchen Staff</option>
               <option value="INVENTORY_CLERK">Inventory Clerk</option>
             </select>
           </div>
@@ -424,8 +430,11 @@ export class UsersComponent implements OnInit {
   getRoleLabel(role: string): string {
     const labels: any = {
       'ADMIN': 'Admin',
+      'OWNER': 'Owner',
       'MANAGER': 'Manager',
       'CASHIER': 'Cashier',
+      'WAITER': 'Waiter',
+      'KITCHEN_STAFF': 'Kitchen Staff',
       'INVENTORY_CLERK': 'Inventory Clerk'
     };
     return labels[role] || role;
@@ -434,8 +443,11 @@ export class UsersComponent implements OnInit {
   getRoleBadgeColor(role: string): string {
     const colors: any = {
       'ADMIN': '#c4a75b',
+      'OWNER': '#9b59b6',
       'MANAGER': '#007bff',
       'CASHIER': '#28a745',
+      'WAITER': '#e74c3c',
+      'KITCHEN_STAFF': '#e67e22',
       'INVENTORY_CLERK': '#ffc107'
     };
     return colors[role] || '#6c757d';

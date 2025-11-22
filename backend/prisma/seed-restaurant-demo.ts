@@ -245,42 +245,134 @@ async function main() {
   await prisma.user.deleteMany({});
   console.log('✓ Cleared ALL data from database\n');
 
-  // Create Users (Waiters, Chefs, Managers)
-  console.log('👥 Creating restaurant staff...');
-  const hashedPassword = await bcrypt.hash('password123', 10);
+  // Create Users (All Roles)
+  console.log('👥 Creating restaurant staff (All Roles)...');
+  const hashedPassword = await bcrypt.hash('password123', 12);
 
-  const adminUser = await prisma.user.upsert({
+  // 1. ADMIN
+  await prisma.user.upsert({
     where: { email: 'admin@restaurant.com' },
-    update: {},
+    update: { password: hashedPassword, role: 'ADMIN', status: 'ACTIVE' },
     create: {
       username: 'admin',
       email: 'admin@restaurant.com',
       password: hashedPassword,
-      firstName: 'Admin',
-      lastName: 'Manager',
+      firstName: 'System',
+      lastName: 'Admin',
       role: 'ADMIN',
       status: 'ACTIVE'
     }
   });
 
-  const waiters = [];
-  for (let i = 1; i <= 5; i++) {
-    const waiter = await prisma.user.upsert({
+  // 2. OWNER
+  await prisma.user.upsert({
+    where: { email: 'owner@restaurant.com' },
+    update: { password: hashedPassword, role: 'OWNER', status: 'ACTIVE' },
+    create: {
+      username: 'owner',
+      email: 'owner@restaurant.com',
+      password: hashedPassword,
+      firstName: 'Restaurant',
+      lastName: 'Owner',
+      role: 'OWNER',
+      status: 'ACTIVE'
+    }
+  });
+
+  // 3. MANAGER
+  await prisma.user.upsert({
+    where: { email: 'manager@restaurant.com' },
+    update: { password: hashedPassword, role: 'MANAGER', status: 'ACTIVE' },
+    create: {
+      username: 'manager',
+      email: 'manager@restaurant.com',
+      password: hashedPassword,
+      firstName: 'Restaurant',
+      lastName: 'Manager',
+      role: 'MANAGER',
+      status: 'ACTIVE'
+    }
+  });
+
+  // 4. CASHIER
+  await prisma.user.upsert({
+    where: { email: 'cashier@restaurant.com' },
+    update: { password: hashedPassword, role: 'CASHIER', status: 'ACTIVE' },
+    create: {
+      username: 'cashier',
+      email: 'cashier@restaurant.com',
+      password: hashedPassword,
+      firstName: 'Main',
+      lastName: 'Cashier',
+      role: 'CASHIER',
+      status: 'ACTIVE'
+    }
+  });
+
+  // 5. WAITER
+  const waiter = await prisma.user.upsert({
+    where: { email: 'waiter@restaurant.com' },
+    update: { password: hashedPassword, role: 'WAITER', status: 'ACTIVE' },
+    create: {
+      username: 'waiter',
+      email: 'waiter@restaurant.com',
+      password: hashedPassword,
+      firstName: 'Head',
+      lastName: 'Waiter',
+      role: 'WAITER',
+      status: 'ACTIVE'
+    }
+  });
+
+  // 6. KITCHEN STAFF
+  await prisma.user.upsert({
+    where: { email: 'kitchen@restaurant.com' },
+    update: { password: hashedPassword, role: 'KITCHEN_STAFF', status: 'ACTIVE' },
+    create: {
+      username: 'kitchen',
+      email: 'kitchen@restaurant.com',
+      password: hashedPassword,
+      firstName: 'Head',
+      lastName: 'Chef',
+      role: 'KITCHEN_STAFF',
+      status: 'ACTIVE'
+    }
+  });
+
+  // 7. INVENTORY CLERK
+  await prisma.user.upsert({
+    where: { email: 'inventory@restaurant.com' },
+    update: { password: hashedPassword, role: 'INVENTORY_CLERK', status: 'ACTIVE' },
+    create: {
+      username: 'inventory',
+      email: 'inventory@restaurant.com',
+      password: hashedPassword,
+      firstName: 'Inventory',
+      lastName: 'Clerk',
+      role: 'INVENTORY_CLERK',
+      status: 'ACTIVE'
+    }
+  });
+
+  // Additional Waiters for demo
+  const waiters = [waiter];
+  for (let i = 1; i <= 4; i++) {
+    const w = await prisma.user.upsert({
       where: { email: `waiter${i}@restaurant.com` },
-      update: {},
+      update: { password: hashedPassword, role: 'WAITER', status: 'ACTIVE' },
       create: {
         username: `waiter${i}`,
         email: `waiter${i}@restaurant.com`,
         password: hashedPassword,
         firstName: `Waiter`,
         lastName: `${i}`,
-        role: 'CASHIER',
+        role: 'WAITER',
         status: 'ACTIVE'
       }
     });
-    waiters.push(waiter);
+    waiters.push(w);
   }
-  console.log(`✓ Created ${waiters.length + 1} staff members\n`);
+  console.log(`✓ Created all 7 user roles + extra waiters\n`);
 
   // Create Floors
   console.log('🏢 Creating restaurant floors...');
@@ -623,7 +715,7 @@ async function main() {
 
     // Beverages (Coffee, Tea, Juice, Smoothie) get size modifiers
     if (product.name.includes('Coffee') || product.name.includes('Tea') || product.name.includes('Latte') ||
-        product.name.includes('Cappuccino') || product.name.includes('Juice') || product.name.includes('Smoothie')) {
+      product.name.includes('Cappuccino') || product.name.includes('Juice') || product.name.includes('Smoothie')) {
       await prisma.productModifierGroup.create({
         data: { productId: product.id, modifierGroupId: sizeGroup.id }
       });
@@ -632,7 +724,7 @@ async function main() {
 
     // Grilled items get cooking style modifiers
     if (product.name.includes('Steak') || product.name.includes('Beef') || product.name.includes('Lamb') ||
-        product.name.includes('Chops')) {
+      product.name.includes('Chops')) {
       await prisma.productModifierGroup.create({
         data: { productId: product.id, modifierGroupId: cookingGroup.id }
       });
@@ -641,7 +733,7 @@ async function main() {
 
     // Spicy items get spice level modifiers
     if (product.name.includes('Chicken') || product.name.includes('Grilled') || product.name.includes('Spicy') ||
-        product.name.includes('Kafta') || product.name.includes('Tawook')) {
+      product.name.includes('Kafta') || product.name.includes('Tawook')) {
       await prisma.productModifierGroup.create({
         data: { productId: product.id, modifierGroupId: spiceLevelGroup.id }
       });
@@ -773,12 +865,16 @@ async function main() {
   console.log(`✓ Customers: ${customers.length}`);
   console.log(`✓ Orders: 50`);
   console.log('\n');
-  console.log('Login Credentials:');
+  console.log('Login Credentials (Password for all: password123):');
   console.log('═══════════════════════════════════════════════');
-  console.log('Email: admin@restaurant.com');
-  console.log('Password: password123');
-  console.log('\nWaiter accounts: waiter1@restaurant.com through waiter5@restaurant.com');
-  console.log('Password: password123');
+  console.log('1. ADMIN:           admin@restaurant.com');
+  console.log('2. OWNER:           owner@restaurant.com');
+  console.log('3. MANAGER:         manager@restaurant.com');
+  console.log('4. CASHIER:         cashier@restaurant.com');
+  console.log('5. WAITER:          waiter@restaurant.com');
+  console.log('6. KITCHEN STAFF:   kitchen@restaurant.com');
+  console.log('7. INVENTORY CLERK: inventory@restaurant.com');
+  console.log('\nExtra Waiters: waiter1@restaurant.com - waiter4@restaurant.com');
   console.log('\n');
 }
 

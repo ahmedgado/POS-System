@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { Product, ProductService } from '../services/product.service';
 import { Category, CategoryService } from '../services/category.service';
+import { AuthService } from '../services/auth.service';
 import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
 import { PaginationComponent } from '../components/pagination.component';
 
@@ -22,7 +23,7 @@ import { PaginationComponent } from '../components/pagination.component';
               {{ selectedProducts.size }} {{ 'products.selected' | translate }}
             </span>
           </div>
-          <div style="display:flex;gap:12px;">
+          <div *ngIf="canEdit()" style="display:flex;gap:12px;">
             <button *ngIf="selectedProducts.size > 0" (click)="bulkInactive()" [disabled]="processing" style="background:#fff;color:#FFA500;border:2px solid #FFA500;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;">
               <span style="font-size:18px;">⏸️</span> {{ processing ? ('products.deactivating' | translate) : ('products.bulkInactive' | translate) }}
             </button>
@@ -85,7 +86,7 @@ import { PaginationComponent } from '../components/pagination.component';
             <table style="width:100%;border-collapse:collapse;">
               <thead style="background:#F8F9FA;">
                 <tr>
-                  <th style="text-align:center;padding:16px;font-weight:600;color:#333;width:50px;">
+                  <th *ngIf="canEdit()" style="text-align:center;padding:16px;font-weight:600;color:#333;width:50px;">
                     <input type="checkbox" [checked]="isAllSelected()" (change)="toggleSelectAll($event)" style="width:18px;height:18px;cursor:pointer;">
                   </th>
                   <th style="text-align:left;padding:16px;font-weight:600;color:#333;width:50px;">#</th>
@@ -96,7 +97,7 @@ import { PaginationComponent } from '../components/pagination.component';
                   <th style="text-align:right;padding:16px;font-weight:600;color:#333;width:100px;">{{ 'products.price' | translate }}</th>
                   <th style="text-align:center;padding:16px;font-weight:600;color:#333;width:80px;">{{ 'products.stock' | translate }}</th>
                   <th style="text-align:center;padding:16px;font-weight:600;color:#333;width:120px;">{{ 'products.status' | translate }}</th>
-                  <th style="text-align:center;padding:16px;font-weight:600;color:#333;width:180px;">{{ 'products.actions' | translate }}</th>
+                  <th *ngIf="canEdit()" style="text-align:center;padding:16px;font-weight:600;color:#333;width:180px;">{{ 'products.actions' | translate }}</th>
                 </tr>
               </thead>
             </table>
@@ -108,7 +109,7 @@ import { PaginationComponent } from '../components/pagination.component';
               <tbody>
                 <tr *ngFor="let p of products; let i = index" style="border-top:1px solid #F0F0F0;transition:background 0.2s;"
                     onmouseover="this.style.background='#F8F9FA'" onmouseout="this.style.background='#fff'">
-                  <td style="padding:16px;text-align:center;width:50px;">
+                  <td *ngIf="canEdit()" style="padding:16px;text-align:center;width:50px;">
                     <input type="checkbox" [checked]="isProductSelected(p.id)" (change)="toggleSelectProduct(p.id)" style="width:18px;height:18px;cursor:pointer;">
                   </td>
                   <td style="padding:16px;color:#666;width:50px;">{{ (currentPage - 1) * pageSize + i + 1 }}</td>
@@ -145,7 +146,7 @@ import { PaginationComponent } from '../components/pagination.component';
                       {{ 'products.inStock' | translate }}
                     </span>
                   </td>
-                  <td style="padding:16px;text-align:center;width:180px;">
+                  <td *ngIf="canEdit()" style="padding:16px;text-align:center;width:180px;">
                     <button (click)="openEditModal(p)" style="background:#DC3545;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;margin-right:6px;font-size:12px;">
                       {{ 'products.edit' | translate }}
                     </button>
@@ -167,7 +168,7 @@ import { PaginationComponent } from '../components/pagination.component';
             <div *ngIf="!loading && products.length === 0 && !error" style="text-align:center;padding:80px;">
               <div style="font-size:64px;margin-bottom:16px;">📦</div>
               <h3 style="color:#333;margin-bottom:8px;">{{ 'common.noData' | translate }}</h3>
-              <button (click)="openAddModal()" style="background:#DC3545;color:#fff;border:none;padding:12px 24px;border-radius:8px;font-weight:600;cursor:pointer;">
+              <button *ngIf="canEdit()" (click)="openAddModal()" style="background:#DC3545;color:#fff;border:none;padding:12px 24px;border-radius:8px;font-weight:600;cursor:pointer;">
                 {{ 'products.addProduct' | translate }}
               </button>
             </div>
@@ -328,12 +329,21 @@ export class ProductsComponent implements OnInit {
 
   constructor(
     private productService: ProductService,
-    private categoryService: CategoryService
-  ) {}
+    private categoryService: CategoryService,
+    private authService: AuthService
+  ) { }
 
   ngOnInit(): void {
     this.loadCategories();
     this.loadProducts();
+  }
+
+  canEdit(): boolean {
+    const user = this.authService.currentUser;
+    const role = user?.role;
+    // Only ADMIN, MANAGER, and INVENTORY_CLERK can edit products
+    // CASHIER can only view
+    return role === 'ADMIN' || role === 'MANAGER' || role === 'INVENTORY_CLERK';
   }
 
   loadCategories() {

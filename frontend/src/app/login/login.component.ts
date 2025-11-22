@@ -78,12 +78,43 @@ export class LoginComponent {
   loading = false;
   error = '';
 
-  constructor(private auth: AuthService, private router: Router) {}
+  constructor(private auth: AuthService, private router: Router) { }
 
   onSubmit() {
     this.loading = true; this.error = '';
     this.auth.login(this.email, this.password).subscribe({
-      next: () => this.router.navigateByUrl('/app/dashboard'),
+      next: () => {
+        // Get user role and redirect accordingly
+        const user = this.auth.currentUser;
+        const role = user?.role;
+
+        let redirectUrl = '/app/dashboard'; // Default
+
+        switch (role) {
+          case 'CASHIER':
+            redirectUrl = '/app/pos'; // Cashiers go to POS
+            break;
+          case 'WAITER':
+            redirectUrl = '/app/restaurant/tables'; // Waiters go to Tables
+            break;
+          case 'KITCHEN_STAFF':
+            redirectUrl = '/app/kds'; // Kitchen staff go to Kitchen Display
+            break;
+          case 'INVENTORY_CLERK':
+            redirectUrl = '/app/products'; // Inventory clerks go to Products
+            break;
+          case 'OWNER':
+            redirectUrl = '/app/reports'; // Owners go to Reports
+            break;
+          case 'MANAGER':
+          case 'ADMIN':
+          default:
+            redirectUrl = '/app/dashboard'; // Managers and Admins go to Dashboard
+            break;
+        }
+
+        this.router.navigateByUrl(redirectUrl);
+      },
       error: (err) => {
         this.error = err?.error?.message || 'Login failed';
         this.loading = false;

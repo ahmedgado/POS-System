@@ -20,6 +20,8 @@ import { ProductModifiersComponent } from './modifiers/product-modifiers.compone
 import { KdsComponent } from './kds/kds.component';
 import { ProductStationsComponent } from './restaurant/product-stations.component';
 import { RestaurantModule } from './restaurant/restaurant.module';
+import { IngredientsComponent } from './ingredients/ingredients.component';
+import { RecipesComponent } from './recipes/recipes.component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -45,10 +47,11 @@ const routes: Routes = [
       { path: 'restaurant/modifiers', component: ModifiersComponent },
       { path: 'restaurant/product-modifiers', component: ProductModifiersComponent },
       { path: 'restaurant/product-stations', component: ProductStationsComponent },
-      { path: 'kds', component: KdsComponent }
+      { path: 'kds', component: KdsComponent },
+      { path: 'ingredients', component: IngredientsComponent },
+      { path: 'recipes', component: RecipesComponent }
     ]
   },
-  { path: '**', redirectTo: 'login' }
 ];
 
 @NgModule({

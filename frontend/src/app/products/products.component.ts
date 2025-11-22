@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
@@ -97,7 +98,7 @@ import { PaginationComponent } from '../components/pagination.component';
                   <th style="text-align:right;padding:16px;font-weight:600;color:#333;width:100px;">{{ 'products.price' | translate }}</th>
                   <th style="text-align:center;padding:16px;font-weight:600;color:#333;width:80px;">{{ 'products.stock' | translate }}</th>
                   <th style="text-align:center;padding:16px;font-weight:600;color:#333;width:120px;">{{ 'products.status' | translate }}</th>
-                  <th *ngIf="canEdit()" style="text-align:center;padding:16px;font-weight:600;color:#333;width:180px;">{{ 'products.actions' | translate }}</th>
+                  <th *ngIf="canEdit()" style="text-align:center;padding:16px;font-weight:600;color:#333;width:200px;">{{ 'products.actions' | translate }}</th>
                 </tr>
               </thead>
             </table>
@@ -146,13 +147,18 @@ import { PaginationComponent } from '../components/pagination.component';
                       {{ 'products.inStock' | translate }}
                     </span>
                   </td>
-                  <td *ngIf="canEdit()" style="padding:16px;text-align:center;width:180px;">
-                    <button (click)="openEditModal(p)" style="background:#DC3545;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;margin-right:6px;font-size:12px;">
-                      {{ 'products.edit' | translate }}
-                    </button>
-                    <button (click)="deleteProduct(p.id)" style="background:#6C757D;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;">
-                      {{ 'products.delete' | translate }}
-                    </button>
+                  <td *ngIf="canEdit()" style="padding:16px;text-align:center;width:200px;">
+                    <div style="display:flex;gap:6px;justify-content:center;">
+                      <button (click)="openEditModal(p)" style="background:#DC3545;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;white-space:nowrap;">
+                        ✏️ {{ 'products.edit' | translate }}
+                      </button>
+                      <button (click)="manageRecipe(p)" style="background:#FFA500;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;white-space:nowrap;">
+                        📜 Recipe
+                      </button>
+                      <button (click)="deleteProduct(p.id)" style="background:#6C757D;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;white-space:nowrap;">
+                        🗑️ {{ 'products.delete' | translate }}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               </tbody>
@@ -330,7 +336,8 @@ export class ProductsComponent implements OnInit {
   constructor(
     private productService: ProductService,
     private categoryService: CategoryService,
-    private authService: AuthService
+    private authService: AuthService,
+    private router: Router
   ) { }
 
   ngOnInit(): void {
@@ -344,6 +351,10 @@ export class ProductsComponent implements OnInit {
     // Only ADMIN, MANAGER, and INVENTORY_CLERK can edit products
     // CASHIER can only view
     return role === 'ADMIN' || role === 'MANAGER' || role === 'INVENTORY_CLERK';
+  }
+
+  manageRecipe(product: Product) {
+    this.router.navigate(['/app/recipes'], { queryParams: { productId: product.id } });
   }
 
   loadCategories() {

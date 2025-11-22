@@ -47,6 +47,9 @@ import { BackendStatusComponent } from '../components/backend-status.component';
           <!-- Products - Admin, Manager, Inventory Clerk, Cashier (view only) -->
           <a *ngIf="hasAccess(['ADMIN', 'MANAGER', 'INVENTORY_CLERK', 'CASHIER'])" routerLink="/app/products" routerLinkActive="active" style="display:block;padding:12px 16px;border-radius:10px;color:#f8f6f4;text-decoration:none;margin-bottom:6px;font-weight:500;font-size:15px;transition:all 0.2s;">📦 {{ t('nav.products') }}</a>
           
+          <!-- Ingredients - Admin, Manager, Inventory Clerk -->
+          <a *ngIf="hasAccess(['ADMIN', 'MANAGER', 'INVENTORY_CLERK'])" routerLink="/app/ingredients" routerLinkActive="active" style="display:block;padding:12px 16px;border-radius:10px;color:#f8f6f4;text-decoration:none;margin-bottom:6px;font-weight:500;font-size:15px;transition:all 0.2s;">🥕 Ingredients</a>
+          
           <!-- Restaurant Section - Admin, Manager, Waiter -->
           <div *ngIf="hasAccess(['ADMIN', 'MANAGER', 'WAITER'])" style="margin:20px 0 12px 0;padding:0 16px;">
             <div style="font-size:11px;font-weight:700;color:#d4af37;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Restaurant</div>

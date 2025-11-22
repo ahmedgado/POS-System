@@ -18,6 +18,7 @@ export class SaleController {
       const saleNumber = `SALE-${new Date().getFullYear()}${String(saleCount + 1).padStart(6, '0')}`;
 
       // Create sale with items
+      // @ts-ignore
       const sale = await prisma.$transaction(async (tx: any) => {
         // Create sale
         const newSale = await tx.sale.create({
@@ -44,6 +45,7 @@ export class SaleController {
         });
 
         // Create sale items and update stock
+        // @ts-ignore
         for (const item of items) {
           const saleItem = await tx.saleItem.create({
             data: {
@@ -57,15 +59,35 @@ export class SaleController {
             }
           });
 
-          // Update product stock
-          await tx.product.update({
-            where: { id: item.productId },
-            data: {
-              stock: {
-                decrement: item.quantity
-              }
-            }
+          // Check for recipe
+          const recipe = await tx.recipe.findUnique({
+            where: { productId: item.productId },
+            include: { items: true }
           });
+
+          if (recipe) {
+            // Deduct ingredients based on recipe
+            for (const recipeItem of recipe.items) {
+              await tx.ingredient.update({
+                where: { id: recipeItem.ingredientId },
+                data: {
+                  stock: {
+                    decrement: Number(recipeItem.quantity) * item.quantity
+                  }
+                }
+              });
+            }
+          } else {
+            // No recipe, deduct product stock directly
+            await tx.product.update({
+              where: { id: item.productId },
+              data: {
+                stock: {
+                  decrement: item.quantity
+                }
+              }
+            });
+          }
 
           // Create kitchen tickets for this item if product has kitchen stations
           const productStations = await tx.productKitchenStation.findMany({
@@ -275,14 +297,35 @@ export class SaleController {
 
         // Restore stock for refunded items
         for (const item of refundItems || originalSale.items) {
-          await tx.product.update({
-            where: { id: item.productId },
-            data: {
-              stock: {
-                increment: item.quantity
-              }
-            }
+          // Check for recipe
+          const recipe = await tx.recipe.findUnique({
+            where: { productId: item.productId },
+            include: { items: true }
           });
+
+          if (recipe) {
+            // Restore ingredients
+            for (const recipeItem of recipe.items) {
+              await tx.ingredient.update({
+                where: { id: recipeItem.ingredientId },
+                data: {
+                  stock: {
+                    increment: Number(recipeItem.quantity) * item.quantity
+                  }
+                }
+              });
+            }
+          } else {
+            // Restore product stock
+            await tx.product.update({
+              where: { id: item.productId },
+              data: {
+                stock: {
+                  increment: item.quantity
+                }
+              }
+            });
+          }
         }
 
         // Deduct loyalty points if customer

@@ -48,6 +48,11 @@ export class TableService {
     return this.http.patch<any>(`${this.apiUrl}/${id}/status`, { status });
   }
 
+  // New method to update table positions
+  updateLayout(updates: { id: string; positionX?: number; positionY?: number }[]): Observable<any> {
+    return this.http.patch<any>(`${this.apiUrl}/layout`, { updates });
+  }
+
   deleteTable(id: string): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/${id}`);
   }

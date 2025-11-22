@@ -19,6 +19,7 @@ import { ModifiersComponent } from './modifiers/modifiers.component';
 import { ProductModifiersComponent } from './modifiers/product-modifiers.component';
 import { KdsComponent } from './kds/kds.component';
 import { ProductStationsComponent } from './restaurant/product-stations.component';
+import { RestaurantModule } from './restaurant/restaurant.module';
 
 const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },

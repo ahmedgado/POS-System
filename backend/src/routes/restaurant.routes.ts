@@ -18,7 +18,8 @@ import {
   updateTable,
   updateTableStatus,
   deleteTable,
-  getFloorLayout
+  getFloorLayout,
+  updateTableLayout
 } from '../controllers/table.controller';
 
 // Modifier Controllers
@@ -67,6 +68,7 @@ router.get('/tables/:id', authenticate, getTableById);
 router.post('/tables', authenticate, createTable);
 router.put('/tables/:id', authenticate, updateTable);
 router.patch('/tables/:id/status', authenticate, updateTableStatus);
+router.patch('/tables/layout', authenticate, updateTableLayout);
 router.delete('/tables/:id', authenticate, deleteTable);
 router.get('/floors/:floorId/layout', authenticate, getFloorLayout);
 

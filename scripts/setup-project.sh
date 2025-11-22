@@ -5,7 +5,7 @@
 
 set -e
 
-PROJECT_ROOT="/Users/gado/IdeaProjects/POS-System"
+PROJECT_ROOT="/Users/ahmedgad/test/POS-System"
 cd "$PROJECT_ROOT"
 
 echo "🚀 Setting up POS System..."

@@ -339,3 +339,54 @@ export const getFloorLayout = async (req: Request, res: Response) => {
     });
   }
 };
+
+// Update table layout (bulk position updates for drag-and-drop)
+export const updateTableLayout = async (req: Request, res: Response) => {
+  try {
+    const { updates } = req.body;
+
+    if (!updates || !Array.isArray(updates) || updates.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Updates array is required'
+      });
+    }
+
+    // Validate all updates have required fields
+    for (const update of updates) {
+      if (!update.id || update.positionX === undefined || update.positionY === undefined) {
+        return res.status(400).json({
+          success: false,
+          message: 'Each update must have id, positionX, and positionY'
+        });
+      }
+    }
+
+    // Perform bulk update using transaction
+    const updatePromises = updates.map((update: any) =>
+      prisma.table.update({
+        where: { id: update.id },
+        data: {
+          positionX: update.positionX,
+          positionY: update.positionY
+        }
+      })
+    );
+
+    await prisma.$transaction(updatePromises);
+
+    logger.info(`Table layout updated: ${updates.length} tables repositioned`);
+
+    res.json({
+      success: true,
+      message: `Successfully updated positions for ${updates.length} tables`
+    });
+  } catch (error: any) {
+    logger.error('Update table layout error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update table layout',
+      error: error.message
+    });
+  }
+};

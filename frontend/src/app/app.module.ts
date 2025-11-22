@@ -28,8 +28,8 @@ export function HttpLoaderFactory(http: HttpClient) {
     BrowserAnimationsModule,
     HttpClientModule,
     FormsModule,
-    RestaurantModule,
     AppRoutingModule,
+    RestaurantModule,
     TranslateModule.forRoot({
       defaultLanguage: 'en',
       loader: {

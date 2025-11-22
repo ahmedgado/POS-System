@@ -2,7 +2,7 @@
 
 # Script to create translation files for Arabic/English support
 
-PROJECT_ROOT="/Users/gado/IdeaProjects/POS-System"
+PROJECT_ROOT="/Users/ahmedgad/test/POS-System"
 I18N_DIR="$PROJECT_ROOT/frontend/src/assets/i18n"
 
 echo "🌍 Creating translation files..."

@@ -22,7 +22,7 @@ echo "║   مولد بيانات نظام نقاط البيع للمطاعم   
 echo "╚════════════════════════════════════════════════╝"
 echo -e "${NC}"
 
-PROJECT_DIR="/Users/gado/IdeaProjects/POS-System"
+PROJECT_DIR="/Users/ahmedgad/test/POS-System"
 cd "$PROJECT_DIR"
 
 echo -e "${YELLOW}This will generate complete restaurant data:${NC}"

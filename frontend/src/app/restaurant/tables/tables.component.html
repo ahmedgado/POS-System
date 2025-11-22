@@ -1,168 +1,278 @@
 <!-- Header -->
-<header style="background:linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);color:#c4a75b;padding:20px 32px;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
+<header
+  style="background:linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);color:#c4a75b;padding:20px 32px;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
   <div style="display:flex;align-items:center;justify-content:space-between;">
-    <h1 style="margin:0;font-size:24px;font-weight:700;">🪑 Table Management</h1>
-    <div class="header-actions">
-      <select class="form-select" [(ngModel)]="selectedFloorId" (change)="filterByFloor(selectedFloorId || '')">
+    <div>
+      <h1 style="margin:0 0 4px 0;font-size:24px;font-weight:700;">🪑 Table Management</h1>
+      <p style="margin:0;font-size:13px;color:#999;">Drag tables to arrange your floor plan</p>
+    </div>
+    <div class="header-actions" style="display:flex;gap:12px;align-items:center;">
+      <select class="form-select" [(ngModel)]="selectedFloorId" (change)="filterByFloor(selectedFloorId || '')"
+        style="padding:10px 14px;border:1px solid #c4a75b;border-radius:8px;font-size:14px;min-width:180px;background:#2d2d2d;color:#c4a75b;font-weight:500;">
         <option value="">All Floors</option>
         <option *ngFor="let floor of floors" [value]="floor.id">{{ floor.name }}</option>
       </select>
-      <button (click)="openCreateModal()" style="background:#c4a75b;color:#1a1a1a;border:none;padding:12px 24px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;">
+      <button (click)="openCreateModal()"
+        style="background:#c4a75b;color:#1a1a1a;border:none;padding:12px 24px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;transition:all 0.2s;">
         ➕ Add Table
+      </button>
+      <button (click)="saveLayout()" [disabled]="loading"
+        style="background:#28a745;color:#fff;border:none;padding:12px 24px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;transition:all 0.2s;">
+        <i class="fa fa-save"></i> Save Layout
       </button>
     </div>
   </div>
 </header>
 
-<div class="tables-container">
-  <div class="loading-spinner" *ngIf="loading && tables.length === 0">
-    <i class="fa fa-spinner fa-spin"></i> Loading tables...
+<!-- Status Legend -->
+<div style="background:#f8f6f4;padding:16px 32px;border-bottom:1px solid #e5e5e5;">
+  <div style="display:flex;gap:24px;align-items:center;flex-wrap:wrap;">
+    <span style="font-size:13px;font-weight:600;color:#666;">Status Legend:</span>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <div style="width:16px;height:16px;background:#28a745;border-radius:3px;"></div>
+      <span style="font-size:13px;color:#333;">Available</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <div style="width:16px;height:16px;background:#dc3545;border-radius:3px;"></div>
+      <span style="font-size:13px;color:#333;">Occupied</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <div style="width:16px;height:16px;background:#ffc107;border-radius:3px;"></div>
+      <span style="font-size:13px;color:#333;">Reserved</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <div style="width:16px;height:16px;background:#17a2b8;border-radius:3px;"></div>
+      <span style="font-size:13px;color:#333;">Cleaning</span>
+    </div>
+  </div>
+</div>
+
+<div class="tables-container" style="background:#f8f6f4;padding:32px;min-height:calc(100vh - 200px);">
+  <div class="loading-spinner" *ngIf="loading && tables.length === 0"
+    style="text-align:center;padding:60px;color:#999;">
+    <i class="fa fa-spinner fa-spin fa-3x"></i>
+    <p style="margin-top:20px;font-size:16px;">Loading tables...</p>
   </div>
 
-  <div class="tables-by-floor" *ngIf="!loading || tables.length > 0">
-    <div *ngFor="let floor of getFilteredTablesByFloor() | keyvalue" class="floor-section">
-      <h3 class="floor-title">
-        <i class="fa fa-building"></i> {{ floor.key }}
-        <span class="table-count">({{ floor.value.length }} tables)</span>
-      </h3>
+  <!-- Floor Plan Area -->
+  <div class="floor-plan-container"
+    style="background:white;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.1);margin-bottom:20px;min-height:600px;position:relative;background-image:linear-gradient(45deg, #f0f0f0 25%, transparent 25%, transparent 75%, #f0f0f0 75%, #f0f0f0), linear-gradient(45deg, #f0f0f0 25%, transparent 25%, transparent 75%, #f0f0f0 75%, #f0f0f0);background-size:20px 20px;background-position:0 0, 10px 10px;">
 
-      <div class="tables-grid">
-        <div class="table-card" *ngFor="let table of floor.value"
-             [class.table-available]="table.status === 'AVAILABLE'"
-             [class.table-occupied]="table.status === 'OCCUPIED'"
-             [class.table-reserved]="table.status === 'RESERVED'"
-             [class.table-cleaning]="table.status === 'CLEANING'">
+    <!-- Tables -->
+    <div *ngFor="let table of tables" class="draggable-table" [attr.data-table-id]="table.id" [attr.data-x]="0"
+      [attr.data-y]="0" [style.left.px]="table.positionX || 100" [style.top.px]="table.positionY || 100"
+      style="position:absolute;cursor:move;touch-action:none;user-select:none;">
 
-          <div class="table-header">
-            <div class="table-info">
-              <h4>{{ table.tableNumber }}</h4>
-              <span class="badge" [ngClass]="getStatusBadgeClass(table.status)">
-                <i class="fa" [ngClass]="getStatusIcon(table.status)"></i>
-                {{ table.status }}
-              </span>
-            </div>
-            <div class="table-actions">
-              <button class="btn-icon" (click)="openEditModal(table)" title="Edit">
-                <i class="fa fa-edit"></i>
-              </button>
-              <button class="btn-icon btn-danger" (click)="deleteTable(table)" title="Delete">
-                <i class="fa fa-trash"></i>
-              </button>
-            </div>
+      <!-- ROUND Table Shape -->
+      <div *ngIf="table.shape === 'ROUND'" class="table-shape-round"
+        [style.background]="'linear-gradient(135deg, ' + getStatusColor(table.status) + ' 0%, ' + getStatusColor(table.status) + 'dd 100%)'"
+        style="width:90px;height:90px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,0.2);border:3px solid rgba(255,255,255,0.3);position:relative;transition:transform 0.2s;">
+        <div style="color:white;font-size:16px;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,0.3);">{{
+          table.tableNumber }}</div>
+        <div style="color:rgba(255,255,255,0.9);font-size:10px;margin-top:2px;text-shadow:0 1px 2px rgba(0,0,0,0.3);">
+          <i class="fa fa-user"></i> {{ table.capacity }}
+        </div>
+
+        <!-- Action Icons (appear on hover) -->
+        <div class="action-icons"
+          style="position:absolute;top:-12px;right:-12px;display:flex;gap:4px;opacity:0;transition:opacity 0.2s;">
+          <button (click)="openEditModal(table)" title="Edit"
+            style="width:24px;height:24px;border-radius:50%;background:white;border:2px solid #666;color:#666;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 2px 6px rgba(0,0,0,0.2);">
+            <i class="fa fa-edit"></i>
+          </button>
+          <button (click)="deleteTable(table)" title="Delete"
+            style="width:24px;height:24px;border-radius:50%;background:white;border:2px solid #dc3545;color:#dc3545;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 2px 6px rgba(0,0,0,0.2);">
+            <i class="fa fa-trash"></i>
+          </button>
+        </div>
+
+        <!-- Status Change Icon -->
+        <div class="status-icon" style="position:absolute;bottom:-8px;left:-8px;">
+          <button (click)="openStatusMenu(table)" title="Change Status"
+            style="width:28px;height:28px;border-radius:50%;background:#c4a75b;border:2px solid white;color:white;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;box-shadow:0 2px 6px rgba(0,0,0,0.2);">
+            <i class="fa fa-exchange-alt"></i>
+          </button>
+          <div *ngIf="showStatusMenu === table.id" class="status-dropdown"
+            style="position:absolute;bottom:35px;left:0;background:white;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.2);padding:4px;min-width:120px;z-index:100;">
+            <button *ngFor="let status of statuses" (click)="updateTableStatus(table, status)"
+              style="display:block;width:100%;text-align:left;padding:6px 10px;border:none;background:transparent;cursor:pointer;font-size:11px;border-radius:4px;"
+              [style.background]="table.status === status ? '#f0f0f0' : 'transparent'">
+              <span [style.color]="getStatusColor(status)">●</span> {{ status }}
+            </button>
           </div>
+        </div>
+      </div>
 
-          <div class="table-details">
-            <div class="detail-item">
-              <i class="fa fa-users"></i>
-              <span>{{ table.capacity }} seats</span>
-            </div>
-            <div class="detail-item" *ngIf="table.shape">
-              <i class="fa fa-shapes"></i>
-              <span>{{ table.shape }}</span>
-            </div>
+      <!-- SQUARE Table Shape -->
+      <div *ngIf="table.shape === 'SQUARE'" class="table-shape-square"
+        [style.background]="'linear-gradient(135deg, ' + getStatusColor(table.status) + ' 0%, ' + getStatusColor(table.status) + 'dd 100%)'"
+        style="width:90px;height:90px;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,0.2);border:3px solid rgba(255,255,255,0.3);position:relative;transition:transform 0.2s;">
+        <div style="color:white;font-size:16px;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,0.3);">{{
+          table.tableNumber }}</div>
+        <div style="color:rgba(255,255,255,0.9);font-size:10px;margin-top:2px;text-shadow:0 1px 2px rgba(0,0,0,0.3);">
+          <i class="fa fa-user"></i> {{ table.capacity }}
+        </div>
+
+        <!-- Action Icons (appear on hover) -->
+        <div class="action-icons"
+          style="position:absolute;top:-12px;right:-12px;display:flex;gap:4px;opacity:0;transition:opacity 0.2s;">
+          <button (click)="openEditModal(table)" title="Edit"
+            style="width:24px;height:24px;border-radius:50%;background:white;border:2px solid #666;color:#666;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 2px 6px rgba(0,0,0,0.2);">
+            <i class="fa fa-edit"></i>
+          </button>
+          <button (click)="deleteTable(table)" title="Delete"
+            style="width:24px;height:24px;border-radius:50%;background:white;border:2px solid #dc3545;color:#dc3545;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 2px 6px rgba(0,0,0,0.2);">
+            <i class="fa fa-trash"></i>
+          </button>
+        </div>
+
+        <!-- Status Change Icon -->
+        <div class="status-icon" style="position:absolute;bottom:-8px;left:-8px;">
+          <button (click)="openStatusMenu(table)" title="Change Status"
+            style="width:28px;height:28px;border-radius:50%;background:#c4a75b;border:2px solid white;color:white;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;box-shadow:0 2px 6px rgba(0,0,0,0.2);">
+            <i class="fa fa-exchange-alt"></i>
+          </button>
+          <div *ngIf="showStatusMenu === table.id" class="status-dropdown"
+            style="position:absolute;bottom:35px;left:0;background:white;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.2);padding:4px;min-width:120px;z-index:100;">
+            <button *ngFor="let status of statuses" (click)="updateTableStatus(table, status)"
+              style="display:block;width:100%;text-align:left;padding:6px 10px;border:none;background:transparent;cursor:pointer;font-size:11px;border-radius:4px;"
+              [style.background]="table.status === status ? '#f0f0f0' : 'transparent'">
+              <span [style.color]="getStatusColor(status)">●</span> {{ status }}
+            </button>
           </div>
+        </div>
+      </div>
 
-          <div class="table-status-actions">
-            <button
-              class="btn-status"
-              *ngFor="let status of statuses"
-              [class.active]="table.status === status"
-              (click)="updateTableStatus(table, status)"
-              [title]="'Set as ' + status">
-              <i class="fa" [ngClass]="getStatusIcon(status)"></i>
+      <!-- RECTANGLE Table Shape -->
+      <div *ngIf="table.shape === 'RECTANGLE'" class="table-shape-rectangle"
+        [style.background]="'linear-gradient(135deg, ' + getStatusColor(table.status) + ' 0%, ' + getStatusColor(table.status) + 'dd 100%)'"
+        style="width:110px;height:70px;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,0.2);border:3px solid rgba(255,255,255,0.3);position:relative;transition:transform 0.2s;">
+        <div style="color:white;font-size:16px;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,0.3);">{{
+          table.tableNumber }}</div>
+        <div style="color:rgba(255,255,255,0.9);font-size:10px;margin-top:2px;text-shadow:0 1px 2px rgba(0,0,0,0.3);">
+          <i class="fa fa-user"></i> {{ table.capacity }}
+        </div>
+
+        <!-- Action Icons (appear on hover) -->
+        <div class="action-icons"
+          style="position:absolute;top:-12px;right:-12px;display:flex;gap:4px;opacity:0;transition:opacity 0.2s;">
+          <button (click)="openEditModal(table)" title="Edit"
+            style="width:24px;height:24px;border-radius:50%;background:white;border:2px solid #666;color:#666;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 2px 6px rgba(0,0,0,0.2);">
+            <i class="fa fa-edit"></i>
+          </button>
+          <button (click)="deleteTable(table)" title="Delete"
+            style="width:24px;height:24px;border-radius:50%;background:white;border:2px solid #dc3545;color:#dc3545;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 2px 6px rgba(0,0,0,0.2);">
+            <i class="fa fa-trash"></i>
+          </button>
+        </div>
+
+        <!-- Status Change Icon -->
+        <div class="status-icon" style="position:absolute;bottom:-8px;left:-8px;">
+          <button (click)="openStatusMenu(table)" title="Change Status"
+            style="width:28px;height:28px;border-radius:50%;background:#c4a75b;border:2px solid white;color:white;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;box-shadow:0 2px 6px rgba(0,0,0,0.2);">
+            <i class="fa fa-exchange-alt"></i>
+          </button>
+          <div *ngIf="showStatusMenu === table.id" class="status-dropdown"
+            style="position:absolute;bottom:35px;left:0;background:white;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.2);padding:4px;min-width:120px;z-index:100;">
+            <button *ngFor="let status of statuses" (click)="updateTableStatus(table, status)"
+              style="display:block;width:100%;text-align:left;padding:6px 10px;border:none;background:transparent;cursor:pointer;font-size:11px;border-radius:4px;"
+              [style.background]="table.status === status ? '#f0f0f0' : 'transparent'">
+              <span [style.color]="getStatusColor(status)">●</span> {{ status }}
             </button>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="empty-state" *ngIf="tables.length === 0 && !loading">
-      <i class="fa fa-table fa-3x"></i>
-      <h3>No Tables Found</h3>
-      <p *ngIf="selectedFloorId">No tables on this floor yet</p>
-      <p *ngIf="!selectedFloorId">Create your first table to start managing seating</p>
-      <button class="btn btn-primary" (click)="openCreateModal()">
-        <i class="fa fa-plus"></i> Add First Table
-      </button>
+    <!-- Empty State -->
+    <div *ngIf="tables.length === 0 && !loading" style="text-align:center;padding:100px 20px;color:#999;">
+      <i class="fa fa-table fa-4x" style="color:#ddd;margin-bottom:20px;"></i>
+      <h3 style="color:#666;margin-bottom:10px;">No Tables Yet</h3>
+      <p>Click "Add Table" to create your first table</p>
     </div>
   </div>
 
+  <!-- Instructions -->
+  <div style="background:white;border-radius:8px;padding:16px;margin-top:20px;border-left:4px solid #c4a75b;">
+    <h4 style="margin:0 0 8px 0;color:#333;font-size:14px;font-weight:600;">
+      <i class="fa fa-info-circle" style="color:#c4a75b;"></i> How to use:
+    </h4>
+    <ul style="margin:0;padding-left:20px;color:#666;font-size:13px;line-height:1.8;">
+      <li><strong>Drag tables</strong> - Click and drag any table to move it around the floor plan</li>
+      <li><strong>Edit table</strong> - Click the edit button on a table to modify its details</li>
+      <li><strong>Change status</strong> - Use the dropdown on each table to change its status</li>
+      <li><strong>Save layout</strong> - Click "Save Layout" button to save all table positions</li>
+    </ul>
+  </div>
+
   <!-- Modal -->
-  <div class="modal" *ngIf="showModal" (click)="closeModal()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>{{ editingTable ? 'Edit Table' : 'Add New Table' }}</h2>
-        <button class="btn-close" (click)="closeModal()">&times;</button>
+  <div class="modal" *ngIf="showModal" (click)="closeModal()"
+    style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:1000;">
+    <div class="modal-content" (click)="$event.stopPropagation()"
+      style="background:#fff;border-radius:12px;width:90%;max-width:600px;box-shadow:0 10px 40px rgba(0,0,0,0.3);">
+      <div class="modal-header"
+        style="display:flex;justify-content:space-between;align-items:center;padding:24px 28px;border-bottom:2px solid #f0f0f0;">
+        <h2 style="font-size:22px;font-weight:600;color:#333;margin:0;">
+          <i class="fa fa-table" style="color:#c4a75b;margin-right:8px;"></i>
+          {{ editingTable ? 'Edit Table' : 'Add New Table' }}
+        </h2>
+        <button (click)="closeModal()"
+          style="background:none;border:none;font-size:32px;color:#999;cursor:pointer;">&times;</button>
       </div>
 
-      <div class="modal-body">
-        <div class="form-group">
-          <label>Floor *</label>
-          <select class="form-control" [(ngModel)]="tableForm.floorId" required>
+      <div class="modal-body" style="padding:28px;">
+        <div class="form-group" style="margin-bottom:20px;">
+          <label style="display:block;font-weight:600;color:#333;margin-bottom:8px;font-size:14px;">
+            <i class="fa fa-building" style="color:#c4a75b;"></i> Floor *
+          </label>
+          <select class="form-control" [(ngModel)]="tableForm.floorId" required
+            style="width:100%;padding:10px;border:2px solid #e5e5e5;border-radius:6px;font-size:14px;">
             <option value="">Select Floor</option>
             <option *ngFor="let floor of floors" [value]="floor.id">{{ floor.name }}</option>
           </select>
         </div>
 
-        <div class="form-row">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
           <div class="form-group">
-            <label>Table Number *</label>
-            <input
-              type="text"
-              class="form-control"
-              [(ngModel)]="tableForm.tableNumber"
-              placeholder="e.g., T1, A-5"
-              required>
+            <label style="display:block;font-weight:600;color:#333;margin-bottom:8px;font-size:14px;">
+              <i class="fa fa-hashtag" style="color:#c4a75b;"></i> Table Number *
+            </label>
+            <input type="text" class="form-control" [(ngModel)]="tableForm.tableNumber" required
+              style="width:100%;padding:10px;border:2px solid #e5e5e5;border-radius:6px;font-size:14px;">
           </div>
 
           <div class="form-group">
-            <label>Capacity *</label>
-            <input
-              type="number"
-              class="form-control"
-              [(ngModel)]="tableForm.capacity"
-              min="1"
-              max="20"
-              required>
+            <label style="display:block;font-weight:600;color:#333;margin-bottom:8px;font-size:14px;">
+              <i class="fa fa-users" style="color:#c4a75b;"></i> Capacity *
+            </label>
+            <input type="number" class="form-control" [(ngModel)]="tableForm.capacity" min="1" max="20" required
+              style="width:100%;padding:10px;border:2px solid #e5e5e5;border-radius:6px;font-size:14px;">
           </div>
         </div>
 
-        <div class="form-group">
-          <label>Shape</label>
-          <select class="form-control" [(ngModel)]="tableForm.shape">
-            <option *ngFor="let shape of shapes" [value]="shape">{{ shape }}</option>
-          </select>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label>Position X</label>
-            <input
-              type="number"
-              class="form-control"
-              [ngModel]="tableForm.positionX"
-              (ngModelChange)="tableForm.positionX = $event"
-              placeholder="0">
-            <small class="form-text">For floor plan layout</small>
-          </div>
-
-          <div class="form-group">
-            <label>Position Y</label>
-            <input
-              type="number"
-              class="form-control"
-              [ngModel]="tableForm.positionY"
-              (ngModelChange)="tableForm.positionY = $event"
-              placeholder="0">
-            <small class="form-text">For floor plan layout</small>
+        <div class="form-group" style="margin-bottom:20px;">
+          <label style="display:block;font-weight:600;color:#333;margin-bottom:8px;font-size:14px;">
+            <i class="fa fa-shapes" style="color:#c4a75b;"></i> Shape
+          </label>
+          <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:10px;">
+            <button *ngFor="let shape of shapes" type="button" (click)="tableForm.shape = shape"
+              [style.background]="tableForm.shape === shape ? '#c4a75b' : '#f8f9fa'"
+              [style.color]="tableForm.shape === shape ? '#1a1a1a' : '#666'"
+              style="padding:12px;border:2px solid #e5e5e5;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px;">
+              {{ shape }}
+            </button>
           </div>
         </div>
       </div>
 
-      <div class="modal-footer">
-        <button class="btn btn-secondary" (click)="closeModal()">Cancel</button>
-        <button class="btn btn-primary" (click)="saveTable()" [disabled]="loading">
-          <i class="fa fa-spinner fa-spin" *ngIf="loading"></i>
+      <div class="modal-footer"
+        style="display:flex;justify-content:flex-end;gap:12px;padding:20px 28px;border-top:2px solid #f0f0f0;background:#fafafa;">
+        <button (click)="closeModal()"
+          style="padding:10px 20px;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;background:#6c757d;color:white;">
+          Cancel
+        </button>
+        <button (click)="saveTable()" [disabled]="loading"
+          style="padding:10px 20px;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;background:#c4a75b;color:#1a1a1a;">
           {{ loading ? 'Saving...' : (editingTable ? 'Update' : 'Create') }}
         </button>
       </div>

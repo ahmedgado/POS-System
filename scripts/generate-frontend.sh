@@ -6,7 +6,7 @@
 
 set -e
 
-FRONTEND_DIR="/Users/gado/IdeaProjects/POS-System/frontend"
+FRONTEND_DIR="/Users/ahmedgad/test/POS-System/frontend"
 
 echo "🚀 Generating Complete Angular Frontend for POS System..."
 echo "=========================================================="

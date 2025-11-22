@@ -8,103 +8,115 @@
   </div>
 </header>
 
-<div class="floors-container">
-  <div class="loading-spinner" *ngIf="loading && floors.length === 0">
+<div class="floors-container" style="background:#f8f6f4;padding:32px;">
+  <div class="loading-spinner" *ngIf="loading && floors.length === 0" style="text-align:center;padding:60px;color:#999;">
     <i class="fa fa-spinner fa-spin"></i> Loading floors...
   </div>
 
-  <div class="floors-grid" *ngIf="!loading || floors.length > 0">
-    <div class="floor-card" *ngFor="let floor of floors">
-      <div class="floor-header">
-        <h3>{{ floor.name }}</h3>
-        <div class="floor-actions">
-          <button class="btn-icon" (click)="openEditModal(floor)" title="Edit">
+  <div class="floors-grid" *ngIf="!loading || floors.length > 0" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(320px, 1fr));gap:20px;">
+    <div class="floor-card" *ngFor="let floor of floors"
+         style="background:#fff;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.1);transition:transform 0.2s, box-shadow 0.2s;border:1px solid #ddd;">
+      <div class="floor-header" style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px;">
+        <h3 style="font-size:20px;font-weight:600;color:#333;margin:0;flex:1;">{{ floor.name }}</h3>
+        <div class="floor-actions" style="display:flex;gap:8px;">
+          <button class="btn-icon" (click)="openEditModal(floor)" title="Edit"
+                  style="background:none;border:none;padding:6px 10px;cursor:pointer;color:#666;border-radius:6px;transition:all 0.2s;">
             <i class="fa fa-edit"></i>
           </button>
-          <button class="btn-icon btn-danger" (click)="deleteFloor(floor)" title="Delete">
+          <button class="btn-icon btn-danger" (click)="deleteFloor(floor)" title="Delete"
+                  style="background:none;border:none;padding:6px 10px;cursor:pointer;color:#dc3545;border-radius:6px;transition:all 0.2s;">
             <i class="fa fa-trash"></i>
           </button>
         </div>
       </div>
 
-      <p class="floor-description" *ngIf="floor.description">
+      <p class="floor-description" *ngIf="floor.description" style="color:#666;font-size:14px;margin-bottom:16px;line-height:1.5;">
         {{ floor.description }}
       </p>
 
-      <div class="floor-stats">
-        <div class="stat">
-          <i class="fa fa-chair"></i>
+      <div class="floor-stats" style="display:flex;flex-direction:column;gap:10px;padding:16px 0;border-top:1px solid #eee;border-bottom:1px solid #eee;margin-bottom:16px;">
+        <div class="stat" style="display:flex;align-items:center;gap:10px;font-size:14px;color:#333;">
+          <i class="fa fa-chair" style="width:20px;color:#c4a75b;"></i>
           <span>{{ getTableCount(floor) }} Tables</span>
         </div>
-        <div class="stat">
-          <i class="fa fa-check-circle" style="color: #28a745;"></i>
+        <div class="stat" style="display:flex;align-items:center;gap:10px;font-size:14px;color:#333;">
+          <i class="fa fa-check-circle" style="color: #28a745;width:20px;"></i>
           <span>{{ getAvailableTableCount(floor) }} Available</span>
         </div>
-        <div class="stat">
-          <i class="fa fa-sort-numeric-up"></i>
+        <div class="stat" style="display:flex;align-items:center;gap:10px;font-size:14px;color:#333;">
+          <i class="fa fa-sort-numeric-up" style="width:20px;color:#c4a75b;"></i>
           <span>Order: {{ floor.sortOrder }}</span>
         </div>
       </div>
 
-      <div class="floor-footer">
-        <a [routerLink]="['/app/restaurant/tables']" [queryParams]="{floorId: floor.id}" class="btn btn-sm btn-outline">
+      <div class="floor-footer" style="display:flex;gap:10px;">
+        <a [routerLink]="['/app/restaurant/tables']" [queryParams]="{floorId: floor.id}" class="btn btn-sm btn-outline"
+           style="padding:6px 12px;font-size:13px;flex:1;background:transparent;color:#c4a75b;border:1px solid #c4a75b;border-radius:8px;font-weight:500;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:8px;">
           <i class="fa fa-table"></i> Manage Tables
         </a>
       </div>
     </div>
 
-    <div class="empty-state" *ngIf="floors.length === 0 && !loading">
-      <i class="fa fa-building fa-3x"></i>
-      <h3>No Floors Found</h3>
+    <div class="empty-state" *ngIf="floors.length === 0 && !loading" style="text-align:center;padding:60px 20px;color:#666;">
+      <i class="fa fa-building fa-3x" style="color:#ddd;margin-bottom:20px;"></i>
+      <h3 style="color:#333;margin-bottom:10px;">No Floors Found</h3>
       <p>Create your first floor to start managing tables</p>
-      <button class="btn btn-primary" (click)="openCreateModal()">
+      <button class="btn btn-primary" (click)="openCreateModal()"
+              style="background:#c4a75b;color:#1a1a1a;border:none;padding:12px 24px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;">
         <i class="fa fa-plus"></i> Add First Floor
       </button>
     </div>
   </div>
 
   <!-- Modal -->
-  <div class="modal" *ngIf="showModal" (click)="closeModal()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>{{ editingFloor ? 'Edit Floor' : 'Add New Floor' }}</h2>
-        <button class="btn-close" (click)="closeModal()">&times;</button>
+  <div class="modal" *ngIf="showModal" (click)="closeModal()"
+       style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:1000;animation:fadeIn 0.2s;">
+    <div class="modal-content" (click)="$event.stopPropagation()"
+         style="background:#fff;border-radius:12px;width:90%;max-width:500px;box-shadow:0 10px 40px rgba(0,0,0,0.2);animation:slideUp 0.3s;border:1px solid #c4a75b;">
+      <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:1px solid #eee;">
+        <h2 style="font-size:20px;font-weight:600;color:#333;margin:0;">{{ editingFloor ? 'Edit Floor' : 'Add New Floor' }}</h2>
+        <button class="btn-close" (click)="closeModal()" style="background:none;border:none;font-size:28px;color:#999;cursor:pointer;line-height:1;padding:0;width:32px;height:32px;">&times;</button>
       </div>
 
-      <div class="modal-body">
-        <div class="form-group">
-          <label>Floor Name *</label>
+      <div class="modal-body" style="padding:24px;">
+        <div class="form-group" style="margin-bottom:20px;">
+          <label style="display:block;font-weight:500;color:#333;margin-bottom:8px;font-size:14px;">Floor Name *</label>
           <input
             type="text"
             class="form-control"
             [(ngModel)]="floorForm.name"
             placeholder="e.g., Ground Floor, First Floor"
-            required>
+            required
+            style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:6px;font-size:14px;transition:border-color 0.2s;background-color:#fff;color:#333;">
         </div>
 
-        <div class="form-group">
-          <label>Description</label>
+        <div class="form-group" style="margin-bottom:20px;">
+          <label style="display:block;font-weight:500;color:#333;margin-bottom:8px;font-size:14px;">Description</label>
           <textarea
             class="form-control"
             [(ngModel)]="floorForm.description"
             rows="3"
-            placeholder="Optional description of the floor"></textarea>
+            placeholder="Optional description of the floor"
+            style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:6px;font-size:14px;transition:border-color 0.2s;background-color:#fff;color:#333;"></textarea>
         </div>
 
-        <div class="form-group">
-          <label>Sort Order</label>
+        <div class="form-group" style="margin-bottom:20px;">
+          <label style="display:block;font-weight:500;color:#333;margin-bottom:8px;font-size:14px;">Sort Order</label>
           <input
             type="number"
             class="form-control"
             [(ngModel)]="floorForm.sortOrder"
-            min="0">
-          <small class="form-text">Lower numbers appear first</small>
+            min="0"
+            style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:6px;font-size:14px;transition:border-color 0.2s;background-color:#fff;color:#333;">
+          <small class="form-text" style="display:block;margin-top:6px;font-size:12px;color:#666;">Lower numbers appear first</small>
         </div>
       </div>
 
-      <div class="modal-footer">
-        <button class="btn btn-secondary" (click)="closeModal()">Cancel</button>
-        <button class="btn btn-primary" (click)="saveFloor()" [disabled]="loading">
+      <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:10px;padding:20px 24px;border-top:1px solid #eee;">
+        <button class="btn btn-secondary" (click)="closeModal()"
+                style="padding:10px 20px;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:8px;background:#6c757d;color:white;">Cancel</button>
+        <button class="btn btn-primary" (click)="saveFloor()" [disabled]="loading"
+                style="padding:10px 20px;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:8px;background:#c4a75b;color:#1a1a1a;">
           <i class="fa fa-spinner fa-spin" *ngIf="loading"></i>
           {{ loading ? 'Saving...' : (editingFloor ? 'Update' : 'Create') }}
         </button>

@@ -1,5 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, AfterViewInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import interact from 'interactjs';
 import { TableService, Table } from '../../services/table.service';
 import { FloorService, Floor } from '../../services/floor.service';
 
@@ -8,29 +9,26 @@ import { FloorService, Floor } from '../../services/floor.service';
   templateUrl: './tables.component.html',
   styleUrls: ['./tables.component.css']
 })
-export class TablesComponent implements OnInit {
+export class TablesComponent implements OnInit, AfterViewInit {
   tables: Table[] = [];
   floors: Floor[] = [];
   loading = false;
   showModal = false;
   editingTable: Table | null = null;
   selectedFloorId: string | null = null;
+  showStatusMenu: string | null = null;
 
   tableForm: {
     floorId: string;
     tableNumber: string;
     capacity: number;
     shape: 'SQUARE' | 'ROUND' | 'RECTANGLE';
-    positionX: number;
-    positionY: number;
   } = {
-    floorId: '',
-    tableNumber: '',
-    capacity: 4,
-    shape: 'SQUARE',
-    positionX: 0,
-    positionY: 0
-  };
+      floorId: '',
+      tableNumber: '',
+      capacity: 4,
+      shape: 'SQUARE',
+    };
 
   shapes: ('SQUARE' | 'ROUND' | 'RECTANGLE')[] = ['SQUARE', 'ROUND', 'RECTANGLE'];
   statuses = ['AVAILABLE', 'OCCUPIED', 'RESERVED', 'CLEANING'];
@@ -39,7 +37,7 @@ export class TablesComponent implements OnInit {
     private tableService: TableService,
     private floorService: FloorService,
     private route: ActivatedRoute
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.route.queryParams.subscribe(params => {
@@ -51,14 +49,67 @@ export class TablesComponent implements OnInit {
     this.loadTables();
   }
 
+  ngAfterViewInit(): void {
+    // Initialize interact.js after view is ready
+    setTimeout(() => this.initializeDragAndDrop(), 500);
+  }
+
+  initializeDragAndDrop(): void {
+    // Make all table elements draggable
+    interact('.draggable-table')
+      .draggable({
+        inertia: true,
+        modifiers: [
+          interact.modifiers.restrictRect({
+            restriction: 'parent',
+            endOnly: true
+          })
+        ],
+        autoScroll: true,
+        listeners: {
+          move: this.dragMoveListener.bind(this),
+          end: this.dragEndListener.bind(this)
+        }
+      });
+  }
+
+  dragMoveListener(event: any): void {
+    const target = event.target;
+    const x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
+    const y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
+
+    target.style.transform = `translate(${x}px, ${y}px)`;
+    target.setAttribute('data-x', x);
+    target.setAttribute('data-y', y);
+  }
+
+  dragEndListener(event: any): void {
+    const target = event.target;
+    const tableId = target.getAttribute('data-table-id');
+    const x = parseFloat(target.getAttribute('data-x')) || 0;
+    const y = parseFloat(target.getAttribute('data-y')) || 0;
+
+    // Update table position in the array
+    const table = this.tables.find(t => t.id === tableId);
+    if (table) {
+      table.positionX = (table.positionX || 0) + x;
+      table.positionY = (table.positionY || 0) + y;
+
+      // Reset transform and data attributes
+      target.style.transform = '';
+      target.setAttribute('data-x', '0');
+      target.setAttribute('data-y', '0');
+
+      console.log(`Table ${table.tableNumber} moved to:`, { x: table.positionX, y: table.positionY });
+    }
+  }
+
   loadFloors(): void {
     this.floorService.getFloors().subscribe({
       next: (response) => {
         this.floors = response.data || [];
       },
-      error: (error) => {
-        console.error('Error loading floors:', error);
-      }
+      error: (error) => console.error('Error loading floors:', error)
     });
   }
 
@@ -66,20 +117,39 @@ export class TablesComponent implements OnInit {
     this.loading = true;
     this.tableService.getTables().subscribe({
       next: (response) => {
-        let allTables = response.data || [];
-
-        // Filter by floor if selected
+        this.tables = response.data || [];
         if (this.selectedFloorId) {
-          allTables = allTables.filter((t: Table) => t.floorId === this.selectedFloorId);
+          this.tables = this.tables.filter(t => t.floorId === this.selectedFloorId);
         }
-
-        this.tables = allTables;
         this.loading = false;
+
+        // Reinitialize drag and drop after tables are loaded
+        setTimeout(() => this.initializeDragAndDrop(), 100);
       },
       error: (error) => {
-        console.error('Error loading tables:', error);
         this.loading = false;
-        alert('Failed to load tables');
+        console.error('Error loading tables:', error);
+      }
+    });
+  }
+
+  saveLayout(): void {
+    this.loading = true;
+    const updates = this.tables.map(t => ({
+      id: t.id,
+      positionX: Math.round(t.positionX || 0),
+      positionY: Math.round(t.positionY || 0)
+    }));
+
+    this.tableService.updateLayout(updates).subscribe({
+      next: () => {
+        this.loading = false;
+        alert('Layout saved successfully!');
+      },
+      error: (error) => {
+        this.loading = false;
+        console.error('Error saving layout:', error);
+        alert('Failed to save layout.');
       }
     });
   }
@@ -91,8 +161,6 @@ export class TablesComponent implements OnInit {
       tableNumber: `T${this.tables.length + 1}`,
       capacity: 4,
       shape: 'SQUARE',
-      positionX: 0,
-      positionY: 0
     };
     this.showModal = true;
   }
@@ -104,138 +172,83 @@ export class TablesComponent implements OnInit {
       tableNumber: table.tableNumber,
       capacity: table.capacity,
       shape: table.shape || 'SQUARE',
-      positionX: table.positionX || 0,
-      positionY: table.positionY || 0
     };
     this.showModal = true;
   }
 
   closeModal(): void {
     this.showModal = false;
-    this.editingTable = null;
   }
 
   saveTable(): void {
-    if (!this.tableForm.floorId || !this.tableForm.tableNumber.trim()) {
-      alert('Floor and table number are required');
-      return;
-    }
-
-    if (this.tableForm.capacity < 1) {
-      alert('Capacity must be at least 1');
-      return;
-    }
+    if (!this.tableForm.floorId || !this.tableForm.tableNumber.trim()) return;
 
     this.loading = true;
+    const tableData = { ...this.tableForm };
 
-    if (this.editingTable) {
-      // Update existing table
-      this.tableService.updateTable(this.editingTable.id, this.tableForm).subscribe({
-        next: () => {
-          this.loading = false;
-          this.closeModal();
-          this.loadTables();
-          alert('Table updated successfully');
-        },
-        error: (error) => {
-          console.error('Error updating table:', error);
-          this.loading = false;
-          alert('Failed to update table');
-        }
-      });
-    } else {
-      // Create new table
-      this.tableService.createTable(this.tableForm).subscribe({
-        next: () => {
-          this.loading = false;
-          this.closeModal();
-          this.loadTables();
-          alert('Table created successfully');
-        },
-        error: (error) => {
-          console.error('Error creating table:', error);
-          this.loading = false;
-          alert('Failed to create table');
-        }
-      });
-    }
+    const operation = this.editingTable
+      ? this.tableService.updateTable(this.editingTable.id, tableData)
+      : this.tableService.createTable({ ...tableData, positionX: 100, positionY: 100 });
+
+    operation.subscribe({
+      next: () => {
+        this.loading = false;
+        this.closeModal();
+        this.loadTables();
+      },
+      error: (err) => {
+        this.loading = false;
+        console.error('Error saving table:', err);
+        alert('Failed to save table.');
+      }
+    });
+  }
+
+  openStatusMenu(table: Table): void {
+    this.showStatusMenu = this.showStatusMenu === table.id ? null : table.id;
   }
 
   updateTableStatus(table: Table, newStatus: string): void {
     this.tableService.updateTableStatus(table.id, newStatus).subscribe({
       next: () => {
         table.status = newStatus as any;
-        alert('Table status updated');
+        this.showStatusMenu = null;
       },
-      error: (error) => {
-        console.error('Error updating table status:', error);
-        alert('Failed to update table status');
-      }
+      error: (err) => console.error('Error updating status:', err)
     });
   }
 
   deleteTable(table: Table): void {
-    if (!confirm(`Are you sure you want to delete table "${table.tableNumber}"?`)) {
-      return;
+    if (confirm(`Delete table "${table.tableNumber}"?`)) {
+      this.tableService.deleteTable(table.id).subscribe({
+        next: () => this.loadTables(),
+        error: (err) => console.error('Error deleting table:', err)
+      });
     }
-
-    this.loading = true;
-    this.tableService.deleteTable(table.id).subscribe({
-      next: () => {
-        this.loading = false;
-        this.loadTables();
-        alert('Table deleted successfully');
-      },
-      error: (error) => {
-        console.error('Error deleting table:', error);
-        this.loading = false;
-        alert('Failed to delete table');
-      }
-    });
-  }
-
-  getStatusBadgeClass(status: string): string {
-    const classes: any = {
-      'AVAILABLE': 'badge-success',
-      'OCCUPIED': 'badge-danger',
-      'RESERVED': 'badge-warning',
-      'CLEANING': 'badge-info'
-    };
-    return classes[status] || 'badge-secondary';
-  }
-
-  getStatusIcon(status: string): string {
-    const icons: any = {
-      'AVAILABLE': 'fa-check-circle',
-      'OCCUPIED': 'fa-users',
-      'RESERVED': 'fa-clock',
-      'CLEANING': 'fa-broom'
-    };
-    return icons[status] || 'fa-circle';
   }
 
   filterByFloor(floorId: string): void {
-    this.selectedFloorId = floorId || null;
+    this.selectedFloorId = floorId;
     this.loadTables();
   }
 
-  getFilteredTablesByFloor(): { [key: string]: Table[] } {
-    const grouped: { [key: string]: Table[] } = {};
-
-    this.tables.forEach(table => {
-      const floorName = table.floor?.name || 'Unknown Floor';
-      if (!grouped[floorName]) {
-        grouped[floorName] = [];
-      }
-      grouped[floorName].push(table);
-    });
-
-    return grouped;
+  getStatusColor(status: string): string {
+    switch (status) {
+      case 'AVAILABLE': return '#28a745';
+      case 'OCCUPIED': return '#dc3545';
+      case 'RESERVED': return '#ffc107';
+      case 'CLEANING': return '#17a2b8';
+      default: return '#6c757d';
+    }
   }
 
-  getSelectedFloorName(): string {
-    if (!this.selectedFloorId) return '';
-    const floor = this.floors.find(f => f.id === this.selectedFloorId);
-    return floor?.name || '';
+  getStatusIcon(status: string): string {
+    switch (status) {
+      case 'AVAILABLE': return 'fa-check-circle';
+      case 'OCCUPIED': return 'fa-users';
+      case 'RESERVED': return 'fa-calendar-check';
+      case 'CLEANING': return 'fa-broom';
+      default: return 'fa-question-circle';
+    }
   }
 }

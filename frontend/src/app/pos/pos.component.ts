@@ -7,7 +7,7 @@ import { SaleService, CreateSaleRequest } from '../services/sale.service';
 import { AuthService } from '../services/auth.service';
 import { Category, CategoryService } from '../services/category.service';
 import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
- import { TableService, Table } from '../services/table.service';
+import { TableService, Table } from '../services/table.service';
 import { FloorService, Floor } from '../services/floor.service';
 import { ShiftService, Shift } from '../services/shift.service';
 import { ModifierService, ModifierGroup, Modifier } from '../services/modifier.service';
@@ -144,9 +144,18 @@ interface SelectedModifier {
       <!-- Right Panel - Cart -->
       <div style="width:440px;display:flex;flex-direction:column;background:#ffffff;border-left:1px solid #e5e0db;">
         <!-- Cart Header -->
-        <div style="background:linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);padding:20px 24px;border-bottom:1px solid #d4af37;">
-          <h2 style="margin:0;font-size:20px;font-weight:600;color:#d4af37;letter-spacing:0.5px;">{{ 'pos.shoppingCart' | translate }}</h2>
-          <div style="color:#f8f6f4;font-size:14px;margin-top:6px;font-weight:500;">{{ cartItems.length }} {{ 'pos.items' | translate }}</div>
+        <div style="background:linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);padding:20px 24px;border-bottom:1px solid #d4af37;display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <h2 style="margin:0;font-size:20px;font-weight:600;color:#d4af37;letter-spacing:0.5px;">{{ 'pos.shoppingCart' | translate }}</h2>
+            <div style="color:#f8f6f4;font-size:14px;margin-top:6px;font-weight:500;">{{ cartItems.length }} {{ 'pos.items' | translate }}</div>
+          </div>
+          <button 
+            (click)="toggleSplitMode()"
+            [style.background]="splitMode ? '#d4af37' : 'transparent'"
+            [style.color]="splitMode ? '#1a1a1a' : '#d4af37'"
+            style="border:1px solid #d4af37;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;transition:all 0.2s;">
+            {{ splitMode ? 'Cancel Split' : 'Split Bill' }}
+          </button>
         </div>
 
         <!-- Restaurant Order Type & Table Selection -->
@@ -204,8 +213,15 @@ interface SelectedModifier {
             <div style="font-size:13px;margin-top:8px;">{{ 'pos.addProducts' | translate }}</div>
           </div>
 
-          <div *ngFor="let item of cartItems; let i = index" style="background:linear-gradient(135deg, #fafaf9 0%, #f8f6f4 100%);border:1px solid #e5e0db;border-radius:12px;padding:14px;margin-bottom:14px;">
+          <div *ngFor="let item of cartItems; let i = index" 
+               [style.border-color]="splitMode && selectedForSplit.has(i) ? '#d4af37' : '#e5e0db'"
+               [style.background]="splitMode && selectedForSplit.has(i) ? '#f0e6d2' : 'linear-gradient(135deg, #fafaf9 0%, #f8f6f4 100%)'"
+               style="border:1px solid;border-radius:12px;padding:14px;margin-bottom:14px;transition:all 0.2s;">
+            
             <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:10px;">
+              <div *ngIf="splitMode" style="margin-right:12px;display:flex;align-items:center;">
+                <input type="checkbox" [checked]="selectedForSplit.has(i)" (change)="toggleItemSplit(i)" style="width:20px;height:20px;accent-color:#d4af37;cursor:pointer;">
+              </div>
               <div style="flex:1;">
                 <div style="font-weight:600;color:#1a1a1a;margin-bottom:6px;">{{ item.name }}</div>
                 <div style="color:#8b7355;font-size:13px;">{{ item.price | currencyFormat }} {{ 'pos.each' | translate }}</div>
@@ -216,6 +232,7 @@ interface SelectedModifier {
                 </div>
               </div>
               <button
+                *ngIf="!splitMode"
                 (click)="removeFromCart(i)"
                 style="background:linear-gradient(135deg, #8b7355 0%, #6d5a45 100%);color:#fff;border:none;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:18px;line-height:1;box-shadow:0 2px 6px rgba(0,0,0,0.15);">
                 ×
@@ -223,7 +240,7 @@ interface SelectedModifier {
             </div>
 
             <div style="display:flex;align-items:center;gap:12px;">
-              <div style="display:flex;align-items:center;gap:10px;background:#ffffff;border-radius:10px;padding:6px;border:1px solid #e5e0db;">
+              <div *ngIf="!splitMode" style="display:flex;align-items:center;gap:10px;background:#ffffff;border-radius:10px;padding:6px;border:1px solid #e5e0db;">
                 <button
                   (click)="updateQuantity(i, item.quantity - 1)"
                   style="background:#ffffff;border:1px solid #d4af37;width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:18px;font-weight:700;line-height:1;color:#d4af37;">
@@ -242,6 +259,9 @@ interface SelectedModifier {
                   +
                 </button>
               </div>
+              <div *ngIf="splitMode" style="font-weight:600;color:#1a1a1a;font-size:14px;">
+                Qty: {{ item.quantity }}
+              </div>
               <div style="flex:1;text-align:right;">
                 <div style="font-weight:700;color:#d4af37;font-size:18px;">{{ item.subtotal | currencyFormat }}</div>
               </div>
@@ -259,76 +279,97 @@ interface SelectedModifier {
             <span>{{ 'pos.tax' | translate }} ({{ taxRate * 100 }}%):</span>
             <span style="font-weight:600;color:#1a1a1a;">{{ getTax() | currencyFormat }}</span>
           </div>
-          <div style="display:flex;justify-content:space-between;margin-bottom:14px;color:#8b7355;font-size:15px;">
+          
+          <!-- Service Charge & Tips -->
+          <div style="display:flex;justify-content:space-between;margin-bottom:14px;color:#8b7355;font-size:15px;align-items:center;">
+            <span>Service Charge (%):</span>
+            <input
+              type="number"
+              [(ngModel)]="serviceChargeRate"
+              (change)="calculateTotal()"
+              placeholder="0"
+              style="width:80px;text-align:right;padding:6px 10px;border:1px solid #e5e0db;border-radius:8px;font-weight:600;"
+              min="0"
+              step="0.01"
+            />
+          </div>
+          <div *ngIf="getServiceCharge() > 0" style="display:flex;justify-content:space-between;margin-bottom:14px;color:#8b7355;font-size:15px;">
+            <span>Service Charge Amount:</span>
+            <span style="font-weight:600;color:#1a1a1a;">{{ getServiceCharge() | currencyFormat }}</span>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;margin-bottom:14px;color:#8b7355;font-size:15px;align-items:center;">
+            <span>Tip Amount:</span>
+            <input
+              type="number"
+              [(ngModel)]="tipAmount"
+              (change)="calculateTotal()"
+              placeholder="0.00"
+              style="width:100px;text-align:right;padding:6px 10px;border:1px solid #e5e0db;border-radius:8px;font-weight:600;"
+              min="0"
+            />
+          </div>
+
+          <div style="display:flex;justify-content:space-between;margin-bottom:14px;color:#8b7355;font-size:15px;align-items:center;">
             <span>{{ 'pos.discount' | translate }}:</span>
             <input
               type="number"
               [(ngModel)]="discountAmount"
               (change)="calculateTotal()"
               placeholder="0.00"
-              style="width:100px;text-align:right;padding:8px 12px;border:1px solid #d4af37;border-radius:8px;font-weight:600;box-shadow:0 2px 6px rgba(0,0,0,0.06);"
+              style="width:100px;text-align:right;padding:6px 10px;border:1px solid #d4af37;border-radius:8px;font-weight:600;box-shadow:0 2px 6px rgba(0,0,0,0.06);"
               min="0"
             />
           </div>
+
           <div style="display:flex;justify-content:space-between;padding-top:16px;border-top:2px solid #d4af37;margin-top:14px;">
             <span style="font-size:19px;font-weight:700;color:#1a1a1a;letter-spacing:0.3px;">{{ 'pos.total' | translate }}:</span>
             <span style="font-size:26px;font-weight:700;color:#d4af37;">{{ getTotal() | currencyFormat }}</span>
           </div>
         </div>
 
-        <!-- Payment Method -->
-        <div style="padding:20px 24px;border-top:1px solid #e5e0db;background:#fafaf9;">
-          <div style="font-weight:600;color:#1a1a1a;margin-bottom:14px;font-size:14px;letter-spacing:0.3px;">{{ 'pos.paymentMethod' | translate }}</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
-            <button
-              (click)="paymentMethod = 'CASH'"
-              [style.background]="paymentMethod === 'CASH' ? 'linear-gradient(135deg, #d4af37 0%, #c19a2e 100%)' : '#ffffff'"
-              [style.color]="paymentMethod === 'CASH' ? '#ffffff' : '#1a1a1a'"
-              [style.border]="paymentMethod === 'CASH' ? 'none' : '1px solid #e5e0db'"
-              style="padding:14px 10px;border-radius:10px;cursor:pointer;font-weight:600;font-size:13px;box-shadow:0 2px 6px rgba(0,0,0,0.08);transition:all 0.2s;">
-              💵 {{ 'pos.cash' | translate }}
-            </button>
-            <button
-              (click)="paymentMethod = 'CARD'"
-              [style.background]="paymentMethod === 'CARD' ? 'linear-gradient(135deg, #d4af37 0%, #c19a2e 100%)' : '#ffffff'"
-              [style.color]="paymentMethod === 'CARD' ? '#ffffff' : '#1a1a1a'"
-              [style.border]="paymentMethod === 'CARD' ? 'none' : '1px solid #e5e0db'"
-              style="padding:14px 10px;border-radius:10px;cursor:pointer;font-weight:600;font-size:13px;box-shadow:0 2px 6px rgba(0,0,0,0.08);transition:all 0.2s;">
-              💳 {{ 'pos.card' | translate }}
-            </button>
-            <button
-              (click)="paymentMethod = 'MOBILE'"
-              [style.background]="paymentMethod === 'MOBILE' ? 'linear-gradient(135deg, #d4af37 0%, #c19a2e 100%)' : '#ffffff'"
-              [style.color]="paymentMethod === 'MOBILE' ? '#ffffff' : '#1a1a1a'"
-              [style.border]="paymentMethod === 'MOBILE' ? 'none' : '1px solid #e5e0db'"
-              style="padding:14px 10px;border-radius:10px;cursor:pointer;font-weight:600;font-size:13px;box-shadow:0 2px 6px rgba(0,0,0,0.08);transition:all 0.2s;">
-              📱 {{ 'pos.mobile' | translate }}
-            </button>
+        <!-- Payment Section -->
+        <div *ngIf="!splitMode" style="padding:20px 24px;border-top:1px solid #e5e0db;background:#fafaf9;">
+          <!-- Added Payments List -->
+          <div *ngIf="payments.length > 0" style="margin-bottom:16px;">
+            <div style="font-weight:600;color:#1a1a1a;margin-bottom:8px;font-size:14px;">Payments Added:</div>
+            <div *ngFor="let p of payments; let i = index" style="display:flex;justify-content:space-between;align-items:center;background:#fff;padding:8px 12px;border-radius:8px;border:1px solid #e5e0db;margin-bottom:6px;">
+              <span style="font-weight:500;">{{ p.method }}</span>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span style="font-weight:600;">{{ p.amount | currencyFormat }}</span>
+                <button (click)="removePayment(i)" style="border:none;background:none;color:#d32f2f;cursor:pointer;font-weight:700;">×</button>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:14px;">
+              <span>Total Paid: <strong style="color:#2d7c3e;">{{ getTotalPaid() | currencyFormat }}</strong></span>
+              <span>Remaining: <strong style="color:#d32f2f;">{{ getRemainingAmount() | currencyFormat }}</strong></span>
+            </div>
           </div>
-        </div>
 
-        <!-- Cash Payment Details -->
-        <div *ngIf="paymentMethod === 'CASH'" style="padding:0 24px 20px 24px;">
-          <div style="margin-bottom:10px;">
-            <label style="font-size:13px;color:#1a1a1a;font-weight:600;">{{ 'pos.amountPaid' | translate }}:</label>
-            <input
-              type="number"
-              [(ngModel)]="amountPaid"
-              (input)="calculateChange()"
-              placeholder="0.00"
-              style="width:100%;padding:14px;border:1px solid #d4af37;border-radius:10px;font-size:17px;font-weight:600;margin-top:8px;box-shadow:0 2px 6px rgba(0,0,0,0.06);"
-              min="0"
-            />
-          </div>
-          <div *ngIf="amountPaid > 0" style="display:flex;justify-content:space-between;padding:14px;background:linear-gradient(135deg, #f0e6d2 0%, #f8f6f4 100%);border-radius:10px;border:1px solid #d4af37;">
-            <span style="font-weight:600;color:#1a1a1a;">{{ 'pos.change' | translate }}:</span>
-            <span style="font-weight:700;color:#2d7c3e;font-size:19px;">{{ getChange() | currencyFormat }}</span>
+          <!-- Add Payment Controls -->
+          <div *ngIf="getRemainingAmount() > 0">
+            <div style="font-weight:600;color:#1a1a1a;margin-bottom:10px;font-size:14px;">Add Payment</div>
+            <div style="display:flex;gap:10px;margin-bottom:10px;">
+              <input
+                type="number"
+                [(ngModel)]="amountPaid"
+                placeholder="Amount"
+                style="flex:1;padding:12px;border:1px solid #d4af37;border-radius:10px;font-size:16px;font-weight:600;"
+                [value]="getRemainingAmount()"
+              />
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+              <button (click)="addPayment('CASH', amountPaid || getRemainingAmount())" style="padding:10px;background:#fff;border:1px solid #d4af37;border-radius:8px;color:#d4af37;font-weight:600;cursor:pointer;">💵 Cash</button>
+              <button (click)="addPayment('CARD', amountPaid || getRemainingAmount())" style="padding:10px;background:#fff;border:1px solid #d4af37;border-radius:8px;color:#d4af37;font-weight:600;cursor:pointer;">💳 Card</button>
+              <button (click)="addPayment('MOBILE_WALLET', amountPaid || getRemainingAmount())" style="padding:10px;background:#fff;border:1px solid #d4af37;border-radius:8px;color:#d4af37;font-weight:600;cursor:pointer;">📱 Mobile</button>
+            </div>
           </div>
         </div>
 
         <!-- Action Buttons -->
         <div style="padding:20px 24px;background:linear-gradient(135deg, #fafaf9 0%, #f8f6f4 100%);border-top:1px solid #e5e0db;">
           <button
+            *ngIf="!splitMode"
             (click)="completeSale()"
             [disabled]="cartItems.length === 0 || processing"
             style="width:100%;background:linear-gradient(135deg, #d4af37 0%, #c19a2e 100%);color:#ffffff;border:none;padding:18px;border-radius:12px;font-weight:700;font-size:17px;cursor:pointer;margin-bottom:10px;box-shadow:0 4px 12px rgba(212,175,55,0.3);"
@@ -336,6 +377,17 @@ interface SelectedModifier {
             [style.cursor]="cartItems.length === 0 || processing ? 'not-allowed' : 'pointer'">
             {{ processing ? ('pos.processing' | translate) : ('pos.completeSale' | translate) }}
           </button>
+
+          <button
+            *ngIf="splitMode"
+            (click)="paySplitItems()"
+            [disabled]="selectedForSplit.size === 0 || processing"
+            style="width:100%;background:linear-gradient(135deg, #d4af37 0%, #c19a2e 100%);color:#ffffff;border:none;padding:18px;border-radius:12px;font-weight:700;font-size:17px;cursor:pointer;margin-bottom:10px;box-shadow:0 4px 12px rgba(212,175,55,0.3);"
+            [style.opacity]="selectedForSplit.size === 0 || processing ? '0.5' : '1'"
+            [style.cursor]="selectedForSplit.size === 0 || processing ? 'not-allowed' : 'pointer'">
+            Pay Selected Items ({{ selectedForSplit.size }})
+          </button>
+
           <button
             (click)="clearCart()"
             [disabled]="cartItems.length === 0"
@@ -434,6 +486,70 @@ interface SelectedModifier {
         </div>
       </div>
     </div>
+    <!-- Split Payment Modal -->
+    <div *ngIf="showSplitPaymentModal"
+         style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(26,26,26,0.75);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:1000;"
+         (click)="closeSplitPaymentModal()">
+      <div style="background:#ffffff;border-radius:24px;padding:32px;max-width:500px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.3);border:1px solid #d4af37;" (click)="$event.stopPropagation()">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #d4af37;">
+          <h2 style="margin:0;color:#1a1a1a;font-size:22px;font-weight:700;">Pay Selected Items</h2>
+          <button
+            (click)="closeSplitPaymentModal()"
+            style="background:#f0e6d2;border:none;width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;color:#8b7355;font-weight:700;">
+            ×
+          </button>
+        </div>
+
+        <div style="margin-bottom:24px;">
+          <div style="font-size:16px;color:#1a1a1a;margin-bottom:8px;">Selected Items: <strong>{{ splitCartItems.length }}</strong></div>
+          <div style="font-size:24px;color:#d4af37;font-weight:700;">Total: {{ splitTotalAmount | currencyFormat }}</div>
+        </div>
+
+        <!-- Added Payments List -->
+        <div *ngIf="splitPayments.length > 0" style="margin-bottom:16px;background:#fafaf9;padding:12px;border-radius:12px;border:1px solid #e5e0db;">
+          <div style="font-weight:600;color:#1a1a1a;margin-bottom:8px;font-size:14px;">Payments Added:</div>
+          <div *ngFor="let p of splitPayments; let i = index" style="display:flex;justify-content:space-between;align-items:center;background:#fff;padding:8px 12px;border-radius:8px;border:1px solid #e5e0db;margin-bottom:6px;">
+            <span style="font-weight:500;">{{ p.method }}</span>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="font-weight:600;">{{ p.amount | currencyFormat }}</span>
+              <button (click)="removeSplitPayment(i)" style="border:none;background:none;color:#d32f2f;cursor:pointer;font-weight:700;">×</button>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:14px;">
+            <span>Total Paid: <strong style="color:#2d7c3e;">{{ getSplitTotalPaid() | currencyFormat }}</strong></span>
+            <span>Remaining: <strong style="color:#d32f2f;">{{ getSplitRemaining() | currencyFormat }}</strong></span>
+          </div>
+        </div>
+
+        <!-- Add Payment Controls -->
+        <div *ngIf="getSplitRemaining() > 0" style="margin-bottom:24px;">
+          <div style="font-weight:600;color:#1a1a1a;margin-bottom:10px;font-size:14px;">Add Payment</div>
+          <div style="display:flex;gap:10px;margin-bottom:10px;">
+            <input
+              type="number"
+              [(ngModel)]="splitAmountPaid"
+              placeholder="Amount"
+              style="flex:1;padding:12px;border:1px solid #d4af37;border-radius:10px;font-size:16px;font-weight:600;"
+              [value]="getSplitRemaining()"
+            />
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+            <button (click)="addSplitPayment('CASH', splitAmountPaid || getSplitRemaining())" style="padding:10px;background:#fff;border:1px solid #d4af37;border-radius:8px;color:#d4af37;font-weight:600;cursor:pointer;">💵 Cash</button>
+            <button (click)="addSplitPayment('CARD', splitAmountPaid || getSplitRemaining())" style="padding:10px;background:#fff;border:1px solid #d4af37;border-radius:8px;color:#d4af37;font-weight:600;cursor:pointer;">💳 Card</button>
+            <button (click)="addSplitPayment('MOBILE_WALLET', splitAmountPaid || getSplitRemaining())" style="padding:10px;background:#fff;border:1px solid #d4af37;border-radius:8px;color:#d4af37;font-weight:600;cursor:pointer;">📱 Mobile</button>
+          </div>
+        </div>
+
+        <button
+          (click)="completeSplitSale()"
+          [disabled]="processing || getSplitRemaining() > 0"
+          style="width:100%;background:linear-gradient(135deg, #d4af37 0%, #c19a2e 100%);color:#ffffff;border:none;padding:16px;border-radius:12px;font-weight:700;font-size:17px;cursor:pointer;box-shadow:0 4px 12px rgba(212,175,55,0.3);"
+          [style.opacity]="processing || getSplitRemaining() > 0 ? '0.5' : '1'"
+          [style.cursor]="processing || getSplitRemaining() > 0 ? 'not-allowed' : 'pointer'">
+          {{ processing ? 'Processing...' : 'Complete Payment' }}
+        </button>
+      </div>
+    </div>
   `
 })
 export class POSComponent implements OnInit {
@@ -455,7 +571,7 @@ export class POSComponent implements OnInit {
   itemsPerPage = 12;
   totalPages = 1;
 
-  paymentMethod: 'CASH' | 'CARD' | 'MOBILE' = 'CASH';
+  paymentMethod: 'CASH' | 'CARD' | 'MOBILE_WALLET' = 'CASH';
   taxRate = 0.15; // 15% tax
   discountAmount = 0;
   amountPaid = 0;
@@ -689,9 +805,7 @@ export class POSComponent implements OnInit {
     return this.getSubtotal() * this.taxRate;
   }
 
-  getTotal(): number {
-    return this.getSubtotal() + this.getTax() - this.discountAmount;
-  }
+
 
   getChange(): number {
     return Math.max(0, this.amountPaid - this.getTotal());
@@ -725,11 +839,186 @@ export class POSComponent implements OnInit {
     }
   }
 
+  // Payment & Splitting
+  payments: { method: string, amount: number }[] = [];
+  serviceChargeRate = 0;
+  serviceChargeAmount = 0;
+  tipAmount = 0;
+
+  splitMode = false;
+  selectedForSplit: Set<number> = new Set(); // Set of cart item indices
+
+  // ... existing methods ...
+
+  getServiceCharge(): number {
+    return this.getSubtotal() * this.serviceChargeRate;
+  }
+
+  getTotal(): number {
+    return this.getSubtotal() + this.getTax() + this.getServiceCharge() + this.tipAmount - this.discountAmount;
+  }
+
+  getTotalPaid(): number {
+    return this.payments.reduce((sum, p) => sum + p.amount, 0);
+  }
+
+  getRemainingAmount(): number {
+    return Math.max(0, this.getTotal() - this.getTotalPaid());
+  }
+
+  addPayment(method: string, amount: number) {
+    if (amount <= 0) return;
+    this.payments.push({ method, amount });
+    this.amountPaid = 0; // Reset input
+  }
+
+  removePayment(index: number) {
+    this.payments.splice(index, 1);
+  }
+
+  toggleSplitMode() {
+    this.splitMode = !this.splitMode;
+    this.selectedForSplit.clear();
+  }
+
+  toggleItemSplit(index: number) {
+    if (this.selectedForSplit.has(index)) {
+      this.selectedForSplit.delete(index);
+    } else {
+      this.selectedForSplit.add(index);
+    }
+  }
+
+  showSplitPaymentModal = false;
+  splitCartItems: CartItem[] = [];
+  splitTotalAmount = 0;
+  splitPayments: { method: string, amount: number }[] = [];
+  splitAmountPaid = 0;
+
+  paySplitItems() {
+    if (this.selectedForSplit.size === 0) return;
+
+    // Create a temporary cart with selected items
+    this.splitCartItems = this.cartItems.filter((_, index) => this.selectedForSplit.has(index));
+
+    // Calculate total for split items
+    const splitSubtotal = this.splitCartItems.reduce((sum, item) => sum + item.subtotal, 0);
+    const splitTax = splitSubtotal * this.taxRate;
+    this.splitTotalAmount = splitSubtotal + splitTax; // Add service charge/tip logic if needed later
+
+    this.splitPayments = [];
+    this.splitAmountPaid = 0;
+    this.showSplitPaymentModal = true;
+  }
+
+  addSplitPayment(method: string, amount: number) {
+    if (amount <= 0) return;
+    this.splitPayments.push({ method, amount });
+    this.splitAmountPaid = 0;
+  }
+
+  removeSplitPayment(index: number) {
+    this.splitPayments.splice(index, 1);
+  }
+
+  getSplitTotalPaid(): number {
+    return this.splitPayments.reduce((sum, p) => sum + p.amount, 0);
+  }
+
+  getSplitRemaining(): number {
+    return Math.max(0, this.splitTotalAmount - this.getSplitTotalPaid());
+  }
+
+  closeSplitPaymentModal() {
+    this.showSplitPaymentModal = false;
+    this.splitCartItems = [];
+    this.splitPayments = [];
+  }
+
+  completeSplitSale() {
+    const totalPaid = this.getSplitTotalPaid();
+
+    // Auto-add cash if no payments but amount entered (or if exact amount needed)
+    if (this.splitPayments.length === 0 && this.splitAmountPaid > 0) {
+      this.addSplitPayment('CASH', this.splitAmountPaid);
+    } else if (this.splitPayments.length === 0) {
+      // If still 0, maybe they want to pay full with one method? 
+      // For now require explicit add, or we can auto-add remaining as cash if they click complete?
+      // Let's enforce adding payment.
+    }
+
+    // Re-calculate after potential auto-add
+    const finalTotalPaid = this.getSplitTotalPaid();
+
+    if (finalTotalPaid < this.splitTotalAmount) {
+      alert(`Insufficient payment! Remaining: ${(this.splitTotalAmount - finalTotalPaid).toFixed(2)}`);
+      return;
+    }
+
+    this.processing = true;
+
+    const saleRequest: CreateSaleRequest = {
+      items: this.splitCartItems.map(item => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        unitPrice: item.price,
+        taxRate: this.taxRate,
+        discount: 0,
+        totalPrice: item.subtotal
+      })),
+      paymentMethod: this.splitPayments.length > 1 ? 'SPLIT' : (this.splitPayments[0]?.method as any || 'CASH'),
+      payments: this.splitPayments.map(p => ({ paymentMethod: p.method, amount: p.amount })),
+      subtotal: this.splitCartItems.reduce((sum, item) => sum + item.subtotal, 0),
+      taxAmount: this.splitCartItems.reduce((sum, item) => sum + item.subtotal, 0) * this.taxRate,
+      discountAmount: 0,
+      totalAmount: this.splitTotalAmount,
+      cashReceived: this.splitPayments.filter(p => p.method === 'CASH').reduce((sum, p) => sum + p.amount, 0),
+      changeGiven: Math.max(0, finalTotalPaid - this.splitTotalAmount),
+      shiftId: this.currentShift?.id?.toString() || undefined,
+      tableId: this.selectedTableId || undefined,
+      orderType: this.orderType,
+      status: 'COMPLETED'
+    } as any;
+
+    this.saleService.createSale(saleRequest).subscribe({
+      next: (sale) => {
+        this.processing = false;
+        // Remove paid items from main cart
+        this.cartItems = this.cartItems.filter((_, index) => !this.selectedForSplit.has(index));
+        this.selectedForSplit.clear();
+        this.splitMode = false;
+        this.closeSplitPaymentModal();
+        this.calculateTotal();
+        this.preserveCartOnClose = true; // Split sale, keep remaining items
+        this.showSuccessModal = true; // Reuse success modal? Or simple alert?
+        this.lastSaleTotal = this.splitTotalAmount;
+        this.lastSaleChange = saleRequest.changeGiven || 0;
+        // We need to be careful reusing showSuccessModal because it resets cart on close.
+        // We DON'T want to reset the whole cart, just the split items are gone.
+        // So let's just show an alert or a specific success message.
+        alert(`Split Sale Completed! Change: ${(saleRequest.changeGiven || 0).toFixed(2)}`);
+      },
+      error: (err) => {
+        this.processing = false;
+        console.error('Failed to process split sale:', err);
+        alert('Failed to process split payment.');
+      }
+    });
+  }
+
   completeSale() {
     if (this.cartItems.length === 0) return;
 
-    if (this.paymentMethod === 'CASH' && this.amountPaid < this.getTotal()) {
-      alert('Insufficient payment amount!');
+    // If no payments added but amountPaid > 0 (single cash payment flow), add it
+    if (this.payments.length === 0 && this.amountPaid > 0) {
+      this.addPayment('CASH', this.amountPaid);
+    }
+
+    const totalPaid = this.getTotalPaid();
+    const total = this.getTotal();
+
+    if (totalPaid < total) {
+      alert(`Insufficient payment! Remaining: ${(total - totalPaid).toFixed(2)}`);
       return;
     }
 
@@ -744,25 +1033,29 @@ export class POSComponent implements OnInit {
         discount: 0,
         totalPrice: item.subtotal
       })),
-      paymentMethod: this.paymentMethod === 'MOBILE' ? 'CARD' : this.paymentMethod,
+      paymentMethod: this.payments.length > 1 ? 'SPLIT' : (this.payments[0]?.method as any || 'CASH'),
+      payments: this.payments.map(p => ({ paymentMethod: p.method, amount: p.amount })),
       subtotal: this.getSubtotal(),
       taxAmount: this.getTax(),
       discountAmount: this.discountAmount,
-      totalAmount: this.getTotal(),
-      cashReceived: this.paymentMethod === 'CASH' ? this.amountPaid : undefined,
-      changeGiven: this.paymentMethod === 'CASH' ? this.getChange() : undefined,
+      totalAmount: total,
+      cashReceived: this.payments.filter(p => p.method === 'CASH').reduce((sum, p) => sum + p.amount, 0),
+      changeGiven: Math.max(0, totalPaid - total),
       shiftId: this.currentShift?.id?.toString() || undefined,
       tableId: this.selectedTableId || undefined,
-      orderType: this.orderType
+      orderType: this.orderType,
+      tipAmount: this.tipAmount,
+      serviceCharge: this.getServiceCharge()
     };
 
     this.saleService.createSale(saleRequest).subscribe({
       next: (sale) => {
         this.processing = false;
-        this.lastSaleTotal = this.getTotal();
-        this.lastSaleChange = this.getChange();
+        this.lastSaleTotal = total;
+        this.lastSaleChange = saleRequest.changeGiven || 0;
+        this.preserveCartOnClose = false; // Full sale, clear cart
         this.showSuccessModal = true;
-        this.loadProducts(); // Reload products to get updated stock
+        this.loadProducts();
       },
       error: (err) => {
         this.processing = false;
@@ -772,16 +1065,21 @@ export class POSComponent implements OnInit {
     });
   }
 
+  preserveCartOnClose = false;
+
   closeSuccessModal() {
     this.showSuccessModal = false;
-    this.cartItems = [];
-    this.discountAmount = 0;
-    this.amountPaid = 0;
-    this.paymentMethod = 'CASH';
+    if (!this.preserveCartOnClose) {
+      this.cartItems = [];
+      this.discountAmount = 0;
+      this.amountPaid = 0;
+      this.paymentMethod = 'CASH';
+      this.selectedTableId = null;
+      this.selectedTable = null;
+    }
+    this.preserveCartOnClose = false; // Reset flag
     this.searchTerm = '';
     this.filterCategory = '';
-    this.selectedTableId = null;
-    this.selectedTable = null;
     this.loadTablesAndFloors(); // Reload to get updated table statuses
     this.onSearch();
   }

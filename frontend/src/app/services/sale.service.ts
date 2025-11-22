@@ -26,7 +26,11 @@ export interface CreateSaleRequest {
     totalPrice: number;
   }[];
   customerId?: string;
-  paymentMethod: 'CASH' | 'CARD' | 'SPLIT' | 'STORE_CREDIT';
+  paymentMethod: 'CASH' | 'CARD' | 'SPLIT' | 'STORE_CREDIT' | 'MOBILE_WALLET';
+  payments?: {
+    paymentMethod: string;
+    amount: number;
+  }[];
   subtotal: number;
   taxAmount: number;
   discountAmount?: number;
@@ -78,7 +82,7 @@ export interface Sale {
 export class SaleService {
   private readonly baseUrl = '/api/sales';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   createSale(sale: CreateSaleRequest): Observable<Sale> {
     return this.http.post<Sale>(this.baseUrl, sale);

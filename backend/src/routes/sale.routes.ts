@@ -24,7 +24,7 @@ router.post(
     body('subtotal').isFloat({ min: 0 }).withMessage('Subtotal must be positive'),
     body('taxAmount').isFloat({ min: 0 }).withMessage('Tax amount must be positive'),
     body('totalAmount').isFloat({ min: 0 }).withMessage('Total amount must be positive'),
-    body('paymentMethod').isIn(['CASH', 'CARD', 'SPLIT', 'STORE_CREDIT']).withMessage('Invalid payment method'),
+    body('paymentMethod').isIn(['CASH', 'CARD', 'SPLIT', 'STORE_CREDIT', 'MOBILE_WALLET']).withMessage('Invalid payment method'),
     body('customerId').optional().isString(),
     body('shiftId').optional().isString()
   ]),

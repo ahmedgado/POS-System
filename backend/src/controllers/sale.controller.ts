@@ -5,7 +5,7 @@ export class SaleController {
   // Create new sale
   async createSale(req: Request, res: Response): Promise<Response> {
     try {
-      const { customerId, items, paymentMethod, subtotal, taxAmount, discountAmount, totalAmount, cashReceived, changeGiven, shiftId, tableId, waiterId, orderType, tipAmount, serviceCharge } = req.body;
+      const { customerId, items, paymentMethod, payments, subtotal, taxAmount, discountAmount, totalAmount, cashReceived, changeGiven, shiftId, tableId, waiterId, orderType, tipAmount, serviceCharge } = req.body;
       const cashierId = (req as any).user.id;
 
       // Validate items
@@ -30,7 +30,7 @@ export class SaleController {
             taxAmount,
             discountAmount: discountAmount || 0,
             totalAmount,
-            paymentMethod,
+            paymentMethod: paymentMethod || 'SPLIT', // Default to SPLIT if multiple payments
             cashReceived,
             changeGiven,
             shiftId,
@@ -43,6 +43,28 @@ export class SaleController {
             status: 'COMPLETED'
           }
         });
+
+        // Create payments if provided
+        if (payments && Array.isArray(payments) && payments.length > 0) {
+          for (const payment of payments) {
+            await tx.salePayment.create({
+              data: {
+                saleId: newSale.id,
+                paymentMethod: payment.paymentMethod,
+                amount: payment.amount
+              }
+            });
+          }
+        } else if (paymentMethod) {
+          // Create single payment record for backward compatibility
+          await tx.salePayment.create({
+            data: {
+              saleId: newSale.id,
+              paymentMethod: paymentMethod,
+              amount: totalAmount
+            }
+          });
+        }
 
         // Create sale items and update stock
         // @ts-ignore

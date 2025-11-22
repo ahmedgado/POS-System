@@ -9,7 +9,7 @@ import { AuthService } from '../services/auth.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div style="min-height:100vh;background:#f8f6f4;">
+    <div style="background:#f8f6f4;">
       <!-- Header -->
       <header style="background:linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);color:#c4a75b;padding:20px 32px;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
         <div style="display:flex;align-items:center;justify-content:space-between;">

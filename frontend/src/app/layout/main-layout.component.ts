@@ -72,31 +72,50 @@ import { BackendStatusComponent } from '../components/backend-status.component';
           <a *ngIf="hasAccess(['ADMIN', 'MANAGER', 'OWNER'])" routerLink="/app/reports" routerLinkActive="active" style="display:block;padding:12px 16px;border-radius:10px;color:#f8f6f4;text-decoration:none;margin-bottom:6px;font-weight:500;font-size:15px;transition:all 0.2s;">📈 {{ t('nav.reports') }}</a>
           <a *ngIf="hasAccess(['ADMIN', 'MANAGER'])" routerLink="/app/settings" routerLinkActive="active" style="display:block;padding:12px 16px;border-radius:10px;color:#f8f6f4;text-decoration:none;margin-bottom:6px;font-weight:500;font-size:15px;transition:all 0.2s;">⚙️ {{ t('nav.settings') }}</a>
         </nav>
-        <div style="padding:20px;border-top:1px solid #3a3a3a;">
-          <button (click)="logout()" style="width:100%;background:linear-gradient(135deg, #d4af37 0%, #c19a2e 100%);color:#ffffff;border:none;padding:14px;border-radius:10px;font-weight:700;cursor:pointer;font-size:15px;box-shadow:0 4px 12px rgba(212,175,55,0.3);transition:all 0.2s;"
-          (mouseenter)="$event.target.style.transform='translateY(-2px)';$event.target.style.boxShadow='0 6px 16px rgba(212,175,55,0.4)'"
-          (mouseleave)="$event.target.style.transform='translateY(0)';$event.target.style.boxShadow='0 4px 12px rgba(212,175,55,0.3)'">{{ t('nav.logout') }}</button>
-        </div>
       </aside>
-      <section style="flex:1;background:#f8f6f4;">
-        <router-outlet></router-outlet>
+      <section style="flex:1;background:#f8f6f4;display:flex;flex-direction:column;">
+        <!-- Top Banner with User Info and Logout -->
+        <div style="background:#fff;border-bottom:1px solid #e5e5e5;padding:12px 32px;display:flex;justify-content:flex-end;align-items:center;gap:16px;box-shadow:0 2px 4px rgba(0,0,0,0.05);">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div style="text-align:right;">
+              <div style="font-weight:600;color:#333;font-size:14px;">{{ userName }}</div>
+              <div style="font-size:12px;color:#666;">{{ userRole }}</div>
+            </div>
+            <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg, #d4af37 0%, #c19a2e 100%);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px;">
+              {{ userInitials }}
+            </div>
+          </div>
+          <button (click)="logout()" style="background:linear-gradient(135deg, #DC3545 0%, #c82333 100%);color:#fff;border:none;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;box-shadow:0 2px 8px rgba(220,53,69,0.3);transition:all 0.2s;"
+          (mouseenter)="$event.target.style.transform='translateY(-2px)';$event.target.style.boxShadow='0 4px 12px rgba(220,53,69,0.4)'"
+          (mouseleave)="$event.target.style.transform='translateY(0)';$event.target.style.boxShadow='0 2px 8px rgba(220,53,69,0.3)'">
+            🚪 {{ t('nav.logout') }}
+          </button>
+        </div>
+        <!-- Main Content Area -->
+        <div style="flex:1;overflow-y:auto;">
+          <router-outlet></router-outlet>
+        </div>
       </section>
     </div>
   `,
   styles: [`
     a.active {
       background: linear-gradient(135deg, #d4af37 0%, #c19a2e 100%) !important;
-      color: #ffffff !important;
-      box-shadow: 0 4px 12px rgba(212,175,55,0.3);
+      color: #1a1a1a !important;
+      font-weight: 700;
+      box-shadow: 0 4px 12px rgba(212,175,55,0.4);
     }
     a:hover:not(.active) {
-      background: rgba(212,175,55,0.1);
+      background: rgba(212,175,55,0.15);
+      transform: translateX(4px);
     }
   `]
 })
 export class MainLayoutComponent implements OnInit {
   currentLang: Language = 'en';
   userRole: string = '';
+  userName: string = '';
+  userInitials: string = '';
 
   constructor(
     private auth: AuthService,
@@ -110,10 +129,24 @@ export class MainLayoutComponent implements OnInit {
       this.currentLang = lang;
     });
 
-    // Get current user role
+    // Get current user role and info
     const currentUser = this.auth.currentUser;
     if (currentUser) {
       this.userRole = currentUser.role;
+      this.userName = `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || currentUser.username || currentUser.email;
+
+      // Generate initials
+      const firstName = currentUser.firstName || '';
+      const lastName = currentUser.lastName || '';
+      if (firstName && lastName) {
+        this.userInitials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+      } else if (firstName) {
+        this.userInitials = firstName.substring(0, 2).toUpperCase();
+      } else if (currentUser.username) {
+        this.userInitials = currentUser.username.substring(0, 2).toUpperCase();
+      } else {
+        this.userInitials = currentUser.email.substring(0, 2).toUpperCase();
+      }
     }
   }
 

@@ -32,7 +32,7 @@ interface KitchenStation {
       </header>
 
       <!-- Main Content -->
-      <main style="padding:32px;"
+      <main style="padding:32px;">
       <div style="background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,0.08);overflow:hidden;">
         <table style="width:100%;border-collapse:collapse;">
           <thead>

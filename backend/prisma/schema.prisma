@@ -503,6 +503,7 @@ model KitchenStation {
   id          String   @id @default(uuid())
   name        String   @unique // Grill, Bar, Pastry, etc.
   description String?
+  printerIp   String?  // IP address for station printer (e.g., 192.168.1.10)
   sortOrder   Int      @default(0)
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())

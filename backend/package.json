@@ -12,6 +12,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:prod": "prisma migrate deploy",
     "prisma:seed": "ts-node --project tsconfig.seed.json prisma/seed.ts",
+    "prisma:seed:restaurant": "ts-node --project tsconfig.seed.json prisma/seed-restaurant-demo.ts",
     "prisma:studio": "prisma studio",
     "test": "jest",
     "test:watch": "jest --watch",

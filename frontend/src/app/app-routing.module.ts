@@ -22,6 +22,7 @@ import { ProductStationsComponent } from './restaurant/product-stations.componen
 import { RestaurantModule } from './restaurant/restaurant.module';
 import { IngredientsComponent } from './ingredients/ingredients.component';
 import { RecipesComponent } from './recipes/recipes.component';
+import { KitchenStationsComponent } from './kitchen-stations/kitchen-stations.component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -47,6 +48,7 @@ const routes: Routes = [
       { path: 'restaurant/modifiers', component: ModifiersComponent },
       { path: 'restaurant/product-modifiers', component: ProductModifiersComponent },
       { path: 'restaurant/product-stations', component: ProductStationsComponent },
+      { path: 'restaurant/kitchen-stations', component: KitchenStationsComponent },
       { path: 'kds', component: KdsComponent },
       { path: 'ingredients', component: IngredientsComponent },
       { path: 'recipes', component: RecipesComponent }

@@ -47,14 +47,17 @@ RUN apt-get update && apt-get install -y \
 # Copy package files
 COPY package*.json ./
 
-# Install production dependencies only
+# Install production dependencies + ts-node for seeding
 RUN npm install --only=production && \
+    npm install ts-node typescript @types/node --save-dev && \
     npm cache clean --force
 
 # Copy built files from builder
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/tsconfig.json ./tsconfig.json
+COPY --from=builder /app/tsconfig.seed.json ./tsconfig.seed.json
 
 # Create non-root user
 RUN groupadd -g 1001 nodejs && \

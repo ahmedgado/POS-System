@@ -777,6 +777,83 @@ async function main() {
   }
   console.log(`✓ Created ${customers.length} customers\n`);
 
+  // Create Shifts with new enhanced fields
+  console.log('📊 Creating shifts with payment breakdown...');
+  const shifts: any[] = [];
+
+  // Create 5 shifts (representing 5 days of operation)
+  for (let i = 0; i < 5; i++) {
+    const cashier = waiters[randomInt(0, waiters.length - 1)];
+    const shiftDate = new Date();
+    shiftDate.setDate(shiftDate.getDate() - (4 - i)); // Last 5 days
+
+    const openedAt = new Date(shiftDate);
+    openedAt.setHours(8, 0, 0, 0); // 8 AM
+
+    const closedAt = new Date(shiftDate);
+    closedAt.setHours(22, 0, 0, 0); // 10 PM
+
+    const startingCash = 100;
+
+    // Simulate realistic shift totals
+    const cashSales = randomPrice(500, 1500);
+    const cardSales = randomPrice(800, 2000);
+    const mobileSales = randomPrice(300, 800);
+    const splitSales = randomPrice(200, 600);
+
+    const totalSales = cashSales + cardSales + mobileSales + splitSales;
+    const totalTransactions = randomInt(30, 80);
+    const totalTips = randomPrice(50, 200);
+    const totalServiceCharges = totalSales * 0.05; // 5%
+    const totalDiscounts = randomPrice(20, 100);
+    const totalTax = totalSales * 0.15; // 15%
+
+    const expectedCash = startingCash + cashSales;
+    const endingCash = expectedCash + randomPrice(-10, 10); // Small discrepancy
+    const discrepancy = endingCash - expectedCash;
+
+    const shift = await prisma.shift.create({
+      data: {
+        shiftNumber: `SHIFT-${shiftDate.getFullYear()}${String(i + 1).padStart(6, '0')}`,
+        cashierId: cashier.id,
+        startingCash,
+        endingCash,
+        expectedCash,
+        discrepancy,
+        totalSales,
+        totalTransactions,
+        status: 'CLOSED',
+        openedAt,
+        closedAt,
+
+        // Auto-management tracking
+        autoOpened: i % 2 === 0, // Alternate between auto and manual
+        autoClosed: i % 2 === 0,
+        openedBy: i % 2 === 0 ? null : cashier.id,
+        closedBy: i % 2 === 0 ? null : cashier.id,
+
+        // Payment method breakdown
+        cashSales,
+        cardSales,
+        mobileSales,
+        splitSales,
+
+        // Enhanced statistics
+        refundCount: randomInt(0, 3),
+        voidCount: randomInt(0, 2),
+        totalTips,
+        totalServiceCharges,
+        totalDiscounts,
+        totalTax,
+
+        notes: i % 2 === 0 ? 'Automatically closed by system' : 'Manually closed - all good'
+      }
+    });
+
+    shifts.push(shift);
+  }
+  console.log(`✓ Created ${shifts.length} shifts with payment breakdown\n`);
+
   // Create Sales with restaurant-specific fields
   console.log('💰 Creating sample restaurant orders...');
   const orderTypes = ['DINE_IN', 'TAKEAWAY', 'DELIVERY'];
@@ -787,6 +864,9 @@ async function main() {
     const waiter = waiters[randomInt(0, waiters.length - 1)];
     const orderType = orderTypes[randomInt(0, orderTypes.length - 1)] as any;
     const orderStatus = orderStatuses[randomInt(2, orderStatuses.length - 1)] as any;
+
+    // Assign to a random shift
+    const shift = shifts[randomInt(0, shifts.length - 1)];
 
     const table = orderType === 'DINE_IN' ? tables[randomInt(0, tables.length - 1)] : null;
 
@@ -818,12 +898,38 @@ async function main() {
 
     const saleNumber = `SALE-${Date.now()}-${i}`;
 
+    // Determine payment method and create payments
+    const paymentMethods = ['CASH', 'CARD', 'MOBILE_WALLET'];
+    const isSplitPayment = Math.random() < 0.3; // 30% chance of split payment
+
+    let paymentMethod: any;
+    const salePayments: any[] = [];
+
+    if (isSplitPayment) {
+      // Split payment between 2 methods
+      paymentMethod = 'SPLIT';
+      const method1 = paymentMethods[randomInt(0, 2)];
+      const method2 = paymentMethods[randomInt(0, 2)];
+      const amount1 = totalAmount * randomPrice(0.3, 0.7);
+      const amount2 = totalAmount - amount1;
+
+      salePayments.push(
+        { paymentMethod: method1, amount: amount1 },
+        { paymentMethod: method2, amount: amount2 }
+      );
+    } else {
+      // Single payment
+      paymentMethod = paymentMethods[randomInt(0, 2)];
+      salePayments.push({ paymentMethod, amount: totalAmount });
+    }
+
     await prisma.sale.create({
       data: {
         saleNumber: saleNumber,
         cashierId: waiter.id,
         customerId: Math.random() < 0.7 ? customer.id : null,
         tableId: table?.id,
+        shiftId: shift.id, // Link to shift
         totalAmount: totalAmount,
         subtotal: subtotal,
         discountAmount: discount,
@@ -833,11 +939,14 @@ async function main() {
         orderType: orderType,
         orderStatus: orderStatus,
         waiterId: waiter.id,
-        paymentMethod: ['CASH', 'CARD', 'MOBILE_WALLET'][randomInt(0, 2)] as any,
+        paymentMethod: paymentMethod,
         status: 'COMPLETED' as any,
         notes: Math.random() < 0.1 ? 'Customer allergic to nuts' : undefined,
         items: {
           create: saleItems
+        },
+        payments: {
+          create: salePayments // Create SalePayment records
         }
       }
     });

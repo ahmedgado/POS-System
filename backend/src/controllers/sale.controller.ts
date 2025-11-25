@@ -1,16 +1,29 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
+import shiftService from '../services/shift.service';
 
 export class SaleController {
   // Create new sale
   async createSale(req: Request, res: Response): Promise<Response> {
     try {
-      const { customerId, items, paymentMethod, payments, subtotal, taxAmount, discountAmount, totalAmount, cashReceived, changeGiven, shiftId, tableId, waiterId, orderType, tipAmount, serviceCharge } = req.body;
+      const { customerId, items, paymentMethod, payments, subtotal, taxAmount, discountAmount, totalAmount, cashReceived, changeGiven, tableId, waiterId, orderType, tipAmount, serviceCharge } = req.body;
       const cashierId = (req as any).user.id;
 
       // Validate items
       if (!items || items.length === 0) {
         return res.status(400).json({ message: 'No items in sale' });
+      }
+
+      // Get or create active shift
+      let shiftId: string | null = null;
+      try {
+        const shift = await shiftService.getOrCreateShift(cashierId);
+        if (shift) {
+          shiftId = shift.id;
+        }
+      } catch (error: any) {
+        // If shift is required but not found/created, return error
+        return res.status(400).json({ message: error.message });
       }
 
       // Generate sale number

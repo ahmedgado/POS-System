@@ -11,6 +11,7 @@ import { TableService, Table } from '../services/table.service';
 import { FloorService, Floor } from '../services/floor.service';
 import { ShiftService, Shift } from '../services/shift.service';
 import { ModifierService, ModifierGroup, Modifier } from '../services/modifier.service';
+import { SettingsService, ShiftSettings } from '../services/settings.service';
 
 interface CartItem {
   productId: string;
@@ -40,7 +41,21 @@ interface SelectedModifier {
         <!-- Header -->
         <header style="background:linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);color:#d4af37;padding:20px 24px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
           <h1 style="margin:0;font-size:22px;font-weight:600;letter-spacing:0.5px;">{{ 'pos.title' | translate }}</h1>
-          <div style="font-size:14px;color:#f8f6f4;font-weight:500;">{{ cashierName }}</div>
+          <div style="display:flex;align-items:center;gap:16px;">
+            <div *ngIf="currentShift" style="background:#4caf50;color:white;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px;">
+              <span style="width:8px;height:8px;background:white;border-radius:50%;"></span>
+              SHIFT OPEN
+            </div>
+            <div *ngIf="!currentShift && shiftSettings?.shiftMode === 'MANUAL'" 
+                 (click)="openShift()"
+                 style="background:#f44336;color:white;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.2s;"
+                 (mouseenter)="$event.currentTarget.style.opacity='0.9'"
+                 (mouseleave)="$event.currentTarget.style.opacity='1'">
+              <span style="width:8px;height:8px;background:white;border-radius:50%;animation:pulse 1.5s infinite;"></span>
+              OPEN SHIFT
+            </div>
+            <div style="font-size:14px;color:#f8f6f4;font-weight:500;">{{ cashierName }}</div>
+          </div>
         </header>
 
         <!-- Search Bar -->
@@ -334,9 +349,9 @@ interface SelectedModifier {
           <div *ngIf="payments.length > 0" style="margin-bottom:16px;">
             <div style="font-weight:600;color:#1a1a1a;margin-bottom:8px;font-size:14px;">Payments Added:</div>
             <div *ngFor="let p of payments; let i = index" style="display:flex;justify-content:space-between;align-items:center;background:#fff;padding:8px 12px;border-radius:8px;border:1px solid #e5e0db;margin-bottom:6px;">
-              <span style="font-weight:500;">{{ p.method }}</span>
+              <span style="font-weight:500;color:#1a1a1a;">{{ p.method }}</span>
               <div style="display:flex;align-items:center;gap:10px;">
-                <span style="font-weight:600;">{{ p.amount | currencyFormat }}</span>
+                <span style="font-weight:600;color:#1a1a1a;">{{ p.amount | currencyFormat }}</span>
                 <button (click)="removePayment(i)" style="border:none;background:none;color:#d32f2f;cursor:pointer;font-weight:700;">×</button>
               </div>
             </div>
@@ -506,12 +521,12 @@ interface SelectedModifier {
         </div>
 
         <!-- Added Payments List -->
-        <div *ngIf="splitPayments.length > 0" style="margin-bottom:16px;background:#fafaf9;padding:12px;border-radius:12px;border:1px solid #e5e0db;">
+        <div *ngIf="splitPayments.length > 0" style="margin-bottom:16px;background:#fafaf9;padding:12px;border-radius:12px;border:1px solid #e5dfdbff;">
           <div style="font-weight:600;color:#1a1a1a;margin-bottom:8px;font-size:14px;">Payments Added:</div>
           <div *ngFor="let p of splitPayments; let i = index" style="display:flex;justify-content:space-between;align-items:center;background:#fff;padding:8px 12px;border-radius:8px;border:1px solid #e5e0db;margin-bottom:6px;">
-            <span style="font-weight:500;">{{ p.method }}</span>
+            <span style="font-weight:500;color:#1a1a1a;">{{ p.method }}</span>
             <div style="display:flex;align-items:center;gap:10px;">
-              <span style="font-weight:600;">{{ p.amount | currencyFormat }}</span>
+              <span style="font-weight:600;color:#1a1a1a;">{{ p.amount | currencyFormat }}</span>
               <button (click)="removeSplitPayment(i)" style="border:none;background:none;color:#d32f2f;cursor:pointer;font-weight:700;">×</button>
             </div>
           </div>
@@ -595,6 +610,8 @@ export class POSComponent implements OnInit {
   productModifiers: ModifierGroup[] = [];
   selectedModifiers: Map<string, SelectedModifier[]> = new Map();
 
+  shiftSettings: ShiftSettings | null = null;
+
   constructor(
     private productService: ProductService,
     private saleService: SaleService,
@@ -603,7 +620,8 @@ export class POSComponent implements OnInit {
     private tableService: TableService,
     private floorService: FloorService,
     private shiftService: ShiftService,
-    private modifierService: ModifierService
+    private modifierService: ModifierService,
+    private settingsService: SettingsService
   ) {
     this.cashierName = this.authService.currentUser?.firstName || 'Cashier';
   }
@@ -613,6 +631,16 @@ export class POSComponent implements OnInit {
     this.loadProducts();
     this.loadTablesAndFloors();
     this.loadCurrentShift();
+    this.loadShiftSettings();
+  }
+
+  loadShiftSettings() {
+    this.settingsService.getShiftSettings().subscribe({
+      next: (response) => {
+        this.shiftSettings = response.data;
+      },
+      error: (err) => console.error('Failed to load shift settings:', err)
+    });
   }
 
   loadCurrentShift() {
@@ -622,6 +650,25 @@ export class POSComponent implements OnInit {
       },
       error: (err) => console.error('Failed to load current shift:', err)
     });
+  }
+
+  openShift() {
+    if (confirm('Open a new shift?')) {
+      // Use default starting cash from settings or prompt?
+      // For simplicity, use settings value or 0
+      const startingCash = this.shiftSettings?.shiftStartingCash || 0;
+
+      this.shiftService.openShift(startingCash).subscribe({
+        next: (shift) => {
+          this.currentShift = shift;
+          alert('Shift opened successfully!');
+        },
+        error: (err) => {
+          console.error('Failed to open shift:', err);
+          alert('Failed to open shift: ' + (err.error?.message || err.message));
+        }
+      });
+    }
   }
 
   loadTablesAndFloors() {
@@ -936,6 +983,12 @@ export class POSComponent implements OnInit {
   }
 
   completeSplitSale() {
+    // Check for shift requirement
+    if (this.shiftSettings?.shiftMode === 'MANUAL' && this.shiftSettings?.requireShiftForSales && !this.currentShift) {
+      alert('A shift must be open to process sales. Please open a shift first.');
+      return;
+    }
+
     const totalPaid = this.getSplitTotalPaid();
 
     // Auto-add cash if no payments but amount entered (or if exact amount needed)
@@ -1008,6 +1061,12 @@ export class POSComponent implements OnInit {
 
   completeSale() {
     if (this.cartItems.length === 0) return;
+
+    // Check for shift requirement
+    if (this.shiftSettings?.shiftMode === 'MANUAL' && this.shiftSettings?.requireShiftForSales && !this.currentShift) {
+      alert('A shift must be open to process sales. Please open a shift first.');
+      return;
+    }
 
     // If no payments added but amountPaid > 0 (single cash payment flow), add it
     if (this.payments.length === 0 && this.amountPaid > 0) {

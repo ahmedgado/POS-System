@@ -61,6 +61,8 @@ app.use('*', (_req, res) => {
 // Error handling middleware (must be last)
 app.use(errorHandler);
 
+import schedulerService from './services/scheduler.service';
+
 // Start server
 const PORT = config.port;
 
@@ -68,11 +70,15 @@ const server = app.listen(PORT, () => {
   logger.info(`🚀 Server running on port ${PORT} in ${config.nodeEnv} mode`);
   logger.info(`📍 API available at http://localhost:${PORT}/api`);
   logger.info(`❤️  Health check at http://localhost:${PORT}/api/health`);
+
+  // Initialize Scheduler
+  schedulerService.initialize();
 });
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
   logger.info('SIGTERM signal received: closing HTTP server');
+  schedulerService.stopAll();
   server.close(() => {
     logger.info('HTTP server closed');
     process.exit(0);
@@ -81,6 +87,7 @@ process.on('SIGTERM', () => {
 
 process.on('SIGINT', () => {
   logger.info('SIGINT signal received: closing HTTP server');
+  schedulerService.stopAll();
   server.close(() => {
     logger.info('HTTP server closed');
     process.exit(0);

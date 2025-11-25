@@ -50,6 +50,15 @@ export interface SystemSettings {
   lowStockThreshold: number;
 }
 
+export interface ShiftSettings {
+  shiftMode: 'MANUAL' | 'AUTOMATIC' | 'HYBRID' | 'ON_DEMAND';
+  autoShiftStartTime: string | null;
+  autoShiftEndTime: string | null;
+  shiftStartingCash: number;
+  requireShiftForSales: boolean;
+  inactivityTimeout: number;
+}
+
 export interface AllSettings {
   store: StoreSettings;
   tax: TaxSettings;
@@ -148,5 +157,14 @@ export class SettingsService {
     const formData = new FormData();
     formData.append('backup', file);
     return this.http.post<{ success: boolean; message: string }>(`${this.baseUrl}/restore`, formData);
+  }
+
+  // Shift Management Settings
+  getShiftSettings(): Observable<{ data: ShiftSettings }> {
+    return this.http.get<{ data: ShiftSettings }>(`${this.baseUrl}/shift`);
+  }
+
+  updateShiftSettings(settings: Partial<ShiftSettings>): Observable<{ data: ShiftSettings; message: string }> {
+    return this.http.put<{ data: ShiftSettings; message: string }>(`${this.baseUrl}/shift`, settings);
   }
 }

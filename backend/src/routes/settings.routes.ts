@@ -50,6 +50,10 @@ router.put('/receipt', (req, res, next) => controller.updateReceipt(req, res).ca
 router.put('/currency', (req, res, next) => controller.updateCurrency(req, res).catch(next));
 router.put('/system', (req, res, next) => controller.updateSystem(req, res).catch(next));
 
+// Shift management settings routes
+router.get('/shift', (req, res, next) => controller.getShiftSettings(req, res).catch(next));
+router.put('/shift', (req, res, next) => controller.updateShiftSettings(req, res).catch(next));
+
 // Logo upload
 router.post('/upload-logo', upload.single('logo'), (req, res) => {
   try {

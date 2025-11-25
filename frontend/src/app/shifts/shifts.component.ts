@@ -350,6 +350,35 @@ import { PaginationComponent } from '../components/pagination.component';
             </div>
           </div>
 
+          <!-- Payment Breakdown -->
+          <div style="background:#f8f9fa;padding:20px;border-radius:8px;margin-bottom:20px;">
+             <h3 style="margin:0 0 16px 0;font-size:16px;color:#333;font-weight:600;">💳 Payment Breakdown</h3>
+             <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;font-size:14px;">
+                <div style="display:flex;justify-content:space-between;">
+                   <span style="color:#666;">Cash:</span>
+                   <span style="font-weight:700;color:#1a1a1a;">{{ selectedShift.cashSales | currency }}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;">
+                   <span style="color:#666;">Card:</span>
+                   <span style="font-weight:700;color:#1a1a1a;">{{ selectedShift.cardSales | currency }}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;">
+                   <span style="color:#666;">Mobile:</span>
+                   <span style="font-weight:700;color:#1a1a1a;">{{ selectedShift.mobileSales | currency }}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;">
+                   <span style="color:#666;">Split:</span>
+                   <span style="font-weight:700;color:#1a1a1a;">{{ selectedShift.splitSales | currency }}</span>
+                </div>
+             </div>
+          </div>
+
+          <!-- Auto Management Info -->
+          <div *ngIf="selectedShift.autoOpened || selectedShift.autoClosed" style="background:#e3f2fd;padding:16px;border-radius:8px;margin-bottom:20px;font-size:13px;color:#0d47a1;">
+             <div *ngIf="selectedShift.autoOpened" style="margin-bottom:4px;">🤖 Automatically opened by system</div>
+             <div *ngIf="selectedShift.autoClosed">🤖 Automatically closed by system</div>
+          </div>
+
           <div *ngIf="selectedShift.notes" style="background:#fff3cd;border:1px solid #ffc107;padding:16px;border-radius:8px;">
             <div style="font-weight:600;color:#856404;margin-bottom:8px;">{{ 'shifts.notes' | translate }}:</div>
             <div style="color:#856404;">{{ selectedShift.notes }}</div>
@@ -449,10 +478,11 @@ export class ShiftsComponent implements OnInit {
     this.shiftService.openShift(this.startingCash, this.openNotes).subscribe({
       next: (shift) => {
         this.processing = false;
-        this.currentShift = shift;
         this.showOpenShiftModal = false;
         this.startingCash = 0;
         this.openNotes = '';
+        // Reload current shift to ensure display updates
+        this.loadCurrentShift();
         this.loadShifts();
       },
       error: (err) => {
@@ -475,6 +505,8 @@ export class ShiftsComponent implements OnInit {
         this.endingCash = 0;
         this.closeNotes = '';
         this.calculatedDifference = 0;
+        // Reload current shift to ensure display updates (should be null now)
+        this.loadCurrentShift();
         this.loadShifts();
       },
       error: (err) => {

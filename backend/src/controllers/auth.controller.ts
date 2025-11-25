@@ -8,6 +8,7 @@ import { config } from '../config';
 import { AppError } from '../middleware/errorHandler';
 import { ApiResponse } from '../utils/response';
 import { logger } from '../utils/logger';
+import shiftService from '../services/shift.service';
 
 export class AuthController {
   async login(req: AuthRequest, res: Response) {
@@ -87,6 +88,14 @@ export class AuthController {
     });
 
     logger.info(`User logged in: ${user.email}`);
+
+    // Auto-open shift if in AUTOMATIC mode and conditions are met
+    try {
+      await shiftService.autoOpenShiftOnLogin(user.id);
+    } catch (error) {
+      // Log error but don't fail login
+      logger.error('Failed to auto-open shift on login:', error);
+    }
 
     // Remove password from response
     const { password: _, ...userWithoutPassword } = user;

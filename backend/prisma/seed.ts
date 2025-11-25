@@ -206,9 +206,26 @@ async function main() {
     skipDuplicates: true
   });
 
-  // Create system settings
+  // Create SystemSettings (new unified settings model)
   console.log('Creating system settings...');
 
+  const existingSystemSettings = await prisma.systemSettings.findFirst();
+  if (!existingSystemSettings) {
+    await prisma.systemSettings.create({
+      data: {
+        businessName: 'POS System',
+        currency: 'USD',
+        taxRate: 0.15,
+        shiftMode: 'MANUAL',
+        shiftStartingCash: 100,
+        requireShiftForSales: false,
+        inactivityTimeout: 30
+      }
+    });
+    console.log('✓ Created default system settings');
+  }
+
+  // Create legacy settings (for backward compatibility)
   const settings = [
     { key: 'store_name', value: 'My Store', category: 'general' },
     { key: 'tax_rate', value: '0.10', category: 'financial' },

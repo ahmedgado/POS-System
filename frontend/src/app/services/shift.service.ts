@@ -18,13 +18,33 @@ export interface Shift {
   totalTransactions?: number;
   status: 'OPEN' | 'CLOSED';
   notes?: string;
+
+  // Payment breakdown
+  cashSales?: number;
+  cardSales?: number;
+  mobileSales?: number;
+  splitSales?: number;
+
+  // Auto-management tracking
+  autoOpened?: boolean;
+  autoClosed?: boolean;
+  openedBy?: string;
+  closedBy?: string;
+
+  // Enhanced statistics
+  totalTips?: number;
+  totalServiceCharges?: number;
+  totalDiscounts?: number;
+  totalTax?: number;
+  refundCount?: number;
+  voidCount?: number;
 }
 
 @Injectable({ providedIn: 'root' })
 export class ShiftService {
   private readonly baseUrl = '/api/shifts';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   getAll(page: number = 1, limit: number = 25, status?: string): Observable<any> {
     let params: any = { page: page.toString(), limit: limit.toString() };

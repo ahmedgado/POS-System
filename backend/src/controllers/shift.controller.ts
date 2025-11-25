@@ -4,6 +4,7 @@ import { prisma } from '../config/database';
 import { AppError } from '../middleware/errorHandler';
 import { ApiResponse } from '../utils/response';
 import { logger } from '../utils/logger';
+import shiftService from '../services/shift.service';
 
 export class ShiftController {
   // POST /api/shifts/open - Open new shift
@@ -32,7 +33,9 @@ export class ShiftController {
         shiftNumber,
         cashierId: req.user!.id,
         startingCash,
-        status: 'OPEN'
+        status: 'OPEN',
+        autoOpened: false,
+        openedBy: req.user!.id // Track who manually opened the shift
       },
       include: {
         cashier: {
@@ -73,11 +76,6 @@ export class ShiftController {
       where: {
         cashierId: req.user!.id,
         status: 'OPEN'
-      },
-      include: {
-        sales: {
-          where: { status: 'COMPLETED' }
-        }
       }
     });
 
@@ -85,12 +83,14 @@ export class ShiftController {
       throw new AppError('No open shift found', 404);
     }
 
-    // Calculate expected cash
-    const cashSales = shift.sales.filter((s: any) => s.paymentMethod === 'CASH');
-    const expectedCash = Number(shift.startingCash) + cashSales.reduce((sum: number, sale: any) => sum + Number(sale.totalAmount), 0);
+    // Calculate shift totals using ShiftService (CRITICAL BUG FIX)
+    const totals = await shiftService.calculateShiftTotals(shift.id);
+
+    // Calculate expected cash from actual cash payments
+    const expectedCash = Number(shift.startingCash) + totals.cashSales;
     const discrepancy = Number(endingCash) - expectedCash;
 
-    // Close shift
+    // Close shift with all calculated data
     const updatedShift = await prisma.shift.update({
       where: { id: shift.id },
       data: {
@@ -99,7 +99,24 @@ export class ShiftController {
         discrepancy,
         status: 'CLOSED',
         closedAt: new Date(),
-        notes
+        closedBy: req.user!.id,
+        notes,
+
+        // Payment method breakdown
+        cashSales: totals.cashSales,
+        cardSales: totals.cardSales,
+        mobileSales: totals.mobileSales,
+        splitSales: totals.splitSales,
+
+        // Enhanced statistics
+        totalSales: totals.totalSales,
+        totalTransactions: totals.totalTransactions,
+        totalTips: totals.totalTips,
+        totalServiceCharges: totals.totalServiceCharges,
+        totalDiscounts: totals.totalDiscounts,
+        totalTax: totals.totalTax,
+        refundCount: totals.refundCount,
+        voidCount: totals.voidCount
       },
       include: {
         cashier: {
@@ -120,13 +137,20 @@ export class ShiftController {
         action: 'SHIFT_CLOSE',
         entity: 'Shift',
         entityId: shift.id,
-        changes: { endingCash, expectedCash, discrepancy, notes },
+        changes: {
+          endingCash,
+          expectedCash,
+          discrepancy,
+          notes,
+          cashSales: totals.cashSales,
+          totalSales: totals.totalSales
+        },
         ipAddress: req.ip,
         userAgent: req.get('user-agent')
       }
     });
 
-    logger.info(`Shift closed: ${shift.shiftNumber} by ${req.user?.email}`);
+    logger.info(`Shift closed: ${shift.shiftNumber} by ${req.user?.email} - Discrepancy: $${discrepancy.toFixed(2)}`);
 
     return ApiResponse.success(res, updatedShift, 'Shift closed successfully');
   }
@@ -138,12 +162,7 @@ export class ShiftController {
 
     // Get shift
     const shift = await prisma.shift.findUnique({
-      where: { id },
-      include: {
-        sales: {
-          where: { status: 'COMPLETED' }
-        }
-      }
+      where: { id }
     });
 
     if (!shift) {
@@ -158,12 +177,14 @@ export class ShiftController {
       throw new AppError('Shift is already closed', 400);
     }
 
-    // Calculate expected cash
-    const cashSales = shift.sales.filter((s: any) => s.paymentMethod === 'CASH');
-    const expectedCash = Number(shift.startingCash) + cashSales.reduce((sum: number, sale: any) => sum + Number(sale.totalAmount), 0);
+    // Calculate shift totals using ShiftService (CRITICAL BUG FIX)
+    const totals = await shiftService.calculateShiftTotals(shift.id);
+
+    // Calculate expected cash from actual cash payments
+    const expectedCash = Number(shift.startingCash) + totals.cashSales;
     const discrepancy = Number(endingCash) - expectedCash;
 
-    // Close shift
+    // Close shift with all calculated data
     const updatedShift = await prisma.shift.update({
       where: { id },
       data: {
@@ -172,7 +193,24 @@ export class ShiftController {
         discrepancy,
         status: 'CLOSED',
         closedAt: new Date(),
-        notes
+        closedBy: req.user!.id,
+        notes,
+
+        // Payment method breakdown
+        cashSales: totals.cashSales,
+        cardSales: totals.cardSales,
+        mobileSales: totals.mobileSales,
+        splitSales: totals.splitSales,
+
+        // Enhanced statistics
+        totalSales: totals.totalSales,
+        totalTransactions: totals.totalTransactions,
+        totalTips: totals.totalTips,
+        totalServiceCharges: totals.totalServiceCharges,
+        totalDiscounts: totals.totalDiscounts,
+        totalTax: totals.totalTax,
+        refundCount: totals.refundCount,
+        voidCount: totals.voidCount
       },
       include: {
         cashier: {
@@ -198,15 +236,16 @@ export class ShiftController {
           endingCash,
           expectedCash,
           discrepancy,
-          totalSales: shift.totalSales,
-          totalTransactions: shift.totalTransactions
+          cashSales: totals.cashSales,
+          totalSales: totals.totalSales,
+          totalTransactions: totals.totalTransactions
         },
         ipAddress: req.ip,
         userAgent: req.get('user-agent')
       }
     });
 
-    logger.info(`Shift closed: ${shift.shiftNumber} - Discrepancy: $${discrepancy}`);
+    logger.info(`Shift closed: ${shift.shiftNumber} - Discrepancy: $${discrepancy.toFixed(2)}`);
 
     return ApiResponse.success(res, updatedShift, 'Shift closed successfully');
   }
@@ -315,6 +354,12 @@ export class ShiftController {
             firstName: true,
             lastName: true
           }
+        },
+        sales: {
+          where: { status: 'COMPLETED' },
+          select: {
+            totalAmount: true
+          }
         }
       }
     });
@@ -323,6 +368,22 @@ export class ShiftController {
       return ApiResponse.success(res, null, 'No open shift found');
     }
 
-    return ApiResponse.success(res, shift);
+    // Calculate current totals for open shift
+    const totalSales = shift.sales.reduce((sum, sale) => sum + Number(sale.totalAmount), 0);
+    const expectedCash = Number(shift.startingCash) + totalSales; // For now, assume all sales are cash
+
+    // Map database fields to frontend interface
+    const mappedShift = {
+      ...shift,
+      startTime: shift.openedAt,
+      endTime: shift.closedAt,
+      cashierName: `${shift.cashier.firstName} ${shift.cashier.lastName}`,
+      totalSales,
+      totalTransactions: shift.sales.length,
+      expectedCash,
+      difference: shift.discrepancy
+    };
+
+    return ApiResponse.success(res, mappedShift);
   }
 }

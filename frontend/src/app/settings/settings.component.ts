@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { SettingsService, AllSettings, StoreSettings, TaxSettings, ReceiptSettings, CurrencySettings, SystemSettings } from '../services/settings.service';
+import { SettingsService, AllSettings, StoreSettings, TaxSettings, ReceiptSettings, CurrencySettings, SystemSettings, ShiftSettings } from '../services/settings.service';
 
 @Component({
   selector: 'app-settings',
@@ -425,6 +425,109 @@ import { SettingsService, AllSettings, StoreSettings, TaxSettings, ReceiptSettin
           </form>
         </div>
 
+        <!-- Shift Management Settings Tab -->
+        <div *ngIf="activeTab === 'shifts'" style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);padding:32px;">
+          <h3 style="margin:0 0 24px 0;color:#333;font-size:18px;font-weight:600;">📊 Shift Management Configuration</h3>
+          <form (submit)="saveShiftSettings(); $event.preventDefault()">
+            <div style="margin-bottom:24px;">
+              <label style="display:block;font-size:14px;font-weight:600;color:#333;margin-bottom:8px;">Shift Mode</label>
+              <select
+                [(ngModel)]="shiftSettings.shiftMode"
+                name="shiftMode"
+                style="width:100%;padding:12px;border:2px solid #ddd;border-radius:8px;font-size:14px;outline:none;">
+                <option value="MANUAL">Manual - Users open/close shifts manually</option>
+                <option value="AUTOMATIC">Automatic - System opens/closes at configured times</option>
+                <option value="HYBRID">Hybrid - Auto-open on first sale, manual close</option>
+                <option value="ON_DEMAND">On-Demand - Auto-open on sale, auto-close after inactivity</option>
+              </select>
+              <div style="font-size:12px;color:#666;margin-top:4px;">
+                <strong>Current Mode:</strong> {{ shiftSettings.shiftMode }}
+              </div>
+            </div>
+
+            <div *ngIf="shiftSettings.shiftMode === 'AUTOMATIC'" style="background:#f8f9fa;padding:20px;border-radius:8px;margin-bottom:20px;">
+              <h4 style="margin:0 0 16px 0;color:#333;font-size:15px;font-weight:600;">⏰ Automatic Schedule</h4>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+                <div>
+                  <label style="display:block;font-size:14px;font-weight:600;color:#333;margin-bottom:8px;">Auto-Open Time</label>
+                  <input
+                    type="time"
+                    [(ngModel)]="shiftSettings.autoShiftStartTime"
+                    name="autoShiftStartTime"
+                    style="width:100%;padding:12px;border:2px solid #ddd;border-radius:8px;font-size:14px;outline:none;">
+                  <div style="font-size:12px;color:#666;margin-top:4px;">Shifts will automatically open at this time</div>
+                </div>
+                <div>
+                  <label style="display:block;font-size:14px;font-weight:600;color:#333;margin-bottom:8px;">Auto-Close Time</label>
+                  <input
+                    type="time"
+                    [(ngModel)]="shiftSettings.autoShiftEndTime"
+                    name="autoShiftEndTime"
+                    style="width:100%;padding:12px;border:2px solid #ddd;border-radius:8px;font-size:14px;outline:none;">
+                  <div style="font-size:12px;color:#666;margin-top:4px;">Shifts will automatically close at this time</div>
+                </div>
+              </div>
+            </div>
+
+            <div *ngIf="shiftSettings.shiftMode === 'ON_DEMAND'" style="background:#f8f9fa;padding:20px;border-radius:8px;margin-bottom:20px;">
+              <h4 style="margin:0 0 16px 0;color:#333;font-size:15px;font-weight:600;">⏱️ Inactivity Settings</h4>
+              <div>
+                <label style="display:block;font-size:14px;font-weight:600;color:#333;margin-bottom:8px;">Inactivity Timeout (minutes)</label>
+                <input
+                  type="number"
+                  [(ngModel)]="shiftSettings.inactivityTimeout"
+                  name="inactivityTimeout"
+                  min="5"
+                  max="120"
+                  style="width:100%;padding:12px;border:2px solid #ddd;border-radius:8px;font-size:14px;outline:none;">
+                <div style="font-size:12px;color:#666;margin-top:4px;">Shifts will auto-close after this many minutes of no sales</div>
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+              <div>
+                <label style="display:block;font-size:14px;font-weight:600;color:#333;margin-bottom:8px;">Default Starting Cash</label>
+                <input
+                  type="number"
+                  [(ngModel)]="shiftSettings.shiftStartingCash"
+                  name="shiftStartingCash"
+                  step="0.01"
+                  min="0"
+                  style="width:100%;padding:12px;border:2px solid #ddd;border-radius:8px;font-size:14px;outline:none;">
+                <div style="font-size:12px;color:#666;margin-top:4px;">Default cash amount when opening shifts</div>
+              </div>
+              <div>
+                <label style="display:flex;align-items:center;cursor:pointer;user-select:none;height:100%;padding-top:24px;">
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="shiftSettings.requireShiftForSales"
+                    name="requireShiftForSales"
+                    style="margin-right:12px;width:20px;height:20px;cursor:pointer;">
+                  <span style="font-size:14px;color:#666;">Require open shift for sales</span>
+                </label>
+                <div style="font-size:12px;color:#666;margin-top:4px;padding-left:32px;">Block sales if no shift is open</div>
+              </div>
+            </div>
+
+            <div style="background:#e3f2fd;border-left:4px solid #2196f3;padding:16px;border-radius:4px;margin-bottom:24px;">
+              <div style="font-weight:600;color:#1976d2;margin-bottom:8px;">ℹ️ Mode Descriptions:</div>
+              <ul style="margin:0;padding-left:20px;color:#1565c0;font-size:13px;line-height:1.6;">
+                <li><strong>Manual:</strong> Full control - users must explicitly open and close shifts</li>
+                <li><strong>Automatic:</strong> Hands-free - system manages shifts based on schedule</li>
+                <li><strong>Hybrid:</strong> Flexible - auto-opens on first sale, manual close for cash count</li>
+                <li><strong>On-Demand:</strong> Smart - creates shifts as needed, closes when idle</li>
+              </ul>
+            </div>
+
+            <button
+              type="submit"
+              [disabled]="saving"
+              style="background:#c4a75b;color:#1a1a1a;border:none;padding:14px 32px;border-radius:8px;font-weight:600;cursor:pointer;font-size:16px;">
+              {{ saving ? 'Saving...' : 'Save Shift Settings' }}
+            </button>
+          </form>
+        </div>
+
         <!-- Backup Tab -->
         <div *ngIf="activeTab === 'backup'" style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);padding:32px;">
           <h3 style="margin:0 0 24px 0;color:#333;font-size:18px;font-weight:600;">Database Backup & Restore</h3>
@@ -489,6 +592,7 @@ export class SettingsComponent implements OnInit {
     { id: 'receipt', label: 'Receipt', icon: '🧾' },
     { id: 'currency', label: 'Currency', icon: '💵' },
     { id: 'system', label: 'System', icon: '⚙️' },
+    { id: 'shifts', label: 'Shifts', icon: '📊' },
     { id: 'backup', label: 'Backup', icon: '💾' }
   ];
 
@@ -540,6 +644,15 @@ export class SettingsComponent implements OnInit {
     lowStockThreshold: 10
   };
 
+  shiftSettings: ShiftSettings = {
+    shiftMode: 'MANUAL',
+    autoShiftStartTime: null,
+    autoShiftEndTime: null,
+    shiftStartingCash: 100,
+    requireShiftForSales: false,
+    inactivityTimeout: 30
+  };
+
   logoFile: File | null = null;
   backupFile: File | null = null;
 
@@ -547,6 +660,7 @@ export class SettingsComponent implements OnInit {
 
   ngOnInit() {
     this.loadSettings();
+    this.loadShiftSettings();
   }
 
   loadSettings() {
@@ -651,6 +765,31 @@ export class SettingsComponent implements OnInit {
       error: (err) => {
         this.saving = false;
         this.showError('Failed to save system settings');
+      }
+    });
+  }
+
+  loadShiftSettings() {
+    this.settingsService.getShiftSettings().subscribe({
+      next: (response) => {
+        this.shiftSettings = response.data;
+      },
+      error: (err) => {
+        console.error('Failed to load shift settings:', err);
+      }
+    });
+  }
+
+  saveShiftSettings() {
+    this.saving = true;
+    this.settingsService.updateShiftSettings(this.shiftSettings).subscribe({
+      next: () => {
+        this.saving = false;
+        this.showSuccess('Shift settings saved successfully');
+      },
+      error: (err) => {
+        this.saving = false;
+        this.showError('Failed to save shift settings');
       }
     });
   }

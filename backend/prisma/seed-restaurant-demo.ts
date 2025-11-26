@@ -324,21 +324,6 @@ async function main() {
     }
   });
 
-  // 6. KITCHEN STAFF
-  await prisma.user.upsert({
-    where: { email: 'kitchen@restaurant.com' },
-    update: { password: hashedPassword, role: 'KITCHEN_STAFF', status: 'ACTIVE' },
-    create: {
-      username: 'kitchen',
-      email: 'kitchen@restaurant.com',
-      password: hashedPassword,
-      firstName: 'Head',
-      lastName: 'Chef',
-      role: 'KITCHEN_STAFF',
-      status: 'ACTIVE'
-    }
-  });
-
   // 7. INVENTORY CLERK
   await prisma.user.upsert({
     where: { email: 'inventory@restaurant.com' },
@@ -491,6 +476,130 @@ async function main() {
 
   const kitchenStations = [grillStation, coldStation, hotStation, pastaStation, dessertStation, beverageStation];
   console.log(`✓ Created ${kitchenStations.length} kitchen stations\n`);
+
+  // Create Kitchen Staff (one for each station)
+  console.log('👨‍🍳 Creating kitchen staff with station assignments...');
+  const kitchenStaff = [];
+
+  // Grill Station Chef
+  const grillChef = await prisma.user.upsert({
+    where: { email: 'grill@restaurant.com' },
+    update: { password: hashedPassword, role: 'KITCHEN_STAFF', status: 'ACTIVE', kitchenStationId: grillStation.id },
+    create: {
+      username: 'grill_chef',
+      email: 'grill@restaurant.com',
+      password: hashedPassword,
+      firstName: 'Grill',
+      lastName: 'Chef',
+      role: 'KITCHEN_STAFF',
+      status: 'ACTIVE',
+      kitchenStationId: grillStation.id
+    }
+  });
+  kitchenStaff.push(grillChef);
+
+  // Cold Station Chef
+  const coldChef = await prisma.user.upsert({
+    where: { email: 'cold@restaurant.com' },
+    update: { password: hashedPassword, role: 'KITCHEN_STAFF', status: 'ACTIVE', kitchenStationId: coldStation.id },
+    create: {
+      username: 'cold_chef',
+      email: 'cold@restaurant.com',
+      password: hashedPassword,
+      firstName: 'Cold',
+      lastName: 'Chef',
+      role: 'KITCHEN_STAFF',
+      status: 'ACTIVE',
+      kitchenStationId: coldStation.id
+    }
+  });
+  kitchenStaff.push(coldChef);
+
+  // Hot Station Chef
+  const hotChef = await prisma.user.upsert({
+    where: { email: 'hot@restaurant.com' },
+    update: { password: hashedPassword, role: 'KITCHEN_STAFF', status: 'ACTIVE', kitchenStationId: hotStation.id },
+    create: {
+      username: 'hot_chef',
+      email: 'hot@restaurant.com',
+      password: hashedPassword,
+      firstName: 'Hot',
+      lastName: 'Chef',
+      role: 'KITCHEN_STAFF',
+      status: 'ACTIVE',
+      kitchenStationId: hotStation.id
+    }
+  });
+  kitchenStaff.push(hotChef);
+
+  // Pasta & Pizza Chef
+  const pastaChef = await prisma.user.upsert({
+    where: { email: 'pasta@restaurant.com' },
+    update: { password: hashedPassword, role: 'KITCHEN_STAFF', status: 'ACTIVE', kitchenStationId: pastaStation.id },
+    create: {
+      username: 'pasta_chef',
+      email: 'pasta@restaurant.com',
+      password: hashedPassword,
+      firstName: 'Pasta',
+      lastName: 'Chef',
+      role: 'KITCHEN_STAFF',
+      status: 'ACTIVE',
+      kitchenStationId: pastaStation.id
+    }
+  });
+  kitchenStaff.push(pastaChef);
+
+  // Dessert Chef
+  const dessertChef = await prisma.user.upsert({
+    where: { email: 'dessert@restaurant.com' },
+    update: { password: hashedPassword, role: 'KITCHEN_STAFF', status: 'ACTIVE', kitchenStationId: dessertStation.id },
+    create: {
+      username: 'dessert_chef',
+      email: 'dessert@restaurant.com',
+      password: hashedPassword,
+      firstName: 'Dessert',
+      lastName: 'Chef',
+      role: 'KITCHEN_STAFF',
+      status: 'ACTIVE',
+      kitchenStationId: dessertStation.id
+    }
+  });
+  kitchenStaff.push(dessertChef);
+
+  // Beverage Bartender
+  const bartender = await prisma.user.upsert({
+    where: { email: 'bartender@restaurant.com' },
+    update: { password: hashedPassword, role: 'KITCHEN_STAFF', status: 'ACTIVE', kitchenStationId: beverageStation.id },
+    create: {
+      username: 'bartender',
+      email: 'bartender@restaurant.com',
+      password: hashedPassword,
+      firstName: 'Head',
+      lastName: 'Bartender',
+      role: 'KITCHEN_STAFF',
+      status: 'ACTIVE',
+      kitchenStationId: beverageStation.id
+    }
+  });
+  kitchenStaff.push(bartender);
+
+  // Keep the original kitchen user for backward compatibility (assign to hot station)
+  await prisma.user.upsert({
+    where: { email: 'kitchen@restaurant.com' },
+    update: { password: hashedPassword, role: 'KITCHEN_STAFF', status: 'ACTIVE', kitchenStationId: hotStation.id },
+    create: {
+      username: 'kitchen',
+      email: 'kitchen@restaurant.com',
+      password: hashedPassword,
+      firstName: 'Head',
+      lastName: 'Chef',
+      role: 'KITCHEN_STAFF',
+      status: 'ACTIVE',
+      kitchenStationId: hotStation.id
+    }
+  });
+
+  console.log(`✓ Created ${kitchenStaff.length + 1} kitchen staff with station assignments\n`);
 
   // Create Modifier Groups
   console.log('⚙️  Creating modifier groups...');

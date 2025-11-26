@@ -40,6 +40,10 @@ model User {
   updatedAt     DateTime    @updatedAt
   lastLoginAt   DateTime?
 
+  // Kitchen station assignment (for KITCHEN_STAFF role)
+  kitchenStationId String?
+  kitchenStation   KitchenStation? @relation(fields: [kitchenStationId], references: [id])
+
   // Relations
   shifts        Shift[]
   sales         Sale[]
@@ -537,9 +541,10 @@ model KitchenStation {
   updatedAt   DateTime @updatedAt
 
   // Relations
-  tickets     KitchenTicket[]
-  products    ProductKitchenStation[]
-  printJobs   PrintJob[]
+  tickets       KitchenTicket[]
+  products      ProductKitchenStation[]
+  printJobs     PrintJob[]
+  assignedUsers User[]  // Users assigned to this station
 
   @@map("kitchen_stations")
 }

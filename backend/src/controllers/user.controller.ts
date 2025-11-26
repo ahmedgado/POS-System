@@ -17,6 +17,13 @@ export class UserController {
         phone: true,
         role: true,
         status: true,
+        kitchenStationId: true,
+        kitchenStation: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
         createdAt: true,
         lastLoginAt: true
       },
@@ -59,10 +66,15 @@ export class UserController {
   }
 
   async create(req: AuthRequest, res: Response) {
-    const { firstName, lastName, email, phone, password, role, active } = req.body;
+    const { firstName, lastName, email, phone, password, role, active, kitchenStationId } = req.body;
 
     if (!firstName || !lastName || !email || !password || !role) {
       throw new AppError('Missing required fields', 400);
+    }
+
+    // Validate kitchen station for KITCHEN_STAFF role
+    if (role === 'KITCHEN_STAFF' && !kitchenStationId) {
+      throw new AppError('Kitchen station is required for KITCHEN_STAFF role', 400);
     }
 
     // Check if user already exists
@@ -91,7 +103,8 @@ export class UserController {
         lastName,
         phone,
         role,
-        status: active ? 'ACTIVE' : 'INACTIVE'
+        status: active ? 'ACTIVE' : 'INACTIVE',
+        kitchenStationId: role === 'KITCHEN_STAFF' ? kitchenStationId : null
       },
       select: {
         id: true,
@@ -102,6 +115,7 @@ export class UserController {
         phone: true,
         role: true,
         status: true,
+        kitchenStationId: true,
         createdAt: true
       }
     });
@@ -111,7 +125,12 @@ export class UserController {
 
   async update(req: AuthRequest, res: Response) {
     const { id } = req.params;
-    const { firstName, lastName, email, phone, role, active } = req.body;
+    const { firstName, lastName, email, phone, role, active, kitchenStationId } = req.body;
+
+    // Validate kitchen station for KITCHEN_STAFF role
+    if (role === 'KITCHEN_STAFF' && !kitchenStationId) {
+      throw new AppError('Kitchen station is required for KITCHEN_STAFF role', 400);
+    }
 
     const user = await prisma.user.findUnique({
       where: { id }
@@ -129,7 +148,8 @@ export class UserController {
         email,
         phone,
         role,
-        status: active !== undefined ? (active ? 'ACTIVE' : 'INACTIVE') : undefined
+        status: active !== undefined ? (active ? 'ACTIVE' : 'INACTIVE') : undefined,
+        kitchenStationId: role === 'KITCHEN_STAFF' ? kitchenStationId : null
       },
       select: {
         id: true,
@@ -140,6 +160,7 @@ export class UserController {
         phone: true,
         role: true,
         status: true,
+        kitchenStationId: true,
         createdAt: true,
         lastLoginAt: true
       }

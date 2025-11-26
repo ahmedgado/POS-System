@@ -8,8 +8,9 @@ export interface User {
   lastName: string;
   email: string;
   phone?: string;
-  role: 'ADMIN' | 'MANAGER' | 'CASHIER' | 'INVENTORY_CLERK';
+  role: 'ADMIN' | 'MANAGER' | 'CASHIER' | 'INVENTORY_CLERK' | 'KITCHEN_STAFF' | 'WAITER' | 'OWNER';
   active: boolean;
+  kitchenStationId?: string;
   createdAt?: string;
   lastLogin?: string;
 }
@@ -20,8 +21,9 @@ export interface CreateUserRequest {
   email: string;
   phone?: string;
   password: string;
-  role: 'ADMIN' | 'MANAGER' | 'CASHIER' | 'INVENTORY_CLERK';
+  role: 'ADMIN' | 'MANAGER' | 'CASHIER' | 'INVENTORY_CLERK' | 'KITCHEN_STAFF' | 'WAITER' | 'OWNER';
   active: boolean;
+  kitchenStationId?: string;
 }
 
 export interface UpdateUserRequest {
@@ -29,8 +31,9 @@ export interface UpdateUserRequest {
   lastName?: string;
   email?: string;
   phone?: string;
-  role?: 'ADMIN' | 'MANAGER' | 'CASHIER' | 'INVENTORY_CLERK';
+  role?: 'ADMIN' | 'MANAGER' | 'CASHIER' | 'INVENTORY_CLERK' | 'KITCHEN_STAFF' | 'WAITER' | 'OWNER';
   active?: boolean;
+  kitchenStationId?: string;
 }
 
 @Injectable({
@@ -39,7 +42,7 @@ export interface UpdateUserRequest {
 export class UserService {
   private readonly baseUrl = '/api/users';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   getAll(): Observable<User[]> {
     return this.http.get<User[]>(this.baseUrl);

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { PrismaClient, KitchenTicketStatus } from '@prisma/client';
 import { logger } from '../utils/logger';
+import { AuthRequest } from '../middleware/auth';
 
 const prisma = new PrismaClient();
 
@@ -258,9 +259,28 @@ export const unlinkProductFromStation = async (req: Request, res: Response) => {
 // ==================== KITCHEN TICKETS ====================
 
 // Get all kitchen tickets (with filters)
-export const getKitchenTickets = async (req: Request, res: Response) => {
+// For KITCHEN_STAFF users, automatically filter by their assigned station
+export const getKitchenTickets = async (req: AuthRequest, res: Response) => {
   try {
-    const { stationId, status } = req.query;
+    let { stationId, status } = req.query;
+
+    // If user is KITCHEN_STAFF, override stationId with their assigned station
+    if (req.user?.role === 'KITCHEN_STAFF') {
+      const user = await prisma.user.findUnique({
+        where: { id: req.user.id },
+        select: { kitchenStationId: true }
+      });
+
+      if (!user?.kitchenStationId) {
+        return res.status(403).json({
+          success: false,
+          message: 'You are not assigned to any kitchen station'
+        });
+      }
+
+      // Force use of user's assigned station for KITCHEN_STAFF
+      stationId = user.kitchenStationId;
+    }
 
     const where: any = {
       ...(stationId && { kitchenStationId: stationId as string })
@@ -359,6 +379,7 @@ export const getKitchenTickets = async (req: Request, res: Response) => {
     });
   }
 };
+
 
 // Create kitchen ticket (auto-created when order sent to kitchen)
 export const createKitchenTicket = async (req: Request, res: Response) => {
@@ -496,10 +517,111 @@ export const bumpTicket = async (req: Request, res: Response) => {
 };
 
 // Get tickets for specific station (for KDS screen)
-export const getStationTickets = async (req: Request, res: Response) => {
+// If user is KITCHEN_STAFF, only show tickets for their assigned station
+export const getStationTickets = async (req: AuthRequest, res: Response) => {
   try {
     const { stationId } = req.params;
 
+    // If user is KITCHEN_STAFF, verify they're assigned to this station
+    if (req.user?.role === 'KITCHEN_STAFF') {
+      const user = await prisma.user.findUnique({
+        where: { id: req.user.id },
+        select: { kitchenStationId: true }
+      });
+
+      if (!user?.kitchenStationId) {
+        return res.status(403).json({
+          success: false,
+          message: 'You are not assigned to any kitchen station'
+        });
+      }
+
+      // If stationId is provided in params, verify it matches user's assigned station
+      if (stationId && stationId !== user.kitchenStationId) {
+        return res.status(403).json({
+          success: false,
+          message: 'You can only view tickets for your assigned station'
+        });
+      }
+
+      // Use user's assigned station if no stationId provided
+      const targetStationId = stationId || user.kitchenStationId;
+
+      const tickets = await prisma.kitchenTicket.findMany({
+        where: {
+          kitchenStationId: targetStationId,
+          status: {
+            in: ['NEW', 'IN_PROGRESS']
+          }
+        },
+        include: {
+          kitchenStation: {
+            select: {
+              id: true,
+              name: true
+            }
+          }
+        },
+        orderBy: [
+          { priority: 'desc' },
+          { createdAt: 'asc' }
+        ]
+      });
+
+      // Get sale item details
+      const ticketsWithDetails = await Promise.all(
+        tickets.map(async (ticket) => {
+          const saleItem = await prisma.saleItem.findUnique({
+            where: { id: ticket.saleItemId },
+            include: {
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                  imageUrl: true
+                }
+              },
+              modifiers: {
+                include: {
+                  modifier: {
+                    select: {
+                      name: true,
+                      priceAdjustment: true
+                    }
+                  }
+                }
+              },
+              sale: {
+                select: {
+                  id: true,
+                  saleNumber: true,
+                  orderType: true,
+                  table: {
+                    select: {
+                      tableNumber: true
+                    }
+                  }
+                }
+              }
+            }
+          });
+
+          return {
+            ...ticket,
+            saleItem,
+            age: Math.floor((new Date().getTime() - ticket.createdAt.getTime()) / 60000)
+          };
+        })
+      );
+
+      return res.json({
+        success: true,
+        data: ticketsWithDetails,
+        message: `Found ${ticketsWithDetails.length} active tickets`
+      });
+    }
+
+    // For non-kitchen staff (admin, manager), allow viewing any station
     const tickets = await prisma.kitchenTicket.findMany({
       where: {
         kitchenStationId: stationId,
@@ -581,3 +703,4 @@ export const getStationTickets = async (req: Request, res: Response) => {
     });
   }
 };
+

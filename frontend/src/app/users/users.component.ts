@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { User, UserService, CreateUserRequest, UpdateUserRequest } from '../services/user.service';
 import { AuthService } from '../services/auth.service';
+import { KitchenService, KitchenStation } from '../services/kitchen.service';
 
 @Component({
   selector: 'app-users',
@@ -254,6 +255,24 @@ import { AuthService } from '../services/auth.service';
             </select>
           </div>
 
+          <!-- Kitchen Station (only for KITCHEN_STAFF) -->
+          <div *ngIf="formUser.role === 'KITCHEN_STAFF'" style="margin-bottom:20px;">
+            <label style="display:block;font-size:14px;font-weight:600;color:#333;margin-bottom:8px;">
+              Kitchen Station <span style="color:#c4a75b;">*</span>
+            </label>
+            <select
+              [(ngModel)]="formUser.kitchenStationId"
+              name="kitchenStationId"
+              [required]="formUser.role === 'KITCHEN_STAFF'"
+              style="width:100%;padding:12px;border:2px solid #ddd;border-radius:8px;font-size:14px;outline:none;">
+              <option value="">Select Kitchen Station</option>
+              <option *ngFor="let station of kitchenStations" [value]="station.id">
+                {{ station.name }}
+              </option>
+            </select>
+            <div style="font-size:12px;color:#666;margin-top:4px;">Required for kitchen staff users</div>
+          </div>
+
           <div *ngIf="!isEditMode" style="margin-bottom:20px;">
             <label style="display:block;font-size:14px;font-weight:600;color:#333;margin-bottom:8px;">
               Password <span style="color:#c4a75b;">*</span>
@@ -365,6 +384,8 @@ export class UsersComponent implements OnInit {
 
   currentUserId: number;
 
+  kitchenStations: KitchenStation[] = [];
+
   formUser: any = {
     firstName: '',
     lastName: '',
@@ -372,18 +393,32 @@ export class UsersComponent implements OnInit {
     phone: '',
     role: 'CASHIER',
     password: '',
-    active: true
+    active: true,
+    kitchenStationId: ''
   };
 
   constructor(
     private userService: UserService,
-    private authService: AuthService
+    private authService: AuthService,
+    private kitchenService: KitchenService
   ) {
     this.currentUserId = this.authService.currentUser?.id || 0;
   }
 
   ngOnInit() {
     this.loadUsers();
+    this.loadKitchenStations();
+  }
+
+  loadKitchenStations() {
+    this.kitchenService.getStations().subscribe({
+      next: (stations) => {
+        this.kitchenStations = stations.filter(s => s.isActive);
+      },
+      error: (err) => {
+        console.error('Failed to load kitchen stations:', err);
+      }
+    });
   }
 
   loadUsers() {
@@ -462,7 +497,8 @@ export class UsersComponent implements OnInit {
       phone: '',
       role: 'CASHIER',
       password: '',
-      active: true
+      active: true,
+      kitchenStationId: ''
     };
     this.showModal = true;
   }
@@ -476,7 +512,8 @@ export class UsersComponent implements OnInit {
       email: user.email,
       phone: user.phone || '',
       role: user.role,
-      active: user.active
+      active: user.active,
+      kitchenStationId: (user as any).kitchenStationId || ''
     };
     this.showModal = true;
   }
@@ -490,6 +527,13 @@ export class UsersComponent implements OnInit {
   saveUser() {
     this.processing = true;
 
+    // Validate kitchen station for KITCHEN_STAFF
+    if (this.formUser.role === 'KITCHEN_STAFF' && !this.formUser.kitchenStationId) {
+      alert('Please select a kitchen station for kitchen staff users.');
+      this.processing = false;
+      return;
+    }
+
     if (this.isEditMode && this.editingUserId) {
       const updateData: UpdateUserRequest = {
         firstName: this.formUser.firstName,
@@ -497,7 +541,8 @@ export class UsersComponent implements OnInit {
         email: this.formUser.email,
         phone: this.formUser.phone,
         role: this.formUser.role,
-        active: this.formUser.active
+        active: this.formUser.active,
+        kitchenStationId: this.formUser.role === 'KITCHEN_STAFF' ? this.formUser.kitchenStationId : undefined
       };
 
       this.userService.update(this.editingUserId.toString(), updateData).subscribe({
@@ -520,7 +565,8 @@ export class UsersComponent implements OnInit {
         phone: this.formUser.phone,
         password: this.formUser.password,
         role: this.formUser.role,
-        active: this.formUser.active
+        active: this.formUser.active,
+        kitchenStationId: this.formUser.role === 'KITCHEN_STAFF' ? this.formUser.kitchenStationId : undefined
       };
 
       this.userService.create(createData).subscribe({

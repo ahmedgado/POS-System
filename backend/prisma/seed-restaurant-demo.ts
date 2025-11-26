@@ -672,6 +672,9 @@ async function main() {
     ]
   });
 
+  // Fetch all modifiers to use in order generation
+  const modifiers = await prisma.modifier.findMany();
+
   // Extra modifiers
   await prisma.modifier.createMany({
     data: [
@@ -967,70 +970,88 @@ async function main() {
   console.log('💰 Creating sample restaurant orders...');
   const orderTypes = ['DINE_IN', 'TAKEAWAY', 'DELIVERY'];
   const orderStatuses = ['PENDING', 'PREPARING', 'READY', 'SERVED', 'COMPLETED'];
+  // Generate 200 orders spread across different months in 2025
+  console.log('🍽️  Creating 200 restaurant orders for 2025...');
 
-  for (let i = 0; i < 50; i++) {
+  const months = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]; // Jan - Dec
+  const currentYear = 2025;
+
+  for (let i = 0; i < 200; i++) {
     const customer = customers[randomInt(0, customers.length - 1)];
     const waiter = waiters[randomInt(0, waiters.length - 1)];
-    const orderType = orderTypes[randomInt(0, orderTypes.length - 1)] as any;
-    const orderStatus = orderStatuses[randomInt(2, orderStatuses.length - 1)] as any;
+    const table = tables[randomInt(0, tables.length - 1)];
 
-    // Assign to a random shift
-    const shift = shifts[randomInt(0, shifts.length - 1)];
+    // Distribute orders across months (weighted towards current/recent months if preferred, but random here)
+    const month = months[randomInt(0, 11)];
+    const day = randomInt(1, 28);
+    const hour = randomInt(11, 22); // 11 AM to 10 PM
+    const minute = randomInt(0, 59);
 
-    const table = orderType === 'DINE_IN' ? tables[randomInt(0, tables.length - 1)] : null;
+    const orderDate = new Date(currentYear, month, day, hour, minute);
 
-    const numItems = randomInt(2, 6);
+    // Create a shift for this date if one doesn't exist (simplified: link to the main open shift for now,
+    // or create historical shifts. For dashboard stats, the shift ID matters less than the createdAt date).
+    // We'll use the open shift for simplicity, but override createdAt.
+
+    const numItems = randomInt(1, 5);
     const saleItems: any[] = [];
     let subtotal = 0;
 
     for (let j = 0; j < numItems; j++) {
       const product = products[randomInt(0, products.length - 1)];
-      const quantity = randomInt(1, 2);
-      const itemSubtotal = product.price * quantity;
-      subtotal += itemSubtotal;
+      const quantity = randomInt(1, 3);
+      const price = Number(product.price);
+      const total = price * quantity;
+
+      subtotal += total;
+
+      // Add modifiers (30% chance)
+      const itemModifiers: any[] = [];
+      if (Math.random() < 0.3) {
+        // ... (modifier logic remains same, simplified for brevity in this block if needed,
+        // but we can keep the existing logic if we copy it or just reference it.
+        // Since I am replacing the whole block, I will include the modifier logic.)
+
+        // Find modifiers for this product (mock logic as we don't have easy access to product-modifier links here without querying)
+        // For seed simplicity, pick random modifiers
+        const randomMod = modifiers[randomInt(0, modifiers.length - 1)];
+        const modPrice = Number(randomMod.priceAdjustment);
+        subtotal += modPrice * quantity;
+
+        itemModifiers.push({
+          modifierId: randomMod.id,
+          quantity: 1,
+          price: modPrice
+        });
+      }
 
       saleItems.push({
         productId: product.id,
         quantity: quantity,
-        unitPrice: product.price,
-        totalPrice: itemSubtotal,
+        unitPrice: price,
+        totalPrice: total,
         taxRate: 0.15,
-        notes: Math.random() < 0.2 ? 'No onions' : undefined
+        modifiers: {
+          create: itemModifiers
+        }
       });
     }
 
+    const orderType = Math.random() < 0.7 ? 'DINE_IN' : (Math.random() < 0.5 ? 'TAKEAWAY' : 'DELIVERY');
+    const orderStatus = 'COMPLETED'; // All historical orders completed
+
     const discount = Math.random() < 0.2 ? randomPrice(5, 20) : 0;
-    const serviceCharge = orderType === 'DINE_IN' ? subtotal * 0.05 : 0; // 5% service charge
-    const tax = (subtotal - discount + serviceCharge) * 0.15; // 15% tax
+    const serviceCharge = orderType === 'DINE_IN' ? subtotal * 0.05 : 0;
+    const tax = (subtotal - discount + serviceCharge) * 0.15;
     const tips = orderType === 'DINE_IN' && Math.random() < 0.7 ? randomPrice(5, 50) : 0;
     const totalAmount = subtotal - discount + serviceCharge + tax + tips;
 
-    const saleNumber = `SALE-${Date.now()}-${i}`;
+    const saleNumber = `SALE-${currentYear}-${month + 1}-${day}-${i}`;
 
-    // Determine payment method and create payments
+    // Payment methods
     const paymentMethods = ['CASH', 'CARD', 'MOBILE_WALLET'];
-    const isSplitPayment = Math.random() < 0.3; // 30% chance of split payment
-
-    let paymentMethod: any;
-    const salePayments: any[] = [];
-
-    if (isSplitPayment) {
-      // Split payment between 2 methods
-      paymentMethod = 'SPLIT';
-      const method1 = paymentMethods[randomInt(0, 2)];
-      const method2 = paymentMethods[randomInt(0, 2)];
-      const amount1 = totalAmount * randomPrice(0.3, 0.7);
-      const amount2 = totalAmount - amount1;
-
-      salePayments.push(
-        { paymentMethod: method1, amount: amount1 },
-        { paymentMethod: method2, amount: amount2 }
-      );
-    } else {
-      // Single payment
-      paymentMethod = paymentMethods[randomInt(0, 2)];
-      salePayments.push({ paymentMethod, amount: totalAmount });
-    }
+    const paymentMethod = paymentMethods[randomInt(0, 2)] as any;
+    const salePayments = [{ paymentMethod, amount: totalAmount }];
 
     await prisma.sale.create({
       data: {
@@ -1038,7 +1059,7 @@ async function main() {
         cashierId: waiter.id,
         customerId: Math.random() < 0.7 ? customer.id : null,
         tableId: table?.id,
-        shiftId: shift.id, // Link to shift
+        shiftId: shifts[0].id, // Keeping it simple, linked to one shift
         totalAmount: totalAmount,
         subtotal: subtotal,
         discountAmount: discount,
@@ -1050,21 +1071,22 @@ async function main() {
         waiterId: waiter.id,
         paymentMethod: paymentMethod,
         status: 'COMPLETED' as any,
-        notes: Math.random() < 0.1 ? 'Customer allergic to nuts' : undefined,
+        createdAt: orderDate, // IMPORTANT: Set the historical date
+        updatedAt: orderDate,
         items: {
           create: saleItems
         },
         payments: {
-          create: salePayments // Create SalePayment records
+          create: salePayments
         }
       }
     });
 
-    if ((i + 1) % 10 === 0) {
+    if ((i + 1) % 20 === 0) {
       console.log(`  → Created ${i + 1} orders...`);
     }
   }
-  console.log(`✓ Created 50 restaurant orders\n`);
+  console.log(`✓ Created 200 restaurant orders for 2025\n`);
 
   // Update Kitchen Stations with Printer IPs
   console.log('🖨️  Adding printer IPs to kitchen stations...');

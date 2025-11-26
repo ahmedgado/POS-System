@@ -11,12 +11,34 @@ export class DashboardController {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
+    // Start of the current month (midnight)
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    monthStart.setHours(0, 0, 0, 0);
+    const monthEnd = now;
+    const monthName = monthStart.toLocaleString('default', { month: 'long', year: 'numeric' });
+
     // Get today's sales
     const todaySales = await prisma.sale.aggregate({
       where: {
         createdAt: {
           gte: today,
           lt: tomorrow
+        },
+        status: 'COMPLETED'
+      },
+      _sum: {
+        totalAmount: true
+      },
+      _count: true
+    });
+
+    // Monthly aggregation for overall statistics
+    const monthSales = await prisma.sale.aggregate({
+      where: {
+        createdAt: {
+          gte: monthStart,
+          lt: monthEnd
         },
         status: 'COMPLETED'
       },
@@ -136,9 +158,10 @@ export class DashboardController {
     }));
 
     const stats = {
-      totalSales: totalSalesData._count,
-      totalRevenue: Number(totalSalesData._sum.totalAmount) || 0,
-      totalOrders: totalSalesData._count,
+      monthName,
+      totalSales: monthSales._count,
+      totalRevenue: Number(monthSales._sum.totalAmount) || 0,
+      totalOrders: monthSales._count,
       totalProducts,
       todaySales: todaySales._count,
       todayRevenue: Number(todaySales._sum.totalAmount) || 0,

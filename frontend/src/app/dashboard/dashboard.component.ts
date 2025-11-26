@@ -66,7 +66,7 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
 
           <!-- Overall Statistics -->
           <section style="margin-bottom:32px;">
-            <h2 style="margin:0 0 16px 0;color:#333;font-size:18px;font-weight:600;">{{ 'dashboard.overallStatistics' | translate }}</h2>
+            <h2 style="margin:0 0 16px 0;color:#333;font-size:18px;font-weight:600;">{{ stats.monthName }}</h2>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;">
               <!-- Total Sales -->
               <div style="background:#fff;padding:24px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
@@ -156,7 +156,7 @@ export class DashboardComponent implements OnInit {
     private router: Router,
     private dashboardService: DashboardService,
     private settingsService: SettingsService
-  ) {}
+  ) { }
 
   ngOnInit() {
     this.settingsService.loadCurrencySettings();

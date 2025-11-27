@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { authenticate } from '../middleware/auth.middleware';
+import { authenticate, authorize } from '../middleware/auth.middleware';
+import { UserRole } from '@prisma/client';
 
 // Floor Controllers
 import {
@@ -67,7 +68,7 @@ router.get('/tables', authenticate, getTables);
 router.get('/tables/:id', authenticate, getTableById);
 router.post('/tables', authenticate, createTable);
 router.put('/tables/:id', authenticate, updateTable);
-router.patch('/tables/:id/status', authenticate, updateTableStatus);
+router.patch('/tables/:id/status', authenticate, authorize(UserRole.WAITER, UserRole.MANAGER, UserRole.ADMIN), updateTableStatus);
 router.patch('/tables/layout', authenticate, updateTableLayout);
 router.delete('/tables/:id', authenticate, deleteTable);
 router.get('/floors/:floorId/layout', authenticate, getFloorLayout);

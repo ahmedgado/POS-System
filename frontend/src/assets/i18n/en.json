@@ -21,7 +21,8 @@
     "products": "Products",
     "users": "Users",
     "reports": "Reports",
-    "settings": "Settings"
+    "settings": "Settings",
+    "logout": "Logout"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -93,7 +94,11 @@
     "status": "Status",
     "actions": "Actions",
     "view": "View",
-    "walkIn": "Walk-in"
+    "walkIn": "Walk-in",
+    "subtotal": "Subtotal",
+    "discount": "Discount",
+    "tax": "Tax",
+    "total": "Total"
   },
   "shifts": {
     "title": "Shifts Management",
@@ -202,6 +207,13 @@
     "detailedTransactions": "Detailed Sales Transactions",
     "noReportData": "No Report Data",
     "selectDateRange": "Select a date range and click 'Generate Report' to view analytics"
+  },
+  "tableLayout": {
+    "title": "Table Layout",
+    "selectTable": "Click on a table to start an order",
+    "available": "Available",
+    "occupied": "Occupied",
+    "reserved": "Reserved"
   },
   "common": {
     "save": "Save",

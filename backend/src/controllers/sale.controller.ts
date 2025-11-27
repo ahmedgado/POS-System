@@ -170,6 +170,17 @@ export class SaleController {
           });
         }
 
+        // Auto-update table status when order is created
+        // Since sale is completed immediately with payment, set table to CLEANING
+        if (tableId) {
+          await tx.table.update({
+            where: { id: tableId },
+            data: {
+              status: 'CLEANING'
+            }
+          });
+        }
+
         return newSale;
       });
 

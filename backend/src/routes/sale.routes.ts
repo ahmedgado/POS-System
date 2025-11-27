@@ -14,7 +14,7 @@ router.use(authenticate);
 // POST /api/sales
 router.post(
   '/',
-  authorize(UserRole.CASHIER, UserRole.MANAGER, UserRole.ADMIN),
+  authorize(UserRole.CASHIER, UserRole.WAITER, UserRole.MANAGER, UserRole.ADMIN),
   validate([
     body('items').isArray({ min: 1 }).withMessage('At least one item is required'),
     body('items.*.productId').notEmpty().withMessage('Product ID is required'),

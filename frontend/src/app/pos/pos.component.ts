@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { Product, ProductService } from '../services/product.service';
 import { SaleService, CreateSaleRequest } from '../services/sale.service';
@@ -176,7 +177,7 @@ interface SelectedModifier {
         <!-- Restaurant Order Type & Table Selection -->
         <div style="padding:20px 24px;border-bottom:1px solid #e5e0db;background:#fafaf9;">
           <div style="font-weight:600;color:#1a1a1a;margin-bottom:12px;font-size:14px;letter-spacing:0.3px;">Order Type</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
+          <div [style.grid-template-columns]="currentUserRole === 'WAITER' ? '1fr' : '1fr 1fr 1fr'" style="display:grid;gap:8px;margin-bottom:16px;">
             <button
               (click)="orderType = 'DINE_IN'; showTableSelector = true"
               [style.background]="orderType === 'DINE_IN' ? 'linear-gradient(135deg, #d4af37 0%, #c19a2e 100%)' : '#ffffff'"
@@ -186,6 +187,7 @@ interface SelectedModifier {
               🍽️ Dine In
             </button>
             <button
+              *ngIf="currentUserRole !== 'WAITER'"
               (click)="orderType = 'TAKEAWAY'; selectedTableId = null; selectedTable = null; showTableSelector = false"
               [style.background]="orderType === 'TAKEAWAY' ? 'linear-gradient(135deg, #d4af37 0%, #c19a2e 100%)' : '#ffffff'"
               [style.color]="orderType === 'TAKEAWAY' ? '#ffffff' : '#1a1a1a'"
@@ -194,6 +196,7 @@ interface SelectedModifier {
               🥡 Takeaway
             </button>
             <button
+              *ngIf="currentUserRole !== 'WAITER'"
               (click)="orderType = 'DELIVERY'; selectedTableId = null; selectedTable = null; showTableSelector = false"
               [style.background]="orderType === 'DELIVERY' ? 'linear-gradient(135deg, #d4af37 0%, #c19a2e 100%)' : '#ffffff'"
               [style.color]="orderType === 'DELIVERY' ? '#ffffff' : '#1a1a1a'"
@@ -208,12 +211,18 @@ interface SelectedModifier {
             <select
               [ngModel]="selectedTableId"
               (ngModelChange)="onTableSelect($event)"
+              [disabled]="tableLockedFromRoute"
+              [style.opacity]="tableLockedFromRoute ? '0.7' : '1'"
+              [style.cursor]="tableLockedFromRoute ? 'not-allowed' : 'pointer'"
               style="width:100%;padding:12px 14px;border:1px solid #d4af37;border-radius:10px;font-size:14px;background:#ffffff;box-shadow:0 2px 6px rgba(0,0,0,0.06);">
               <option [value]="null">No Table</option>
               <option *ngFor="let table of tables" [value]="table.id">
                 {{ table.floor?.name }} - {{ table.tableNumber }} ({{ table.capacity }} seats)
               </option>
             </select>
+            <div *ngIf="tableLockedFromRoute && selectedTable" style="margin-top:8px;padding:8px 12px;background:#fff3cd;border:1px solid #ffc107;border-radius:8px;font-size:12px;color:#856404;">
+              🔒 Table locked from selection
+            </div>
             <div *ngIf="selectedTable" style="margin-top:12px;padding:12px;background:linear-gradient(135deg, #f0e6d2 0%, #f8f6f4 100%);border-radius:10px;font-size:13px;color:#1a1a1a;border:1px solid #d4af37;">
               ✓ Table: {{ selectedTable.tableNumber }} | Floor: {{ selectedTable.floor?.name }} | {{ selectedTable.capacity }} seats
             </div>
@@ -602,6 +611,8 @@ export class POSComponent implements OnInit {
   selectedTable: Table | null = null;
   orderType: 'DINE_IN' | 'TAKEAWAY' | 'DELIVERY' = 'TAKEAWAY';
   showTableSelector = false;
+  tableLockedFromRoute = false; // Lock table if pre-selected from table layout
+  currentUserRole: string = '';
   currentShift: Shift | null = null;
 
   // Modifier selection
@@ -621,9 +632,11 @@ export class POSComponent implements OnInit {
     private floorService: FloorService,
     private shiftService: ShiftService,
     private modifierService: ModifierService,
-    private settingsService: SettingsService
+    private settingsService: SettingsService,
+    private route: ActivatedRoute
   ) {
     this.cashierName = this.authService.currentUser?.firstName || 'Cashier';
+    this.currentUserRole = this.authService.currentUser?.role || '';
   }
 
   ngOnInit() {
@@ -632,6 +645,17 @@ export class POSComponent implements OnInit {
     this.loadTablesAndFloors();
     this.loadCurrentShift();
     this.loadShiftSettings();
+
+    // Check for table pre-selection from route
+    this.route.queryParams.subscribe(params => {
+      if (params['tableId']) {
+        this.selectedTableId = params['tableId'];
+        this.tableLockedFromRoute = true;
+      }
+      if (params['orderType']) {
+        this.orderType = params['orderType'] as 'DINE_IN' | 'TAKEAWAY' | 'DELIVERY';
+      }
+    });
   }
 
   loadShiftSettings() {

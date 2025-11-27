@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { LoginComponent } from './login/login.component';
 import { AuthGuard } from './guards/auth.guard';
+import { RoleGuard } from './guards/role.guard';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { MainLayoutComponent } from './layout/main-layout.component';
 import { ProductsComponent } from './products/products.component';
@@ -23,6 +24,7 @@ import { RestaurantModule } from './restaurant/restaurant.module';
 import { IngredientsComponent } from './ingredients/ingredients.component';
 import { RecipesComponent } from './recipes/recipes.component';
 import { KitchenStationsComponent } from './kitchen-stations/kitchen-stations.component';
+import { TableLayoutComponent } from './table-layout/table-layout.component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -35,6 +37,7 @@ const routes: Routes = [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', component: DashboardComponent },
       { path: 'pos', component: POSComponent },
+      { path: 'table-layout', component: TableLayoutComponent },
       { path: 'sales', component: SalesComponent },
       { path: 'shifts', component: ShiftsComponent },
       { path: 'customers', component: CustomersComponent },
@@ -43,15 +46,15 @@ const routes: Routes = [
       { path: 'users', component: UsersComponent },
       { path: 'reports', component: ReportsComponent },
       { path: 'settings', component: SettingsComponent },
-      { path: 'restaurant/floors', component: FloorsComponent },
-      { path: 'restaurant/tables', component: TablesComponent },
-      { path: 'restaurant/modifiers', component: ModifiersComponent },
-      { path: 'restaurant/product-modifiers', component: ProductModifiersComponent },
-      { path: 'restaurant/product-stations', component: ProductStationsComponent },
-      { path: 'restaurant/kitchen-stations', component: KitchenStationsComponent },
-      { path: 'kds', component: KdsComponent },
-      { path: 'ingredients', component: IngredientsComponent },
-      { path: 'recipes', component: RecipesComponent }
+      { path: 'restaurant/floors', component: FloorsComponent, canActivate: [RoleGuard], data: { roles: ['ADMIN', 'MANAGER'] } },
+      { path: 'restaurant/tables', component: TablesComponent, canActivate: [RoleGuard], data: { roles: ['ADMIN', 'MANAGER'] } },
+      { path: 'restaurant/modifiers', component: ModifiersComponent, canActivate: [RoleGuard], data: { roles: ['ADMIN', 'MANAGER'] } },
+      { path: 'restaurant/product-modifiers', component: ProductModifiersComponent, canActivate: [RoleGuard], data: { roles: ['ADMIN', 'MANAGER'] } },
+      { path: 'restaurant/product-stations', component: ProductStationsComponent, canActivate: [RoleGuard], data: { roles: ['ADMIN', 'MANAGER'] } },
+      { path: 'restaurant/kitchen-stations', component: KitchenStationsComponent, canActivate: [RoleGuard], data: { roles: ['ADMIN', 'MANAGER'] } },
+      { path: 'kds', component: KdsComponent, canActivate: [RoleGuard], data: { roles: ['ADMIN', 'MANAGER', 'KITCHEN_STAFF'] } },
+      { path: 'ingredients', component: IngredientsComponent, canActivate: [RoleGuard], data: { roles: ['ADMIN', 'MANAGER', 'INVENTORY_CLERK'] } },
+      { path: 'recipes', component: RecipesComponent, canActivate: [RoleGuard], data: { roles: ['ADMIN', 'MANAGER', 'INVENTORY_CLERK'] } }
     ]
   },
 ];

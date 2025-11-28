@@ -441,4 +441,472 @@ router.get('/financial/excel', async (req, res) => {
   }
 });
 
+// ==================== DRAWER-PULL REPORT ====================
+
+// Get Drawer-Pull Report Data (JSON)
+router.get('/drawer-pull/:shiftId', async (req, res) => {
+  try {
+    const { shiftId } = req.params;
+
+    const shift = await prisma.shift.findUnique({
+      where: { id: shiftId },
+      include: {
+        cashier: {
+          select: { id: true, firstName: true, lastName: true }
+        }
+      }
+    });
+
+    if (!shift) {
+      return res.status(404).json({ success: false, message: 'Shift not found' });
+    }
+
+    const sales = await prisma.sale.findMany({
+      where: {
+        shiftId,
+        status: 'COMPLETED'
+      }
+    });
+
+    // Calculate sales by payment method
+    const cashSales = sales.filter(s => s.paymentMethod === 'CASH');
+    const cardSales = sales.filter(s => s.paymentMethod === 'CARD');
+    const mobileWallet = sales.filter(s => s.paymentMethod === 'MOBILE_WALLET');
+
+    const cashSalesTotal = cashSales.reduce((sum, s) => sum + Number(s.totalAmount), 0);
+    const cardSalesTotal = cardSales.reduce((sum, s) => sum + Number(s.totalAmount), 0);
+    const mobileWalletTotal = mobileWallet.reduce((sum, s) => sum + Number(s.totalAmount), 0);
+
+    const expectedCash = Number(shift.startingCash) + cashSalesTotal;
+    const actualCash = Number(shift.endingCash || 0);
+    const difference = actualCash - expectedCash;
+
+    let overShort: 'OVER' | 'SHORT' | 'BALANCED' = 'BALANCED';
+    if (difference > 0.01) overShort = 'OVER';
+    else if (difference < -0.01) overShort = 'SHORT';
+
+    res.json({
+      shift: {
+        id: shift.id,
+        cashierName: `${shift.cashier.firstName} ${shift.cashier.lastName}`,
+        cashierId: shift.cashier.id,
+        startTime: shift.openedAt,
+        endTime: shift.closedAt,
+        status: shift.status
+      },
+      cashFlow: {
+        openingCash: Number(shift.startingCash),
+        cashSales: cashSalesTotal,
+        expectedCash,
+        actualCash,
+        difference,
+        overShort
+      },
+      salesBreakdown: {
+        cashSales: { count: cashSales.length, total: cashSalesTotal },
+        cardSales: { count: cardSales.length, total: cardSalesTotal },
+        mobileWallet: { count: mobileWallet.length, total: mobileWalletTotal },
+        totalSales: { count: sales.length, total: sales.reduce((sum, s) => sum + Number(s.totalAmount), 0) }
+      },
+      transactions: sales.map(s => ({
+        time: s.createdAt,
+        saleNumber: s.saleNumber,
+        amount: Number(s.totalAmount),
+        paymentMethod: s.paymentMethod
+      }))
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Generate Drawer-Pull Report PDF
+router.get('/drawer-pull/:shiftId/pdf', async (req, res) => {
+  try {
+    res.setHeader('Content-Encoding', 'identity');
+    const language = req.query.language as string || 'en';
+    const { shiftId } = req.params;
+    await reportService.generateDrawerPullReportPDF(shiftId, res, language);
+  } catch (error: any) {
+    console.error('PDF generation error:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+});
+
+// Generate Drawer-Pull Report Excel
+router.get('/drawer-pull/:shiftId/excel', async (req, res) => {
+  try {
+    res.setHeader('Content-Encoding', 'identity');
+    const language = req.query.language as string || 'en';
+    const { shiftId } = req.params;
+    await reportService.generateDrawerPullReportExcel(shiftId, res, language);
+  } catch (error: any) {
+    console.error('Excel generation error:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+});
+
+// ==================== SERVER PRODUCTIVITY REPORT ====================
+
+// Get Server Productivity Report Data (JSON)
+router.get('/server-productivity', async (req, res) => {
+  try {
+    const { startDate, endDate, waiterId } = req.query;
+
+    const where: any = {
+      status: 'COMPLETED',
+      waiterId: { not: null }
+    };
+
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) where.createdAt.gte = new Date(startDate as string);
+      if (endDate) {
+        const end = new Date(endDate as string);
+        end.setHours(23, 59, 59, 999);
+        where.createdAt.lte = end;
+      }
+    }
+
+    if (waiterId) {
+      where.waiterId = waiterId;
+    }
+
+    const sales = await prisma.sale.findMany({
+      where,
+      include: {
+        waiter: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true
+          }
+        }
+      }
+    });
+
+    // Group by waiter
+    const waiterStats: any = {};
+    sales.forEach(sale => {
+      const wId = sale.waiterId!;
+      if (!waiterStats[wId]) {
+        waiterStats[wId] = {
+          waiterId: wId,
+          name: `${sale.waiter!.firstName} ${sale.waiter!.lastName}`,
+          totalSales: 0,
+          totalRevenue: 0,
+          totalTips: 0,
+          avgCheckSize: 0,
+          tablesServed: new Set()
+        };
+      }
+      waiterStats[wId].totalSales++;
+      waiterStats[wId].totalRevenue += Number(sale.totalAmount);
+      waiterStats[wId].totalTips += Number(sale.tipAmount || 0);
+      if (sale.tableId) {
+        waiterStats[wId].tablesServed.add(sale.tableId);
+      }
+    });
+
+    // Calculate averages
+    const servers = Object.values(waiterStats).map((stat: any) => ({
+      ...stat,
+      avgCheckSize: stat.totalRevenue / stat.totalSales,
+      tablesServed: stat.tablesServed.size
+    }));
+
+    // Sort by revenue
+    servers.sort((a: any, b: any) => b.totalRevenue - a.totalRevenue);
+
+    const totalRevenue = servers.reduce((sum, s: any) => sum + s.totalRevenue, 0);
+    const totalTips = servers.reduce((sum, s: any) => sum + s.totalTips, 0);
+
+    res.json({
+      servers,
+      topPerformer: servers[0] || null,
+      totalRevenue,
+      totalTips
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Generate Server Productivity Report PDF
+router.get('/server-productivity/pdf', async (req, res) => {
+  try {
+    res.setHeader('Content-Encoding', 'identity');
+    const language = req.query.language as string || 'en';
+    const { startDate, endDate, waiterId } = req.query;
+    await reportService.generateServerProductivityReportPDF({ startDate, endDate, waiterId }, res, language);
+  } catch (error: any) {
+    console.error('PDF generation error:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+});
+
+// Generate Server Productivity Report Excel
+router.get('/server-productivity/excel', async (req, res) => {
+  try {
+    res.setHeader('Content-Encoding', 'identity');
+    const language = req.query.language as string || 'en';
+    const { startDate, endDate, waiterId } = req.query;
+    await reportService.generateServerProductivityReportExcel({ startDate, endDate, waiterId }, res, language);
+  } catch (error: any) {
+    console.error('Excel generation error:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+});
+
+// ==================== HOURLY INCOME REPORT ====================
+
+router.get('/hourly-income', async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const where: any = { status: 'COMPLETED' };
+
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) where.createdAt.gte = new Date(startDate as string);
+      if (endDate) {
+        const end = new Date(endDate as string);
+        end.setHours(23, 59, 59, 999);
+        where.createdAt.lte = end;
+      }
+    }
+
+    const sales = await prisma.sale.findMany({ where });
+
+    const hourlyStats: any = {};
+    sales.forEach(sale => {
+      const hour = new Date(sale.createdAt).getHours();
+      const hourKey = `${hour.toString().padStart(2, '0')}:00`;
+
+      if (!hourlyStats[hourKey]) {
+        hourlyStats[hourKey] = { hour: hourKey, salesCount: 0, revenue: 0, avgCheck: 0 };
+      }
+      hourlyStats[hourKey].salesCount++;
+      hourlyStats[hourKey].revenue += Number(sale.totalAmount);
+    });
+
+    const hourlyBreakdown = Object.values(hourlyStats).map((stat: any) => ({
+      ...stat,
+      avgCheck: stat.revenue / stat.salesCount
+    }));
+
+    hourlyBreakdown.sort((a: any, b: any) => a.hour.localeCompare(b.hour));
+
+    const totalRevenue = hourlyBreakdown.reduce((sum: any, h: any) => sum + h.revenue, 0);
+    const peakHour = hourlyBreakdown.reduce((max: any, h: any) =>
+      h.revenue > (max?.revenue || 0) ? h : max, null);
+
+    res.json({ hourlyBreakdown, totalRevenue, peakHour });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+router.get('/hourly-income/pdf', async (req, res) => {
+  try {
+    res.setHeader('Content-Encoding', 'identity');
+    const language = req.query.language as string || 'en';
+    const { startDate, endDate } = req.query;
+    await reportService.generateHourlyIncomeReportPDF({ startDate, endDate }, res, language);
+  } catch (error: any) {
+    console.error('PDF generation error:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+});
+
+router.get('/hourly-income/excel', async (req, res) => {
+  try {
+    res.setHeader('Content-Encoding', 'identity');
+    const language = req.query.language as string || 'en';
+    const { startDate, endDate } = req.query;
+    await reportService.generateHourlyIncomeReportExcel({ startDate, endDate }, res, language);
+  } catch (error: any) {
+    console.error('Excel generation error:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+});
+
+// ==================== CARD TRANSACTIONS REPORT ====================
+
+router.get('/card-transactions', async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const where: any = {
+      status: 'COMPLETED',
+      paymentMethod: { in: ['CARD', 'MOBILE_WALLET'] }
+    };
+
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) where.createdAt.gte = new Date(startDate as string);
+      if (endDate) {
+        const end = new Date(endDate as string);
+        end.setHours(23, 59, 59, 999);
+        where.createdAt.lte = end;
+      }
+    }
+
+    const sales = await prisma.sale.findMany({
+      where,
+      include: {
+        cashier: {
+          select: {
+            firstName: true,
+            lastName: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const transactions = sales.map(sale => ({
+      date: sale.createdAt,
+      saleNumber: sale.saleNumber,
+      paymentMethod: sale.paymentMethod,
+      amount: Number(sale.totalAmount),
+      cashierName: `${sale.cashier.firstName} ${sale.cashier.lastName}`
+    }));
+
+    const totalAmount = transactions.reduce((sum, t) => sum + t.amount, 0);
+
+    res.json({
+      transactions,
+      totalTransactions: transactions.length,
+      totalAmount
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+router.get('/card-transactions/pdf', async (req, res) => {
+  try {
+    res.setHeader('Content-Encoding', 'identity');
+    const language = req.query.language as string || 'en';
+    const { startDate, endDate } = req.query;
+    await reportService.generateCardTransactionsReportPDF({ startDate, endDate }, res, language);
+  } catch (error: any) {
+    console.error('PDF generation error:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+});
+
+router.get('/card-transactions/excel', async (req, res) => {
+  try {
+    res.setHeader('Content-Encoding', 'identity');
+    const language = req.query.language as string || 'en';
+    const { startDate, endDate } = req.query;
+    await reportService.generateCardTransactionsReportExcel({ startDate, endDate }, res, language);
+  } catch (error: any) {
+    console.error('Excel generation error:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+});
+
+// ==================== JOURNAL REPORT ====================
+
+router.get('/journal', async (req, res) => {
+  try {
+    const { startDate, endDate, includeRefunds } = req.query;
+    const where: any = {};
+
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) where.createdAt.gte = new Date(startDate as string);
+      if (endDate) {
+        const end = new Date(endDate as string);
+        end.setHours(23, 59, 59, 999);
+        where.createdAt.lte = end;
+      }
+    }
+
+    if (includeRefunds === 'false') {
+      where.status = { not: 'REFUNDED' };
+    }
+
+    const sales = await prisma.sale.findMany({
+      where,
+      include: {
+        cashier: {
+          select: {
+            firstName: true,
+            lastName: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const transactions = sales.map(sale => ({
+      time: sale.createdAt,
+      saleNumber: sale.saleNumber,
+      orderType: sale.orderType,
+      paymentMethod: sale.paymentMethod,
+      amount: Number(sale.totalAmount),
+      status: sale.status,
+      cashierName: `${sale.cashier.firstName} ${sale.cashier.lastName}`
+    }));
+
+    const totalAmount = transactions
+      .filter(t => t.status === 'COMPLETED')
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    res.json({
+      transactions,
+      totalTransactions: transactions.length,
+      totalAmount
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+router.get('/journal/pdf', async (req, res) => {
+  try {
+    res.setHeader('Content-Encoding', 'identity');
+    const language = req.query.language as string || 'en';
+    const { startDate, endDate, includeRefunds } = req.query;
+    await reportService.generateJournalReportPDF({ startDate, endDate, includeRefunds }, res, language);
+  } catch (error: any) {
+    console.error('PDF generation error:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+});
+
+router.get('/journal/excel', async (req, res) => {
+  try {
+    res.setHeader('Content-Encoding', 'identity');
+    const language = req.query.language as string || 'en';
+    const { startDate, endDate, includeRefunds } = req.query;
+    await reportService.generateJournalReportExcel({ startDate, endDate, includeRefunds }, res, language);
+  } catch (error: any) {
+    console.error('Excel generation error:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+});
+
 export default router;

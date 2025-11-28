@@ -578,6 +578,886 @@ export class ReportService {
       orderBy: { createdAt: 'desc' }
     });
   }
+
+  // ==================== DRAWER-PULL REPORT ====================
+
+  async generateDrawerPullReportPDF(shiftId: string, res: Response, language: string = 'en') {
+    const shiftData = await this.getDrawerPullData(shiftId);
+
+    const doc = new PDFDocument({ margin: 40, size: 'A4' });
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=drawer-pull-${shiftId}.pdf`);
+    doc.pipe(res);
+
+    // Title
+    doc.rect(40, 40, doc.page.width - 80, 60).fill('#DC3545');
+    doc.fillColor('#FFFFFF').fontSize(24).font('Helvetica-Bold')
+      .text(language === 'ar' ? 'تقرير تسوية النقدية' : 'Drawer-Pull Report', 40, 55, {
+        width: doc.page.width - 80, align: 'center'
+      });
+
+    // Shift Info
+    doc.fillColor('#000000').fontSize(12).font('Helvetica')
+      .text(`${language === 'ar' ? 'الوردية' : 'Shift'}: ${shiftData.shift.id.slice(0, 8)}`, 40, 120)
+      .text(`${language === 'ar' ? 'الموظف' : 'Cashier'}: ${shiftData.shift.cashierName}`, 40, 140)
+      .text(`${language === 'ar' ? 'من' : 'From'}: ${new Date(shiftData.shift.startTime).toLocaleString()}`, 40, 160)
+      .text(`${language === 'ar' ? 'إلى' : 'To'}: ${shiftData.shift.endTime ? new Date(shiftData.shift.endTime).toLocaleString() : 'Ongoing'}`, 40, 180);
+
+    // Cash Flow Summary
+    let currentY = 220;
+    doc.fontSize(16).font('Helvetica-Bold').text(language === 'ar' ? 'ملخص النقدية' : 'Cash Flow Summary', 40, currentY);
+    currentY += 30;
+
+    const cashItems = [
+      { label: language === 'ar' ? 'النقد الافتتاحي' : 'Opening Cash', value: shiftData.cashFlow.openingCash, color: '#666' },
+      { label: language === 'ar' ? 'مبيعات نقدية' : 'Cash Sales', value: shiftData.cashFlow.cashSales, color: '#28a745' },
+      { label: language === 'ar' ? 'النقد المتوقع' : 'Expected Cash', value: shiftData.cashFlow.expectedCash, color: '#007bff' },
+      { label: language === 'ar' ? 'النقد الفعلي' : 'Actual Cash', value: shiftData.cashFlow.actualCash || 0, color: '#6c5ce7' },
+      { label: language === 'ar' ? 'الفرق' : 'Difference', value: shiftData.cashFlow.difference, color: shiftData.cashFlow.difference >= 0 ? '#28a745' : '#dc3545' }
+    ];
+
+    doc.fontSize(11).font('Helvetica');
+    cashItems.forEach(item => {
+      doc.fillColor('#666').text(item.label + ':', 80, currentY);
+      doc.fillColor(item.color).font('Helvetica-Bold').text(`$${item.value.toFixed(2)}`, 350, currentY, { align: 'right' });
+      doc.font('Helvetica');
+      currentY += 25;
+    });
+
+    // Over/Short Status
+    currentY += 10;
+    const status = shiftData.cashFlow.overShort;
+    const statusColor = status === 'BALANCED' ? '#28a745' : status === 'OVER' ? '#ffc107' : '#dc3545';
+    doc.fontSize(14).font('Helvetica-Bold').fillColor(statusColor)
+      .text(`${language === 'ar' ? 'الحالة' : 'Status'}: ${status}`, 80, currentY);
+
+    // Sales Breakdown
+    currentY += 50;
+    doc.fillColor('#000000').fontSize(16).font('Helvetica-Bold')
+      .text(language === 'ar' ? 'توزيع المبيعات' : 'Sales Breakdown', 40, currentY);
+    currentY += 30;
+
+    const salesItems = [
+      { label: language === 'ar' ? 'مبيعات نقدية' : 'Cash Sales', count: shiftData.salesBreakdown.cashSales.count, total: shiftData.salesBreakdown.cashSales.total },
+      { label: language === 'ar' ? 'مبيعات بطاقات' : 'Card Sales', count: shiftData.salesBreakdown.cardSales.count, total: shiftData.salesBreakdown.cardSales.total },
+      { label: language === 'ar' ? 'محفظة إلكترونية' : 'Mobile Wallet', count: shiftData.salesBreakdown.mobileWallet.count, total: shiftData.salesBreakdown.mobileWallet.total }
+    ];
+
+    doc.fontSize(10).font('Helvetica');
+    salesItems.forEach(item => {
+      doc.fillColor('#666').text(item.label, 80, currentY);
+      doc.text(`${item.count} ${language === 'ar' ? 'معاملة' : 'transactions'}`, 250, currentY);
+      doc.fillColor('#28a745').font('Helvetica-Bold').text(`$${item.total.toFixed(2)}`, 400, currentY);
+      doc.fillColor('#000').font('Helvetica');
+      currentY += 20;
+    });
+
+    doc.end();
+  }
+
+  async generateDrawerPullReportExcel(shiftId: string, res: Response, language: string = 'en') {
+    const shiftData = await this.getDrawerPullData(shiftId);
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet(language === 'ar' ? 'تسوية النقدية' : 'Drawer Pull');
+
+    // Shift Info Section
+    worksheet.addRow([language === 'ar' ? 'معلومات الوردية' : 'Shift Information']);
+    worksheet.addRow([language === 'ar' ? 'رقم الوردية' : 'Shift ID', shiftData.shift.id]);
+    worksheet.addRow([language === 'ar' ? 'الموظف' : 'Cashier', shiftData.shift.cashierName]);
+    worksheet.addRow([language === 'ar' ? 'وقت البداية' : 'Start Time', new Date(shiftData.shift.startTime).toLocaleString()]);
+    worksheet.addRow([language === 'ar' ? 'وقت النهاية' : 'End Time', shiftData.shift.endTime ? new Date(shiftData.shift.endTime).toLocaleString() : 'Ongoing']);
+    worksheet.addRow([]);
+
+    // Cash Flow Section
+    worksheet.addRow([language === 'ar' ? 'ملخص النقدية' : 'Cash Flow Summary']);
+    worksheet.addRow([language === 'ar' ? 'النقد الافتتاحي' : 'Opening Cash', shiftData.cashFlow.openingCash]);
+    worksheet.addRow([language === 'ar' ? 'مبيعات نقدية' : 'Cash Sales', shiftData.cashFlow.cashSales]);
+    worksheet.addRow([language === 'ar' ? 'النقد المتوقع' : 'Expected Cash', shiftData.cashFlow.expectedCash]);
+    worksheet.addRow([language === 'ar' ? 'النقد الفعلي' : 'Actual Cash', shiftData.cashFlow.actualCash || 0]);
+    worksheet.addRow([language === 'ar' ? 'الفرق' : 'Difference', shiftData.cashFlow.difference]);
+    worksheet.addRow([language === 'ar' ? 'الحالة' : 'Status', shiftData.cashFlow.overShort]);
+    worksheet.addRow([]);
+
+    // Sales Breakdown
+    worksheet.addRow([language === 'ar' ? 'توزيع المبيعات' : 'Sales Breakdown']);
+    worksheet.addRow([language === 'ar' ? 'نوع الدفع' : 'Payment Type', language === 'ar' ? 'العدد' : 'Count', language === 'ar' ? 'المجموع' : 'Total']);
+    worksheet.addRow([language === 'ar' ? 'نقدي' : 'Cash', shiftData.salesBreakdown.cashSales.count, shiftData.salesBreakdown.cashSales.total]);
+    worksheet.addRow([language === 'ar' ? 'بطاقة' : 'Card', shiftData.salesBreakdown.cardSales.count, shiftData.salesBreakdown.cardSales.total]);
+    worksheet.addRow([language === 'ar' ? 'محفظة' : 'Mobile', shiftData.salesBreakdown.mobileWallet.count, shiftData.salesBreakdown.mobileWallet.total]);
+
+    // Style headers
+    worksheet.getRow(1).font = { bold: true, size: 14 };
+    worksheet.getRow(7).font = { bold: true, size: 14 };
+    worksheet.getRow(15).font = { bold: true, size: 14 };
+    worksheet.getRow(16).font = { bold: true };
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=drawer-pull-${shiftId}.xlsx`);
+    await workbook.xlsx.write(res);
+    res.end();
+  }
+
+  private async getDrawerPullData(shiftId: string) {
+    const shift = await prisma.shift.findUnique({
+      where: { id: shiftId },
+      include: {
+        cashier: {
+          select: { firstName: true, lastName: true }
+        }
+      }
+    });
+
+    if (!shift) {
+      throw new Error('Shift not found');
+    }
+
+    const sales = await prisma.sale.findMany({
+      where: {
+        shiftId,
+        status: 'COMPLETED'
+      }
+    });
+
+    // Calculate sales by payment method
+    const cashSales = sales.filter(s => s.paymentMethod === 'CASH');
+    const cardSales = sales.filter(s => s.paymentMethod === 'CARD');
+    const mobileWallet = sales.filter(s => s.paymentMethod === 'MOBILE_WALLET');
+
+    const cashSalesTotal = cashSales.reduce((sum, s) => sum + Number(s.totalAmount), 0);
+    const cardSalesTotal = cardSales.reduce((sum, s) => sum + Number(s.totalAmount), 0);
+    const mobileWalletTotal = mobileWallet.reduce((sum, s) => sum + Number(s.totalAmount), 0);
+
+    const expectedCash = Number(shift.startingCash) + cashSalesTotal;
+    const actualCash = Number(shift.endingCash || 0);
+    const difference = actualCash - expectedCash;
+
+    let overShort: 'OVER' | 'SHORT' | 'BALANCED' = 'BALANCED';
+    if (difference > 0.01) overShort = 'OVER';
+    else if (difference < -0.01) overShort = 'SHORT';
+
+    return {
+      shift: {
+        id: shift.id,
+        cashierName: `${shift.cashier.firstName} ${shift.cashier.lastName}`,
+        startTime: shift.openedAt,
+        endTime: shift.closedAt,
+        status: shift.status
+      },
+      cashFlow: {
+        openingCash: Number(shift.startingCash),
+        cashSales: cashSalesTotal,
+        expectedCash,
+        actualCash,
+        difference,
+        overShort
+      },
+      salesBreakdown: {
+        cashSales: { count: cashSales.length, total: cashSalesTotal },
+        cardSales: { count: cardSales.length, total: cardSalesTotal },
+        mobileWallet: { count: mobileWallet.length, total: mobileWalletTotal },
+        totalSales: { count: sales.length, total: sales.reduce((sum, s) => sum + Number(s.totalAmount), 0) }
+      },
+      transactions: sales.map(s => ({
+        time: s.createdAt,
+        saleNumber: s.saleNumber,
+        amount: Number(s.totalAmount),
+        paymentMethod: s.paymentMethod
+      }))
+    };
+  }
+
+  // ==================== SERVER PRODUCTIVITY REPORT ====================
+
+  async generateServerProductivityReportPDF(filters: any, res: Response, language: string = 'en') {
+    const serverData = await this.getServerProductivityData(filters);
+
+    const doc = new PDFDocument({ margin: 40, size: 'A4' });
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=server-productivity-${filters.startDate || 'all'}.pdf`);
+    doc.pipe(res);
+
+    // Title
+    doc.rect(40, 40, doc.page.width - 80, 60).fill('#DC3545');
+    doc.fillColor('#FFFFFF').fontSize(24).font('Helvetica-Bold')
+      .text(language === 'ar' ? 'تقرير أداء الخوادم' : 'Server Productivity Report', 40, 55, {
+        width: doc.page.width - 80, align: 'center'
+      });
+
+    // Period
+    if (filters.startDate && filters.endDate) {
+      doc.fontSize(12).text(
+        `${language === 'ar' ? 'الفترة' : 'Period'}: ${filters.startDate} - ${filters.endDate}`,
+        40, 75, { width: doc.page.width - 80, align: 'center' }
+      );
+    }
+
+    // Summary
+    let currentY = 120;
+    doc.fillColor('#000000').fontSize(16).font('Helvetica-Bold')
+      .text(language === 'ar' ? 'الملخص' : 'Summary', 40, currentY);
+    currentY += 30;
+
+    doc.fontSize(11).font('Helvetica')
+      .text(`${language === 'ar' ? 'إجمالي الإيرادات' : 'Total Revenue'}: $${serverData.totalRevenue.toFixed(2)}`, 80, currentY);
+    currentY += 20;
+    doc.text(`${language === 'ar' ? 'إجمالي الإكراميات' : 'Total Tips'}: $${serverData.totalTips.toFixed(2)}`, 80, currentY);
+    currentY += 30;
+
+    // Server Performance Table
+    doc.fontSize(14).font('Helvetica-Bold')
+      .text(language === 'ar' ? 'أداء الخوادم' : 'Server Performance', 40, currentY);
+    currentY += 25;
+
+    // Table Header
+    doc.fontSize(9).font('Helvetica-Bold');
+    doc.text('#', 45, currentY, { width: 20 });
+    doc.text(language === 'ar' ? 'الاسم' : 'Name', 70, currentY, { width: 100 });
+    doc.text(language === 'ar' ? 'المبيعات' : 'Sales', 180, currentY, { width: 50 });
+    doc.text(language === 'ar' ? 'الإيرادات' : 'Revenue', 240, currentY, { width: 70 });
+    doc.text(language === 'ar' ? 'الإكراميات' : 'Tips', 320, currentY, { width: 70 });
+    doc.text(language === 'ar' ? 'متوسط الفاتورة' : 'Avg Check', 400, currentY, { width: 70 });
+    doc.text(language === 'ar' ? 'الطاولات' : 'Tables', 480, currentY, { width: 50 });
+    currentY += 20;
+
+    // Server Rows
+    doc.fontSize(9).font('Helvetica');
+    serverData.servers.forEach((server: any, index: number) => {
+      if (currentY > doc.page.height - 100) {
+        doc.addPage();
+        currentY = 50;
+      }
+
+      if (index % 2 === 0) {
+        doc.rect(40, currentY - 5, doc.page.width - 80, 18).fill('#f8f9fa');
+        doc.fillColor('#000000');
+      }
+
+      doc.text((index + 1).toString(), 45, currentY, { width: 20 });
+      doc.text(server.name, 70, currentY, { width: 100 });
+      doc.text(server.totalSales.toString(), 180, currentY, { width: 50 });
+      doc.fillColor('#28a745').text(`$${server.totalRevenue.toFixed(2)}`, 240, currentY, { width: 70 });
+      doc.fillColor('#007bff').text(`$${server.totalTips.toFixed(2)}`, 320, currentY, { width: 70 });
+      doc.fillColor('#000000').text(`$${server.avgCheckSize.toFixed(2)}`, 400, currentY, { width: 70 });
+      doc.text(server.tablesServed.toString(), 480, currentY, { width: 50 });
+      currentY += 20;
+    });
+
+    doc.end();
+  }
+
+  async generateServerProductivityReportExcel(filters: any, res: Response, language: string = 'en') {
+    const serverData = await this.getServerProductivityData(filters);
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet(language === 'ar' ? 'أداء الخوادم' : 'Server Productivity');
+
+    // Headers
+    worksheet.columns = [
+      { header: language === 'ar' ? 'الترتيب' : 'Rank', key: 'rank', width: 8 },
+      { header: language === 'ar' ? 'اسم الخادم' : 'Server Name', key: 'name', width: 25 },
+      { header: language === 'ar' ? 'إجمالي المبيعات' : 'Total Sales', key: 'totalSales', width: 15 },
+      { header: language === 'ar' ? 'إجمالي الإيرادات' : 'Total Revenue', key: 'totalRevenue', width: 18 },
+      { header: language === 'ar' ? 'إجمالي الإكراميات' : 'Total Tips', key: 'totalTips', width: 15 },
+      { header: language === 'ar' ? 'متوسط الفاتورة' : 'Avg Check Size', key: 'avgCheckSize', width: 18 },
+      { header: language === 'ar' ? 'الطاولات المخدومة' : 'Tables Served', key: 'tablesServed', width: 15 }
+    ];
+
+    // Style header
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFDC3545' }
+    };
+
+    // Add data
+    serverData.servers.forEach((server: any, index: number) => {
+      worksheet.addRow({
+        rank: index + 1,
+        name: server.name,
+        totalSales: server.totalSales,
+        totalRevenue: server.totalRevenue,
+        totalTips: server.totalTips,
+        avgCheckSize: server.avgCheckSize,
+        tablesServed: server.tablesServed
+      });
+    });
+
+    // Summary row
+    worksheet.addRow({});
+    const summaryRow = worksheet.addRow({
+      rank: language === 'ar' ? 'المجموع' : 'TOTAL',
+      totalRevenue: serverData.totalRevenue,
+      totalTips: serverData.totalTips
+    });
+    summaryRow.font = { bold: true };
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=server-productivity-${filters.startDate || 'all'}.xlsx`);
+    await workbook.xlsx.write(res);
+    res.end();
+  }
+
+  private async getServerProductivityData(filters: any) {
+    const where: any = {
+      status: 'COMPLETED',
+      waiterId: { not: null }
+    };
+
+    if (filters.startDate || filters.endDate) {
+      where.createdAt = {};
+      if (filters.startDate) where.createdAt.gte = new Date(filters.startDate);
+      if (filters.endDate) {
+        const end = new Date(filters.endDate);
+        end.setHours(23, 59, 59, 999);
+        where.createdAt.lte = end;
+      }
+    }
+
+    if (filters.waiterId) {
+      where.waiterId = filters.waiterId;
+    }
+
+    const sales = await prisma.sale.findMany({
+      where,
+      include: {
+        waiter: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true
+          }
+        }
+      }
+    });
+
+    // Group by waiter
+    const waiterStats: any = {};
+    sales.forEach(sale => {
+      const waiterId = sale.waiterId!;
+      if (!waiterStats[waiterId]) {
+        waiterStats[waiterId] = {
+          waiterId,
+          name: `${sale.waiter!.firstName} ${sale.waiter!.lastName}`,
+          totalSales: 0,
+          totalRevenue: 0,
+          totalTips: 0,
+          serviceCharges: 0,
+          avgCheckSize: 0,
+          tablesServed: new Set(),
+          covers: 0
+        };
+      }
+      waiterStats[waiterId].totalSales++;
+      waiterStats[waiterId].totalRevenue += Number(sale.totalAmount);
+      waiterStats[waiterId].totalTips += Number(sale.tipAmount || 0);
+      waiterStats[waiterId].serviceCharges += Number(sale.serviceCharge || 0);
+      if (sale.tableId) {
+        waiterStats[waiterId].tablesServed.add(sale.tableId);
+      }
+    });
+
+    // Calculate averages and convert Set to count
+    const servers = Object.values(waiterStats).map((stat: any) => ({
+      ...stat,
+      avgCheckSize: stat.totalRevenue / stat.totalSales,
+      tablesServed: stat.tablesServed.size,
+      rank: 0
+    }));
+
+    // Sort by revenue and assign ranks
+    servers.sort((a: any, b: any) => b.totalRevenue - a.totalRevenue);
+    servers.forEach((server: any, index: number) => {
+      server.rank = index + 1;
+    });
+
+    const totalRevenue = servers.reduce((sum: any, s: any) => sum + s.totalRevenue, 0);
+    const totalTips = servers.reduce((sum: any, s: any) => sum + s.totalTips, 0);
+
+    return {
+      servers,
+      topPerformer: servers[0] || null,
+      totalRevenue,
+      totalTips
+    };
+  }
+
+  // ==================== HOURLY INCOME REPORT ====================
+
+  async generateHourlyIncomeReportPDF(filters: any, res: Response, language: string = 'en') {
+    const hourlyData = await this.getHourlyIncomeData(filters);
+
+    const doc = new PDFDocument({ margin: 40, size: 'A4' });
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=hourly-income-${filters.startDate || 'all'}.pdf`);
+    doc.pipe(res);
+
+    // Title
+    doc.rect(40, 40, doc.page.width - 80, 60).fill('#6c5ce7');
+    doc.fillColor('#FFFFFF').fontSize(24).font('Helvetica-Bold')
+      .text(language === 'ar' ? 'تقرير الدخل بالساعة' : 'Hourly Income Report', 40, 55, {
+        width: doc.page.width - 80, align: 'center'
+      });
+
+    if (filters.startDate && filters.endDate) {
+      doc.fontSize(12).text(
+        `${language === 'ar' ? 'الفترة' : 'Period'}: ${filters.startDate} - ${filters.endDate}`,
+        40, 75, { width: doc.page.width - 80, align: 'center' }
+      );
+    }
+
+    let currentY = 120;
+    doc.fillColor('#000000').fontSize(16).font('Helvetica-Bold')
+      .text(language === 'ar' ? 'الملخص' : 'Summary', 40, currentY);
+    currentY += 30;
+
+    doc.fontSize(11).font('Helvetica')
+      .text(`${language === 'ar' ? 'إجمالي الإيرادات' : 'Total Revenue'}: $${hourlyData.totalRevenue.toFixed(2)}`, 80, currentY);
+    currentY += 20;
+    doc.text(`${language === 'ar' ? 'ذروة الساعة' : 'Peak Hour'}: ${hourlyData.peakHour?.hour || 'N/A'} (${hourlyData.peakHour?.revenue.toFixed(2) || '0.00'})`, 80, currentY);
+    currentY += 30;
+
+    // Hourly breakdown table
+    doc.fontSize(14).font('Helvetica-Bold')
+      .text(language === 'ar' ? 'التفصيل بالساعة' : 'Hourly Breakdown', 40, currentY);
+    currentY += 25;
+
+    doc.fontSize(9).font('Helvetica-Bold');
+    doc.text(language === 'ar' ? 'الساعة' : 'Hour', 80, currentY, { width: 80 });
+    doc.text(language === 'ar' ? 'المبيعات' : 'Sales', 180, currentY, { width: 60 });
+    doc.text(language === 'ar' ? 'الإيرادات' : 'Revenue', 260, currentY, { width: 100 });
+    doc.text(language === 'ar' ? 'متوسط الفاتورة' : 'Avg Check', 380, currentY, { width: 100 });
+    currentY += 20;
+
+    doc.fontSize(9).font('Helvetica');
+    hourlyData.hourlyBreakdown.forEach((hour: any, index: number) => {
+      if (currentY > doc.page.height - 100) {
+        doc.addPage();
+        currentY = 50;
+      }
+
+      if (index % 2 === 0) {
+        doc.rect(40, currentY - 5, doc.page.width - 80, 18).fill('#f8f9fa');
+        doc.fillColor('#000000');
+      }
+
+      doc.text(hour.hour, 80, currentY, { width: 80 });
+      doc.text(hour.salesCount.toString(), 180, currentY, { width: 60 });
+      doc.fillColor('#28a745').text(`$${hour.revenue.toFixed(2)}`, 260, currentY, { width: 100 });
+      doc.fillColor('#000000').text(`$${hour.avgCheck.toFixed(2)}`, 380, currentY, { width: 100 });
+      currentY += 20;
+    });
+
+    doc.end();
+  }
+
+  async generateHourlyIncomeReportExcel(filters: any, res: Response, language: string = 'en') {
+    const hourlyData = await this.getHourlyIncomeData(filters);
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet(language === 'ar' ? 'الدخل بالساعة' : 'Hourly Income');
+
+    worksheet.columns = [
+      { header: language === 'ar' ? 'الساعة' : 'Hour', key: 'hour', width: 15 },
+      { header: language === 'ar' ? 'عدد المبيعات' : 'Sales Count', key: 'salesCount', width: 15 },
+      { header: language === 'ar' ? 'الإيرادات' : 'Revenue', key: 'revenue', width: 18 },
+      { header: language === 'ar' ? 'متوسط الفاتورة' : 'Avg Check', key: 'avgCheck', width: 18 }
+    ];
+
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF6c5ce7' }
+    };
+
+    hourlyData.hourlyBreakdown.forEach((hour: any) => {
+      worksheet.addRow(hour);
+    });
+
+    worksheet.addRow({});
+    const summaryRow = worksheet.addRow({
+      hour: language === 'ar' ? 'المجموع' : 'TOTAL',
+      revenue: hourlyData.totalRevenue
+    });
+    summaryRow.font = { bold: true };
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=hourly-income-${filters.startDate || 'all'}.xlsx`);
+    await workbook.xlsx.write(res);
+    res.end();
+  }
+
+  private async getHourlyIncomeData(filters: any) {
+    const where: any = { status: 'COMPLETED' };
+
+    if (filters.startDate || filters.endDate) {
+      where.createdAt = {};
+      if (filters.startDate) where.createdAt.gte = new Date(filters.startDate);
+      if (filters.endDate) {
+        const end = new Date(filters.endDate);
+        end.setHours(23, 59, 59, 999);
+        where.createdAt.lte = end;
+      }
+    }
+
+    const sales = await prisma.sale.findMany({ where });
+
+    const hourlyStats: any = {};
+    sales.forEach(sale => {
+      const hour = new Date(sale.createdAt).getHours();
+      const hourKey = `${hour.toString().padStart(2, '0')}:00`;
+
+      if (!hourlyStats[hourKey]) {
+        hourlyStats[hourKey] = {
+          hour: hourKey,
+          salesCount: 0,
+          revenue: 0,
+          avgCheck: 0
+        };
+      }
+      hourlyStats[hourKey].salesCount++;
+      hourlyStats[hourKey].revenue += Number(sale.totalAmount);
+    });
+
+    const hourlyBreakdown = Object.values(hourlyStats).map((stat: any) => ({
+      ...stat,
+      avgCheck: stat.revenue / stat.salesCount
+    }));
+
+    hourlyBreakdown.sort((a: any, b: any) => a.hour.localeCompare(b.hour));
+
+    const totalRevenue = hourlyBreakdown.reduce((sum: any, h: any) => sum + h.revenue, 0);
+    const peakHour = hourlyBreakdown.reduce((max: any, h: any) =>
+      h.revenue > (max?.revenue || 0) ? h : max, null);
+
+    return { hourlyBreakdown, totalRevenue, peakHour };
+  }
+
+  // ==================== CARD TRANSACTIONS REPORT ====================
+
+  async generateCardTransactionsReportPDF(filters: any, res: Response, language: string = 'en') {
+    const cardData = await this.getCardTransactionsData(filters);
+
+    const doc = new PDFDocument({ margin: 40, size: 'A4' });
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=card-transactions-${filters.startDate || 'all'}.pdf`);
+    doc.pipe(res);
+
+    doc.rect(40, 40, doc.page.width - 80, 60).fill('#007bff');
+    doc.fillColor('#FFFFFF').fontSize(24).font('Helvetica-Bold')
+      .text(language === 'ar' ? 'تقرير معاملات البطاقات' : 'Card Transactions Report', 40, 55, {
+        width: doc.page.width - 80, align: 'center'
+      });
+
+    if (filters.startDate && filters.endDate) {
+      doc.fontSize(12).text(
+        `${language === 'ar' ? 'الفترة' : 'Period'}: ${filters.startDate} - ${filters.endDate}`,
+        40, 75, { width: doc.page.width - 80, align: 'center' }
+      );
+    }
+
+    let currentY = 120;
+    doc.fillColor('#000000').fontSize(16).font('Helvetica-Bold')
+      .text(language === 'ar' ? 'الملخص' : 'Summary', 40, currentY);
+    currentY += 30;
+
+    doc.fontSize(11).font('Helvetica')
+      .text(`${language === 'ar' ? 'إجمالي المعاملات' : 'Total Transactions'}: ${cardData.totalTransactions}`, 80, currentY);
+    currentY += 20;
+    doc.text(`${language === 'ar' ? 'إجمالي المبلغ' : 'Total Amount'}: $${cardData.totalAmount.toFixed(2)}`, 80, currentY);
+    currentY += 30;
+
+    doc.fontSize(14).font('Helvetica-Bold')
+      .text(language === 'ar' ? 'المعاملات' : 'Transactions', 40, currentY);
+    currentY += 25;
+
+    doc.fontSize(8).font('Helvetica-Bold');
+    doc.text(language === 'ar' ? 'التاريخ' : 'Date', 45, currentY, { width: 80 });
+    doc.text(language === 'ar' ? 'رقم البيع' : 'Sale #', 130, currentY, { width: 60 });
+    doc.text(language === 'ar' ? 'الطريقة' : 'Method', 200, currentY, { width: 80 });
+    doc.text(language === 'ar' ? 'المبلغ' : 'Amount', 290, currentY, { width: 70 });
+    doc.text(language === 'ar' ? 'الكاشير' : 'Cashier', 370, currentY, { width: 120 });
+    currentY += 20;
+
+    doc.fontSize(8).font('Helvetica');
+    cardData.transactions.forEach((txn: any, index: number) => {
+      if (currentY > doc.page.height - 80) {
+        doc.addPage();
+        currentY = 50;
+      }
+
+      if (index % 2 === 0) {
+        doc.rect(40, currentY - 5, doc.page.width - 80, 16).fill('#f8f9fa');
+        doc.fillColor('#000000');
+      }
+
+      doc.text(new Date(txn.date).toLocaleDateString(), 45, currentY, { width: 80 });
+      doc.text(txn.saleNumber, 130, currentY, { width: 60 });
+      doc.text(txn.paymentMethod, 200, currentY, { width: 80 });
+      doc.fillColor('#28a745').text(`$${txn.amount.toFixed(2)}`, 290, currentY, { width: 70 });
+      doc.fillColor('#000000').text(txn.cashierName, 370, currentY, { width: 120 });
+      currentY += 16;
+    });
+
+    doc.end();
+  }
+
+  async generateCardTransactionsReportExcel(filters: any, res: Response, language: string = 'en') {
+    const cardData = await this.getCardTransactionsData(filters);
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet(language === 'ar' ? 'معاملات البطاقات' : 'Card Transactions');
+
+    worksheet.columns = [
+      { header: language === 'ar' ? 'التاريخ' : 'Date', key: 'date', width: 20 },
+      { header: language === 'ar' ? 'رقم البيع' : 'Sale Number', key: 'saleNumber', width: 15 },
+      { header: language === 'ar' ? 'طريقة الدفع' : 'Payment Method', key: 'paymentMethod', width: 20 },
+      { header: language === 'ar' ? 'المبلغ' : 'Amount', key: 'amount', width: 15 },
+      { header: language === 'ar' ? 'الكاشير' : 'Cashier', key: 'cashierName', width: 25 }
+    ];
+
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF007bff' }
+    };
+
+    cardData.transactions.forEach((txn: any) => {
+      worksheet.addRow({
+        ...txn,
+        date: new Date(txn.date).toLocaleString()
+      });
+    });
+
+    worksheet.addRow({});
+    const summaryRow = worksheet.addRow({
+      date: language === 'ar' ? 'المجموع' : 'TOTAL',
+      amount: cardData.totalAmount
+    });
+    summaryRow.font = { bold: true };
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=card-transactions-${filters.startDate || 'all'}.xlsx`);
+    await workbook.xlsx.write(res);
+    res.end();
+  }
+
+  private async getCardTransactionsData(filters: any) {
+    const where: any = {
+      status: 'COMPLETED',
+      paymentMethod: { in: ['CARD', 'MOBILE_WALLET'] }
+    };
+
+    if (filters.startDate || filters.endDate) {
+      where.createdAt = {};
+      if (filters.startDate) where.createdAt.gte = new Date(filters.startDate);
+      if (filters.endDate) {
+        const end = new Date(filters.endDate);
+        end.setHours(23, 59, 59, 999);
+        where.createdAt.lte = end;
+      }
+    }
+
+    const sales = await prisma.sale.findMany({
+      where,
+      include: {
+        cashier: {
+          select: {
+            firstName: true,
+            lastName: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const transactions = sales.map(sale => ({
+      date: sale.createdAt,
+      saleNumber: sale.saleNumber,
+      paymentMethod: sale.paymentMethod,
+      amount: Number(sale.totalAmount),
+      cashierName: `${sale.cashier.firstName} ${sale.cashier.lastName}`
+    }));
+
+    const totalAmount = transactions.reduce((sum, t) => sum + t.amount, 0);
+
+    return {
+      transactions,
+      totalTransactions: transactions.length,
+      totalAmount
+    };
+  }
+
+  // ==================== JOURNAL REPORT ====================
+
+  async generateJournalReportPDF(filters: any, res: Response, language: string = 'en') {
+    const journalData = await this.getJournalData(filters);
+
+    const doc = new PDFDocument({ margin: 40, size: 'A4' });
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=journal-${filters.startDate || 'all'}.pdf`);
+    doc.pipe(res);
+
+    doc.rect(40, 40, doc.page.width - 80, 60).fill('#343a40');
+    doc.fillColor('#FFFFFF').fontSize(24).font('Helvetica-Bold')
+      .text(language === 'ar' ? 'تقرير اليومية' : 'Journal Report', 40, 55, {
+        width: doc.page.width - 80, align: 'center'
+      });
+
+    if (filters.startDate && filters.endDate) {
+      doc.fontSize(12).text(
+        `${language === 'ar' ? 'الفترة' : 'Period'}: ${filters.startDate} - ${filters.endDate}`,
+        40, 75, { width: doc.page.width - 80, align: 'center' }
+      );
+    }
+
+    let currentY = 120;
+    doc.fillColor('#000000').fontSize(16).font('Helvetica-Bold')
+      .text(language === 'ar' ? 'الملخص' : 'Summary', 40, currentY);
+    currentY += 30;
+
+    doc.fontSize(11).font('Helvetica')
+      .text(`${language === 'ar' ? 'إجمالي المعاملات' : 'Total Transactions'}: ${journalData.totalTransactions}`, 80, currentY);
+    currentY += 20;
+    doc.text(`${language === 'ar' ? 'إجمالي المبلغ' : 'Total Amount'}: $${journalData.totalAmount.toFixed(2)}`, 80, currentY);
+    currentY += 30;
+
+    doc.fontSize(14).font('Helvetica-Bold')
+      .text(language === 'ar' ? 'المعاملات' : 'All Transactions', 40, currentY);
+    currentY += 25;
+
+    doc.fontSize(7).font('Helvetica-Bold');
+    doc.text(language === 'ar' ? 'الوقت' : 'Time', 45, currentY, { width: 70 });
+    doc.text(language === 'ar' ? 'رقم' : '#', 120, currentY, { width: 50 });
+    doc.text(language === 'ar' ? 'النوع' : 'Type', 175, currentY, { width: 50 });
+    doc.text(language === 'ar' ? 'الدفع' : 'Payment', 230, currentY, { width: 60 });
+    doc.text(language === 'ar' ? 'المبلغ' : 'Amount', 295, currentY, { width: 60 });
+    doc.text(language === 'ar' ? 'الحالة' : 'Status', 360, currentY, { width: 60 });
+    doc.text(language === 'ar' ? 'الكاشير' : 'Cashier', 425, currentY, { width: 90 });
+    currentY += 18;
+
+    doc.fontSize(7).font('Helvetica');
+    journalData.transactions.forEach((txn: any, index: number) => {
+      if (currentY > doc.page.height - 70) {
+        doc.addPage();
+        currentY = 50;
+      }
+
+      if (index % 2 === 0) {
+        doc.rect(40, currentY - 4, doc.page.width - 80, 14).fill('#f8f9fa');
+        doc.fillColor('#000000');
+      }
+
+      doc.text(new Date(txn.time).toLocaleTimeString(), 45, currentY, { width: 70 });
+      doc.text(txn.saleNumber, 120, currentY, { width: 50 });
+      doc.text(txn.orderType, 175, currentY, { width: 50 });
+      doc.text(txn.paymentMethod, 230, currentY, { width: 60 });
+      doc.fillColor(txn.status === 'COMPLETED' ? '#28a745' : '#dc3545')
+        .text(`$${txn.amount.toFixed(2)}`, 295, currentY, { width: 60 });
+      doc.fillColor('#000000').text(txn.status, 360, currentY, { width: 60 });
+      doc.text(txn.cashierName, 425, currentY, { width: 90 });
+      currentY += 14;
+    });
+
+    doc.end();
+  }
+
+  async generateJournalReportExcel(filters: any, res: Response, language: string = 'en') {
+    const journalData = await this.getJournalData(filters);
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet(language === 'ar' ? 'اليومية' : 'Journal');
+
+    worksheet.columns = [
+      { header: language === 'ar' ? 'الوقت' : 'Time', key: 'time', width: 20 },
+      { header: language === 'ar' ? 'رقم البيع' : 'Sale Number', key: 'saleNumber', width: 15 },
+      { header: language === 'ar' ? 'نوع الطلب' : 'Order Type', key: 'orderType', width: 15 },
+      { header: language === 'ar' ? 'طريقة الدفع' : 'Payment Method', key: 'paymentMethod', width: 18 },
+      { header: language === 'ar' ? 'المبلغ' : 'Amount', key: 'amount', width: 15 },
+      { header: language === 'ar' ? 'الحالة' : 'Status', key: 'status', width: 15 },
+      { header: language === 'ar' ? 'الكاشير' : 'Cashier', key: 'cashierName', width: 25 }
+    ];
+
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF343a40' }
+    };
+
+    journalData.transactions.forEach((txn: any) => {
+      worksheet.addRow({
+        ...txn,
+        time: new Date(txn.time).toLocaleString()
+      });
+    });
+
+    worksheet.addRow({});
+    const summaryRow = worksheet.addRow({
+      time: language === 'ar' ? 'المجموع' : 'TOTAL',
+      amount: journalData.totalAmount
+    });
+    summaryRow.font = { bold: true };
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=journal-${filters.startDate || 'all'}.xlsx`);
+    await workbook.xlsx.write(res);
+    res.end();
+  }
+
+  private async getJournalData(filters: any) {
+    const where: any = {};
+
+    if (filters.startDate || filters.endDate) {
+      where.createdAt = {};
+      if (filters.startDate) where.createdAt.gte = new Date(filters.startDate);
+      if (filters.endDate) {
+        const end = new Date(filters.endDate);
+        end.setHours(23, 59, 59, 999);
+        where.createdAt.lte = end;
+      }
+    }
+
+    if (filters.includeRefunds === false) {
+      where.status = { not: 'REFUNDED' };
+    }
+
+    const sales = await prisma.sale.findMany({
+      where,
+      include: {
+        cashier: {
+          select: {
+            firstName: true,
+            lastName: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const transactions = sales.map(sale => ({
+      time: sale.createdAt,
+      saleNumber: sale.saleNumber,
+      orderType: sale.orderType,
+      paymentMethod: sale.paymentMethod,
+      amount: Number(sale.totalAmount),
+      status: sale.status,
+      cashierName: `${sale.cashier.firstName} ${sale.cashier.lastName}`
+    }));
+
+    const totalAmount = transactions
+      .filter(t => t.status === 'COMPLETED')
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    return {
+      transactions,
+      totalTransactions: transactions.length,
+      totalAmount
+    };
+  }
 }
 
 export default new ReportService();

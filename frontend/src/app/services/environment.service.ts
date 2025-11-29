@@ -11,15 +11,15 @@ export interface BackendConfig {
 @Injectable({ providedIn: 'root' })
 export class EnvironmentService {
   // Development Mode: Set to true for local development (disables auto-detection)
-  private readonly DEV_MODE = true; // Set to false for production hybrid setup
+  private readonly DEV_MODE = false; // Set to false for production hybrid setup
 
   private localBackendUrl = 'http://localhost:3000'; // Default local server IP
-  private cloudBackendUrl = 'https://your-cloud-domain.com'; // Your cloud domain
+  private cloudBackendUrl = 'http://16.170.236.116'; // Your cloud domain
 
   private currentBackendSubject = new BehaviorSubject<BackendConfig>({
-    url: this.localBackendUrl,
-    type: 'local',
-    isAvailable: true // Start as available in dev mode
+    url: this.DEV_MODE ? this.localBackendUrl : this.cloudBackendUrl,
+    type: this.DEV_MODE ? 'local' : 'cloud',
+    isAvailable: false // Start as unavailable, let detection or DEV_MODE decide
   });
 
   public currentBackend$ = this.currentBackendSubject.asObservable();

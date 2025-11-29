@@ -1,0 +1,93 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: pos-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME:-pos_db}
+      POSTGRES_USER: ${DB_USER:-pos_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-pos_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - pos-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-pos_user}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:alpine
+    container_name: pos-redis
+    restart: always
+    volumes:
+      - redis_data:/data
+    networks:
+      - pos-network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API
+  backend:
+    image: gado/pos-backend:latest
+    container_name: pos-backend
+    restart: always
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://${DB_USER:-pos_user}:${DB_PASSWORD:-pos_password}@postgres:5432/${DB_NAME:-pos_db}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET:-production_secret_key_change_me}
+      JWT_EXPIRES_IN: 24h
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - pos-network
+
+  # Frontend
+  frontend:
+    image: gado/pos-frontend:latest
+    container_name: pos-frontend
+    restart: always
+    depends_on:
+      - backend
+    networks:
+      - pos-network
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: gado/pos-nginx:latest
+    container_name: pos-nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - pos-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  uploads_data:
+
+
+networks:
+  pos-network:
+    driver: bridge

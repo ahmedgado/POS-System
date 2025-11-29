@@ -88,8 +88,12 @@ export class SaleService {
     return this.http.post<Sale>(this.baseUrl, sale);
   }
 
-  getSales(): Observable<Sale[]> {
-    return this.http.get<Sale[]>(this.baseUrl);
+  getSales(limit?: number): Observable<Sale[]> {
+    const params: any = {};
+    if (limit) {
+      params.limit = limit.toString();
+    }
+    return this.http.get<Sale[]>(this.baseUrl, { params });
   }
 
   getSale(id: string): Observable<Sale> {

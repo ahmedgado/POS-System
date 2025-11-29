@@ -54,6 +54,10 @@ router.put('/system', (req, res, next) => controller.updateSystem(req, res).catc
 router.get('/shift', (req, res, next) => controller.getShiftSettings(req, res).catch(next));
 router.put('/shift', (req, res, next) => controller.updateShiftSettings(req, res).catch(next));
 
+// Loyalty program settings routes
+router.get('/loyalty', (req, res, next) => controller.getLoyaltySettings(req, res).catch(next));
+router.put('/loyalty', (req, res, next) => controller.updateLoyaltySettings(req, res).catch(next));
+
 // Logo upload
 router.post('/upload-logo', upload.single('logo'), (req, res) => {
   try {

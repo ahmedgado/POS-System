@@ -91,7 +91,7 @@ import { PaginationComponent } from '../components/pagination.component';
                   (mouseenter)="$event.currentTarget.style.background='#f8f9fa'"
                   (mouseleave)="$event.currentTarget.style.background='#fff'">
                   <td style="padding:16px 24px;color:#666;font-size:14px;">{{ (currentPage - 1) * pageSize + i + 1 }}</td>
-                  <td style="padding:16px 24px;color:#333;font-weight:600;font-size:14px;">{{ customer.name }}</td>
+                  <td style="padding:16px 24px;color:#333;font-weight:600;font-size:14px;">{{ getFullName(customer) }}</td>
                   <td style="padding:16px 24px;color:#666;font-size:14px;">{{ customer.phone }}</td>
                   <td style="padding:16px 24px;color:#666;font-size:14px;">{{ customer.email || '-' }}</td>
                   <td style="padding:16px 24px;color:#666;font-size:14px;">{{ customer.city || '-' }}</td>
@@ -163,15 +163,29 @@ import { PaginationComponent } from '../components/pagination.component';
         <div style="padding:24px;">
           <form (submit)="saveCustomer(); $event.preventDefault()">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
-              <div style="grid-column:1/-1;">
+              <div>
                 <label style="display:block;font-size:14px;font-weight:600;color:#333;margin-bottom:8px;">
-                  Customer Name <span style="color:#dc3545;">*</span>
+                  First Name <span style="color:#dc3545;">*</span>
                 </label>
                 <input
                   type="text"
-                  [(ngModel)]="formCustomer.name"
-                  name="name"
-                  placeholder="Enter customer name"
+                  [(ngModel)]="formCustomer.firstName"
+                  name="firstName"
+                  placeholder="Enter first name"
+                  required
+                  style="width:100%;padding:12px;border:2px solid #ddd;border-radius:8px;font-size:14px;outline:none;"
+                />
+              </div>
+
+              <div>
+                <label style="display:block;font-size:14px;font-weight:600;color:#333;margin-bottom:8px;">
+                  Last Name <span style="color:#dc3545;">*</span>
+                </label>
+                <input
+                  type="text"
+                  [(ngModel)]="formCustomer.lastName"
+                  name="lastName"
+                  placeholder="Enter last name"
                   required
                   style="width:100%;padding:12px;border:2px solid #ddd;border-radius:8px;font-size:14px;outline:none;"
                 />
@@ -246,10 +260,10 @@ import { PaginationComponent } from '../components/pagination.component';
             <div style="display:flex;gap:12px;">
               <button
                 type="submit"
-                [disabled]="!formCustomer.name || !formCustomer.phone || saving"
+                [disabled]="!formCustomer.firstName || !formCustomer.lastName || !formCustomer.phone || saving"
                 style="flex:1;background:#DC3545;color:#fff;border:none;padding:14px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;"
-                [style.opacity]="!formCustomer.name || !formCustomer.phone || saving ? '0.5' : '1'"
-                [style.cursor]="!formCustomer.name || !formCustomer.phone || saving ? 'not-allowed' : 'pointer'">
+                [style.opacity]="!formCustomer.firstName || !formCustomer.lastName || !formCustomer.phone || saving ? '0.5' : '1'"
+                [style.cursor]="!formCustomer.firstName || !formCustomer.lastName || !formCustomer.phone || saving ? 'not-allowed' : 'pointer'">
                 {{ saving ? 'Saving...' : (editingCustomer ? 'Update' : 'Create') }}
               </button>
               <button
@@ -272,7 +286,7 @@ import { PaginationComponent } from '../components/pagination.component';
         <!-- Modal Header -->
         <div style="padding:24px;border-bottom:2px solid #DC3545;">
           <div style="display:flex;justify-content:space-between;align-items:center;">
-            <h2 style="margin:0;color:#333;font-size:20px;font-weight:700;">{{ selectedCustomer.name }}</h2>
+            <h2 style="margin:0;color:#333;font-size:20px;font-weight:700;">{{ getFullName(selectedCustomer) }}</h2>
             <button
               (click)="closeDetails()"
               style="background:none;border:none;font-size:28px;color:#999;cursor:pointer;line-height:1;padding:0;width:32px;height:32px;">
@@ -360,7 +374,8 @@ export class CustomersComponent implements OnInit {
   selectedCustomer: Customer | null = null;
 
   formCustomer: Partial<Customer> = {
-    name: '',
+    firstName: '',
+    lastName: '',
     phone: '',
     email: '',
     city: '',
@@ -368,7 +383,7 @@ export class CustomersComponent implements OnInit {
     active: true
   };
 
-  constructor(private customerService: CustomerService) {}
+  constructor(private customerService: CustomerService) { }
 
   ngOnInit() {
     this.loadCustomers();
@@ -422,7 +437,8 @@ export class CustomersComponent implements OnInit {
   openAddModal() {
     this.editingCustomer = null;
     this.formCustomer = {
-      name: '',
+      firstName: '',
+      lastName: '',
       phone: '',
       email: '',
       city: '',
@@ -435,7 +451,8 @@ export class CustomersComponent implements OnInit {
   openEditModal(customer: Customer) {
     this.editingCustomer = customer;
     this.formCustomer = {
-      name: customer.name,
+      firstName: customer.firstName,
+      lastName: customer.lastName,
       phone: customer.phone,
       email: customer.email,
       city: customer.city,
@@ -449,7 +466,8 @@ export class CustomersComponent implements OnInit {
     this.showModal = false;
     this.editingCustomer = null;
     this.formCustomer = {
-      name: '',
+      firstName: '',
+      lastName: '',
       phone: '',
       email: '',
       city: '',
@@ -459,7 +477,7 @@ export class CustomersComponent implements OnInit {
   }
 
   saveCustomer() {
-    if (!this.formCustomer.name || !this.formCustomer.phone) return;
+    if (!this.formCustomer.firstName || !this.formCustomer.lastName || !this.formCustomer.phone) return;
 
     this.saving = true;
     const operation = this.editingCustomer
@@ -505,5 +523,10 @@ export class CustomersComponent implements OnInit {
   formatDate(dateString: string): string {
     const date = new Date(dateString);
     return date.toLocaleDateString();
+  }
+
+  getFullName(customer: Customer | null): string {
+    if (!customer) return '';
+    return `${customer.firstName} ${customer.lastName}`.trim();
   }
 }

@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { AuthService } from '../services/auth.service';
 import { DashboardService, DashboardStats } from '../services/dashboard.service';
+import { CustomerService, DashboardInsights, CustomerGrowth } from '../services/customer.service';
 import { SettingsService } from '../services/settings.service';
 import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
 
@@ -94,6 +95,57 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
             </div>
           </section>
 
+          <!-- Customer Insights -->
+          <section *ngIf="customerInsights" style="margin-bottom:32px;">
+            <h2 style="margin:0 0 16px 0;color:#333;font-size:18px;font-weight:600;">Customer Insights</h2>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;">
+              <!-- Total Customers -->
+              <div style="background:#fff;padding:24px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-top:4px solid #6f42c1;">
+                <div style="color:#666;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Total Customers</div>
+                <div style="font-size:28px;font-weight:700;color:#333;">{{ customerInsights.totalCustomers }}</div>
+                <div style="font-size:13px;color:#28a745;margin-top:4px;">+{{ customerInsights.newCustomers }} new this month</div>
+              </div>
+
+              <!-- Retention Rate -->
+              <div style="background:#fff;padding:24px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-top:4px solid #17a2b8;">
+                <div style="color:#666;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Retention Rate</div>
+                <div style="font-size:28px;font-weight:700;color:#333;">{{ customerInsights.retentionRate }}%</div>
+                <div style="font-size:13px;color:#666;margin-top:4px;">Active in last 90 days</div>
+              </div>
+
+              <!-- Top Customer -->
+              <div *ngIf="customerInsights.topCustomers.length > 0" style="background:#fff;padding:24px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-top:4px solid #fd7e14;">
+                <div style="color:#666;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Top Customer</div>
+                <div style="font-size:20px;font-weight:700;color:#333;">{{ customerInsights.topCustomers[0].firstName }} {{ customerInsights.topCustomers[0].lastName }}</div>
+                <div style="font-size:13px;color:#666;margin-top:4px;">{{ customerInsights.topCustomers[0].totalSpent | currencyFormat }} spent</div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Customer Growth Chart -->
+          <section *ngIf="customerGrowth.length > 0" style="margin-bottom:32px;">
+            <h2 style="margin:0 0 16px 0;color:#333;font-size:18px;font-weight:600;">Customer Growth (Last 12 Months)</h2>
+            <div style="background:#fff;padding:24px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+              <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;">
+                <div *ngFor="let month of customerGrowth" style="flex:1;min-width:60px;display:flex;flex-direction:column;align-items:center;">
+                  <div style="position:relative;height:200px;display:flex;align-items:flex-end;width:100%;">
+                    <div 
+                      [style.height.px]="month.count > 0 ? (month.count / getMaxGrowth() * 180) : 5"
+                      style="width:100%;background:linear-gradient(180deg, #d4af37 0%, #c19a2e 100%);border-radius:8px 8px 0 0;transition:all 0.3s;position:relative;cursor:pointer;"
+                      [title]="month.count + ' new customers'">
+                      <div style="position:absolute;top:-24px;left:50%;transform:translateX(-50%);font-weight:700;color:#d4af37;font-size:14px;white-space:nowrap;">
+                        {{ month.count }}
+                      </div>
+                    </div>
+                  </div>
+                  <div style="margin-top:8px;font-size:11px;color:#666;font-weight:600;text-align:center;">
+                    {{ month.date.substring(5) }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
           <!-- Two Column Layout -->
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(400px,1fr));gap:24px;">
             <!-- Recent Sales -->
@@ -137,7 +189,7 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
               <div *ngFor="let cat of stats.salesByCategory" style="padding:16px;border:1px solid #f0f0f0;border-radius:8px;">
                 <div style="font-weight:600;color:#333;margin-bottom:8px;">{{ cat.category }}</div>
                 <div style="font-size:24px;font-weight:700;color:#DC3545;margin-bottom:4px;">{{ cat.total | currencyFormat }}</div>
-                <div style="font-size:13px;color:#888;">{{ cat.percentage.toFixed(1) }}% of total</div>
+                <div style="font-size:13px;color:#888;">{{ formatPercentage(cat.percentage) }}% of total</div>
               </div>
             </div>
           </section>
@@ -147,20 +199,31 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
   `
 })
 export class DashboardComponent implements OnInit {
-  userEmail = this.auth.currentUser?.email ?? '';
+  userEmail: string;
   loading = true;
   stats: DashboardStats | null = null;
+  customerInsights: DashboardInsights | null = null;
+  customerGrowth: CustomerGrowth[] = [];
 
   constructor(
     private auth: AuthService,
     private router: Router,
     private dashboardService: DashboardService,
-    private settingsService: SettingsService
+    private settingsService: SettingsService,
+    private customerService: CustomerService
   ) { }
 
   ngOnInit() {
+    this.userEmail = this.auth.currentUser?.email || '';
     this.settingsService.loadCurrencySettings();
     this.loadStats();
+    this.loadCustomerInsights();
+    this.loadCustomerGrowth();
+  }
+
+  formatPercentage(value: number | string): string {
+    const num = Number(value);
+    return isNaN(num) ? '0.0' : num.toFixed(1);
   }
 
   loadStats() {
@@ -187,6 +250,33 @@ export class DashboardComponent implements OnInit {
           topProducts: [],
           salesByCategory: []
         };
+      }
+    });
+  }
+
+  loadCustomerInsights() {
+    this.customerService.getDashboardInsights().subscribe({
+      next: (data) => {
+        this.customerInsights = data;
+      },
+      error: (err) => {
+        console.error('Failed to load customer insights:', err);
+      }
+    });
+  }
+
+  getMaxGrowth(): number {
+    if (this.customerGrowth.length === 0) return 1;
+    return Math.max(...this.customerGrowth.map(m => m.count), 1);
+  }
+
+  loadCustomerGrowth() {
+    this.customerService.getCustomerGrowth().subscribe({
+      next: (data) => {
+        this.customerGrowth = data;
+      },
+      error: (err) => {
+        console.error('Failed to load customer growth:', err);
       }
     });
   }

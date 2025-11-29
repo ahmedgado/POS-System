@@ -1,7 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { SaleService, Sale } from '../services/sale.service';
 import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
 
@@ -15,13 +15,22 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
       <header style="background:linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);color:#d4af37;padding:24px 40px;box-shadow:0 4px 16px rgba(0,0,0,0.2);">
         <div style="display:flex;align-items:center;justify-content:space-between;">
           <h1 style="margin:0;font-size:26px;font-weight:700;letter-spacing:0.5px;">📊 {{ 'sales.title' | translate }}</h1>
-          <button
-            (click)="exportToExcel()"
-            style="background:linear-gradient(135deg, #d4af37 0%, #c19a2e 100%);color:#1a1a1a;border:none;padding:12px 24px;border-radius:10px;font-weight:600;cursor:pointer;font-size:14px;box-shadow:0 4px 12px rgba(212,175,55,0.3);transition:all 0.2s;"
-            (mouseenter)="$event.target.style.transform='translateY(-2px)';$event.target.style.boxShadow='0 6px 16px rgba(212,175,55,0.4)'"
-            (mouseleave)="$event.target.style.transform='translateY(0)';$event.target.style.boxShadow='0 4px 12px rgba(212,175,55,0.3)'">
-            📥 {{ 'common.export' | translate }}
-          </button>
+          <div style="display:flex;gap:12px;">
+            <button
+              (click)="loadSales()"
+              style="background:rgba(255,255,255,0.1);color:#d4af37;border:1px solid #d4af37;padding:12px 24px;border-radius:10px;font-weight:600;cursor:pointer;font-size:14px;transition:all 0.2s;"
+              (mouseenter)="$event.target.style.background='rgba(212,175,55,0.1)'"
+              (mouseleave)="$event.target.style.background='rgba(255,255,255,0.1)'">
+              🔄 {{ 'common.refresh' | translate }}
+            </button>
+            <button
+              (click)="exportToExcel()"
+              style="background:linear-gradient(135deg, #d4af37 0%, #c19a2e 100%);color:#1a1a1a;border:none;padding:12px 24px;border-radius:10px;font-weight:600;cursor:pointer;font-size:14px;box-shadow:0 4px 12px rgba(212,175,55,0.3);transition:all 0.2s;"
+              (mouseenter)="$event.target.style.transform='translateY(-2px)';$event.target.style.boxShadow='0 6px 16px rgba(212,175,55,0.4)'"
+              (mouseleave)="$event.target.style.transform='translateY(0)';$event.target.style.boxShadow='0 4px 12px rgba(212,175,55,0.3)'">
+              📥 {{ 'common.export' | translate }}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -150,7 +159,7 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
                   <td style="padding:16px 24px;color:#666;font-size:14px;">{{ getCashierName(sale) }}</td>
                   <td style="padding:16px 24px;color:#666;font-size:14px;">
                     <span *ngIf="sale.orderType" [style.background]="getOrderTypeColor(sale.orderType)"
-                          style="padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;color:#fff;">
+                      style="padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;color:#fff;">
                       {{ sale.orderType }}
                     </span>
                     <span *ngIf="!sale.orderType" style="color:#999;">-</span>
@@ -158,14 +167,14 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
                   <td style="padding:16px 24px;color:#666;font-size:14px;">{{ getTotalItems(sale) }}</td>
                   <td style="padding:16px 24px;">
                     <span [style.background]="getPaymentMethodColor(sale.paymentMethod)"
-                          style="padding:4px 12px;border-radius:12px;font-size:12px;font-weight:600;color:#fff;">
+                      style="padding:4px 12px;border-radius:12px;font-size:12px;font-weight:600;color:#fff;">
                       {{ sale.paymentMethod }}
                     </span>
                   </td>
                   <td style="padding:16px 24px;color:#DC3545;font-weight:700;font-size:16px;">{{ sale.totalAmount | currencyFormat }}</td>
                   <td style="padding:16px 24px;">
                     <span [style.background]="getStatusColor(sale.status)"
-                          style="padding:4px 12px;border-radius:12px;font-size:12px;font-weight:600;color:#fff;">
+                      style="padding:4px 12px;border-radius:12px;font-size:12px;font-weight:600;color:#fff;">
                       {{ sale.status }}
                     </span>
                   </td>
@@ -195,8 +204,8 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
 
     <!-- Sale Details Modal -->
     <div *ngIf="selectedSale"
-         style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px;"
-         (click)="closeDetails()">
+      style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px;"
+      (click)="closeDetails()">
       <div style="background:#fff;border-radius:16px;max-width:600px;width:100%;max-height:80vh;overflow-y:auto;" (click)="$event.stopPropagation()">
         <!-- Modal Header -->
         <div style="padding:24px;border-bottom:2px solid #DC3545;">
@@ -227,14 +236,14 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
               <div>
                 <div style="color:#666;font-size:13px;margin-bottom:4px;">{{ 'sales.status' | translate }}</div>
                 <span [style.background]="getStatusColor(selectedSale.status)"
-                      style="padding:4px 12px;border-radius:12px;font-size:12px;font-weight:600;color:#fff;">
+                  style="padding:4px 12px;border-radius:12px;font-size:12px;font-weight:600;color:#fff;">
                   {{ selectedSale.status }}
                 </span>
               </div>
               <div>
                 <div style="color:#666;font-size:13px;margin-bottom:4px;">Order Type</div>
                 <span *ngIf="selectedSale.orderType" [style.background]="getOrderTypeColor(selectedSale.orderType)"
-                      style="padding:4px 12px;border-radius:12px;font-size:12px;font-weight:600;color:#fff;">
+                  style="padding:4px 12px;border-radius:12px;font-size:12px;font-weight:600;color:#fff;">
                   {{ selectedSale.orderType }}
                 </span>
                 <span *ngIf="!selectedSale.orderType" style="color:#999;">-</span>
@@ -249,6 +258,18 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
                 <div style="color:#666;font-size:13px;margin-bottom:4px;">Waiter</div>
                 <div style="color:#333;font-weight:600;">
                   {{ selectedSale.waiter.firstName }} {{ selectedSale.waiter.lastName }}
+                </div>
+              </div>
+              <div *ngIf="selectedSale.customer">
+                <div style="color:#666;font-size:13px;margin-bottom:4px;">Customer</div>
+                <div style="color:#6f42c1;font-weight:600;">
+                  {{ selectedSale.customer.firstName }} {{ selectedSale.customer.lastName }}
+                </div>
+                <div *ngIf="selectedSale.customer.phone" style="color:#666;font-size:12px;margin-top:2px;">
+                  📞 {{ selectedSale.customer.phone }}
+                </div>
+                <div *ngIf="selectedSale.customer.loyaltyPoints" style="color:#28a745;font-size:12px;margin-top:2px;">
+                  ⭐ {{ selectedSale.customer.loyaltyPoints }} points
                 </div>
               </div>
             </div>
@@ -306,7 +327,7 @@ import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
     </div>
   `
 })
-export class SalesComponent implements OnInit {
+export class SalesComponent implements OnInit, OnDestroy {
   sales: Sale[] = [];
   filteredSales: Sale[] = [];
   loading = false;
@@ -317,16 +338,30 @@ export class SalesComponent implements OnInit {
   filterStatus = '';
 
   selectedSale: Sale | null = null;
+  private refreshInterval: any;
 
-  constructor(private saleService: SaleService) {}
+  constructor(
+    private saleService: SaleService,
+    private translate: TranslateService
+  ) { }
 
   ngOnInit() {
     this.loadSales();
+    // Auto-refresh every 30 seconds
+    this.refreshInterval = setInterval(() => {
+      this.loadSales();
+    }, 30000);
+  }
+
+  ngOnDestroy() {
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+    }
   }
 
   loadSales() {
     this.loading = true;
-    this.saleService.getSales().subscribe({
+    this.saleService.getSales(1000).subscribe({
       next: (data) => {
         this.sales = data;
         this.filteredSales = data;
@@ -392,15 +427,15 @@ export class SalesComponent implements OnInit {
         return '-';
       }
 
-// Format: DD/MM/YYYY, HH:MM AM/PM
-        return date.toLocaleString('en-GB', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: true
-        });
+      // Format: DD/MM/YYYY, HH:MM AM/PM
+      return date.toLocaleString('en-GB', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
 
     } catch (error) {
       console.error('Date formatting error:', error);
@@ -562,8 +597,8 @@ export class SalesComponent implements OnInit {
       </head>
       <body>
         <div class="header">
-          <div class="logo">ST. REGIS POS</div>
-          <div class="subtitle">The St. Regis New Capital</div>
+          <div class="logo">ST.REGIS POS</div>
+          <div class="subtitle">The St.Regis New Capital</div>
         </div>
 
         <div class="info-section">

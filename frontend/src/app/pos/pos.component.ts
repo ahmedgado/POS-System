@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { Product, ProductService } from '../services/product.service';
+import { CustomerService, Customer, LoyaltyBalance, PurchasePatterns } from '../services/customer.service';
 import { SaleService, CreateSaleRequest } from '../services/sale.service';
 import { AuthService } from '../services/auth.service';
 import { Category, CategoryService } from '../services/category.service';
@@ -352,6 +353,75 @@ interface SelectedModifier {
           </div>
         </div>
 
+        <!-- Customer Section -->
+        <div style="padding:20px 24px;border-top:1px solid #e5e0db;background:#fafaf9;">
+          <div style="font-weight:600;color:#1a1a1a;margin-bottom:12px;font-size:14px;letter-spacing:0.3px;">Customer (Optional)</div>
+          
+          <!-- Selected Customer Display -->
+          <div *ngIf="selectedCustomer" style="background:#fff;padding:12px;border-radius:8px;border:1px solid #d4af37;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font-weight:600;color:#1a1a1a;">{{ selectedCustomer.firstName }} {{ selectedCustomer.lastName }}</div>
+              <div style="font-size:12px;color:#666;">{{ selectedCustomer.phone || selectedCustomer.email }}</div>
+              <div *ngIf="loyaltyBalance" style="font-size:12px;color:#d4af37;margin-top:4px;">
+                💎 {{ loyaltyBalance.currentPoints }} points ({{ loyaltyBalance.pointsValue | currencyFormat }} value)
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button (click)="openCustomerQuickView(selectedCustomer, $event)" style="background:none;border:none;color:#d4af37;cursor:pointer;font-size:18px;" title="View insights">ℹ️</button>
+              <button (click)="clearCustomer()" style="background:#f0e6d2;border:none;width:28px;height:28px;border-radius:6px;cursor:pointer;color:#8b7355;font-weight:700;">×</button>
+            </div>
+          </div>
+
+          <!-- Customer Search -->
+          <div *ngIf="!selectedCustomer" style="position:relative;">
+            <input
+              #customerInput
+              type="text"
+              [(ngModel)]="customerSearchQuery"
+              (keyup)="onCustomerSearch()"
+              (input)="onCustomerSearch()"
+              (focus)="onCustomerSearch()"
+              placeholder="Search customer..."
+              style="width:100%;padding:10px 12px;border:1px solid #d4af37;border-radius:8px;font-size:14px;margin-bottom:8px;"
+            />
+            <div style="font-size:10px;color:#999;margin-bottom:8px;">v2.1 - Clear Customer Fixed</div>
+            
+            <!-- Search Results Dropdown -->
+            <div *ngIf="customerSearchResults.length > 0" 
+                 style="position:absolute;top:45px;left:0;right:0;background:#fff;border:1px solid #d4af37;border-radius:8px;max-height:200px;overflow-y:auto;z-index:1000;box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+              <div *ngFor="let customer of customerSearchResults"
+                   (click)="selectCustomerFromSearch(customer)"
+                   style="padding:10px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;transition:background 0.2s;"
+                   (mouseenter)="$event.currentTarget.style.background='#fafaf9'"
+                   (mouseleave)="$event.currentTarget.style.background='#fff'">
+                <div style="font-weight:600;color:#1a1a1a;">{{ customer.firstName }} {{ customer.lastName }}</div>
+                <div style="font-size:12px;color:#666;">{{ customer.phone || customer.email }}</div>
+              </div>
+            </div>
+            
+            <!-- Quick Add Customer Button -->
+            <button 
+              (click)="openAddCustomerModal()"
+              style="width:100%;padding:10px;background:#d4af37;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;margin-bottom:12px;">
+              + Add New Customer
+            </button>
+
+            <!-- Recent Customers -->
+            <div *ngIf="recentCustomers.length > 0">
+              <div style="font-size:12px;color:#666;margin-bottom:6px;font-weight:600;">Recent Customers</div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <div *ngFor="let customer of recentCustomers"
+                     (click)="selectedCustomer = customer; customerSearchQuery = customer.firstName + ' ' + customer.lastName; showCustomerSearch = false;"
+                     style="padding:6px 12px;background:#f0e6d2;border:1px solid #d4af37;border-radius:16px;font-size:12px;cursor:pointer;transition:all 0.2s;"
+                     (mouseenter)="$event.currentTarget.style.background='#d4af37'; $event.currentTarget.style.color='#fff'"
+                     (mouseleave)="$event.currentTarget.style.background='#f0e6d2'; $event.currentTarget.style.color='#1a1a1a'">
+                  {{ customer.firstName }} {{ customer.lastName }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Payment Section -->
         <div *ngIf="!splitMode" style="padding:20px 24px;border-top:1px solid #e5e0db;background:#fafaf9;">
           <!-- Added Payments List -->
@@ -510,6 +580,85 @@ interface SelectedModifier {
         </div>
       </div>
     </div>
+
+    <!-- Add Customer Modal -->
+    <div *ngIf="showAddCustomerModal"
+         style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(26,26,26,0.75);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:1000;"
+         (click)="closeAddCustomerModal()">
+      <div style="background:#ffffff;border-radius:24px;padding:32px;max-width:500px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.3);border:1px solid #d4af37;" (click)="$event.stopPropagation()">
+        <h2 style="margin:0 0 24px 0;color:#1a1a1a;font-size:22px;font-weight:700;">Add New Customer</h2>
+        
+        <div style="display:grid;gap:16px;">
+          <div>
+            <label style="display:block;margin-bottom:6px;font-weight:600;color:#333;font-size:14px;">First Name *</label>
+            <input [(ngModel)]="newCustomer.firstName" type="text" style="width:100%;padding:12px;border:1px solid #d4af37;border-radius:8px;font-size:14px;">
+          </div>
+          
+          <div>
+            <label style="display:block;margin-bottom:6px;font-weight:600;color:#333;font-size:14px;">Last Name *</label>
+            <input [(ngModel)]="newCustomer.lastName" type="text" style="width:100%;padding:12px;border:1px solid #d4af37;border-radius:8px;font-size:14px;">
+          </div>
+          
+          <div>
+            <label style="display:block;margin-bottom:6px;font-weight:600;color:#333;font-size:14px;">Phone</label>
+            <input [(ngModel)]="newCustomer.phone" type="tel" style="width:100%;padding:12px;border:1px solid #d4af37;border-radius:8px;font-size:14px;">
+          </div>
+          
+          <div>
+            <label style="display:block;margin-bottom:6px;font-weight:600;color:#333;font-size:14px;">Email</label>
+            <input [(ngModel)]="newCustomer.email" type="email" style="width:100%;padding:12px;border:1px solid #d4af37;border-radius:8px;font-size:14px;">
+          </div>
+        </div>
+        
+        <div style="display:flex;gap:12px;margin-top:24px;">
+          <button (click)="closeAddCustomerModal()" style="flex:1;padding:12px;background:#fff;border:1px solid #ccc;border-radius:8px;font-weight:600;cursor:pointer;">Cancel</button>
+          <button (click)="saveNewCustomer()" style="flex:1;padding:12px;background:#d4af37;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;">Save Customer</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Customer Quick View Modal -->
+    <div *ngIf="showCustomerQuickView"
+         style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(26,26,26,0.75);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:1000;"
+         (click)="closeCustomerQuickView()">
+      <div style="background:#ffffff;border-radius:24px;padding:32px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);border:1px solid #d4af37;" (click)="$event.stopPropagation()">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+          <h2 style="margin:0;color:#1a1a1a;font-size:22px;font-weight:700;">Customer Insights</h2>
+          <button (click)="closeCustomerQuickView()" style="background:#f0e6d2;border:none;width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:20px;color:#8b7355;font-weight:700;">×</button>
+        </div>
+        
+        <!-- Purchase Patterns -->
+        <div *ngIf="customerPatterns" style="margin-bottom:24px;">
+          <h3 style="margin:0 0 12px 0;color:#333;font-size:16px;font-weight:600;">Purchase Patterns</h3>
+          <div style="background:#fafaf9;padding:16px;border-radius:8px;">
+            <div style="margin-bottom:12px;">
+              <strong>Favorite Items:</strong>
+              <div *ngFor="let item of customerPatterns.mostPurchasedItems" style="margin-left:16px;color:#666;">
+                • {{ item.name }} ({{ item.count }} times)
+              </div>
+            </div>
+            <div style="margin-bottom:12px;">
+              <strong>Visit Frequency:</strong> {{ customerPatterns.purchaseFrequency }}
+            </div>
+            <div>
+              <strong>Preferred Time:</strong> {{ customerPatterns.preferredTime }}
+            </div>
+          </div>
+        </div>
+        
+        <!-- Recent Purchases -->
+        <div *ngIf="customerHistory.length > 0">
+          <h3 style="margin:0 0 12px 0;color:#333;font-size:16px;font-weight:600;">Recent Purchases</h3>
+          <div *ngFor="let purchase of customerHistory" style="padding:12px;background:#fafaf9;border-radius:8px;margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+              <span style="font-weight:600;">{{ purchase.createdAt | date:'short' }}</span>
+              <span style="color:#d4af37;font-weight:700;">{{ purchase.totalAmount | currencyFormat }}</span>
+            </div>
+            <div style="font-size:12px;color:#666;">{{ purchase.items?.length || 0 }} items</div>
+          </div>
+        </div>
+      </div>
+    </div>
     <!-- Split Payment Modal -->
     <div *ngIf="showSplitPaymentModal"
          style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(26,26,26,0.75);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:1000;"
@@ -613,6 +762,22 @@ export class POSComponent implements OnInit {
   showTableSelector = false;
   tableLockedFromRoute = false; // Lock table if pre-selected from table layout
   currentUserRole: string = '';
+  // Customer & Loyalty
+  selectedCustomer: Customer | null = null;
+  customerSearchQuery = '';
+  customerSearchResults: Customer[] = [];
+  showCustomerSearch = false;
+  loyaltyBalance: LoyaltyBalance | null = null;
+  pointsToRedeem = 0;
+  loyaltyDiscount = 0;
+
+  // Customer Enhancements
+  showAddCustomerModal = false;
+  newCustomer = { firstName: '', lastName: '', phone: '', email: '', notes: '' };
+  recentCustomers: Customer[] = [];
+  showCustomerQuickView = false;
+  customerPatterns: PurchasePatterns | null = null;
+  customerHistory: any[] = [];
   currentShift: Shift | null = null;
 
   // Modifier selection
@@ -633,6 +798,7 @@ export class POSComponent implements OnInit {
     private shiftService: ShiftService,
     private modifierService: ModifierService,
     private settingsService: SettingsService,
+    private customerService: CustomerService,
     private route: ActivatedRoute
   ) {
     this.cashierName = this.authService.currentUser?.firstName || 'Cashier';
@@ -645,6 +811,7 @@ export class POSComponent implements OnInit {
     this.loadTablesAndFloors();
     this.loadCurrentShift();
     this.loadShiftSettings();
+    this.loadRecentCustomers();
 
     // Check for table pre-selection from route
     this.route.queryParams.subscribe(params => {
@@ -1116,6 +1283,7 @@ export class POSComponent implements OnInit {
         discount: 0,
         totalPrice: item.subtotal
       })),
+      customerId: this.selectedCustomer?.id,
       paymentMethod: this.payments.length > 1 ? 'SPLIT' : (this.payments[0]?.method as any || 'CASH'),
       payments: this.payments.map(p => ({ paymentMethod: p.method, amount: p.amount })),
       subtotal: this.getSubtotal(),
@@ -1253,5 +1421,128 @@ export class POSComponent implements OnInit {
 
   getProductImageUrl(productId: string): string {
     return `/api/products/${productId}/image`;
+  }
+
+  onCustomerSearch() {
+    console.log('🔍 onCustomerSearch called, query:', this.customerSearchQuery);
+    const query = this.customerSearchQuery?.trim() || '';
+    console.log('🔍 Trimmed query:', query, 'Length:', query.length);
+
+    if (query.length < 2) {
+      this.customerSearchResults = [];
+      return;
+    }
+
+    console.log('🔍 Making API call to search customers...');
+    this.customerService.searchCustomers(query).subscribe({
+      next: (results) => {
+        console.log('🔍 Search results:', results);
+        this.customerSearchResults = results;
+      },
+      error: (err) => {
+        console.error('❌ Failed to search customers:', err);
+        this.customerSearchResults = [];
+      }
+    });
+  }
+
+  selectCustomerFromSearch(customer: any) {
+    this.selectedCustomer = customer;
+    this.customerSearchQuery = `${customer.firstName} ${customer.lastName}`;
+    this.customerSearchResults = [];
+
+    // Load loyalty balance
+    this.customerService.getLoyaltyBalance(customer.id).subscribe({
+      next: (balance) => {
+        this.loyaltyBalance = balance;
+      },
+      error: (err) => console.error('Failed to load loyalty balance:', err)
+    });
+  }
+
+  clearCustomer() {
+    this.selectedCustomer = null;
+    this.customerSearchQuery = '';
+    this.customerSearchResults = [];
+    this.loyaltyBalance = null;
+  }
+
+  // Customer Enhancements Methods
+
+  openAddCustomerModal() {
+    this.newCustomer = { firstName: '', lastName: '', phone: '', email: '', notes: '' };
+    this.showAddCustomerModal = true;
+  }
+
+  closeAddCustomerModal() {
+    this.showAddCustomerModal = false;
+  }
+
+  saveNewCustomer() {
+    if (!this.newCustomer.firstName || !this.newCustomer.lastName) {
+      alert('First Name and Last Name are required');
+      return;
+    }
+
+    this.customerService.create(this.newCustomer).subscribe({
+      next: (customer) => {
+        this.selectedCustomer = customer;
+        this.customerSearchQuery = `${customer.firstName} ${customer.lastName}`;
+        this.showCustomerSearch = false;
+
+        // Load loyalty balance for the new customer
+        this.customerService.getLoyaltyBalance(customer.id).subscribe({
+          next: (balance) => {
+            this.loyaltyBalance = balance;
+          },
+          error: (err) => console.error('Failed to load loyalty balance:', err)
+        });
+
+        this.closeAddCustomerModal();
+        this.loadRecentCustomers();
+        alert(`Customer ${customer.firstName} ${customer.lastName} added successfully!`);
+      },
+      error: (err) => {
+        console.error('Failed to create customer:', err);
+        alert('Failed to create customer: ' + (err.error?.message || err.message));
+      }
+    });
+  }
+
+  loadRecentCustomers() {
+    this.customerService.searchCustomers('').subscribe({
+      next: (customers) => {
+        this.recentCustomers = customers.slice(0, 5);
+      },
+      error: (err) => console.error('Failed to load recent customers:', err)
+    });
+  }
+
+  openCustomerQuickView(customer: Customer, event: Event) {
+    event.stopPropagation();
+    this.showCustomerQuickView = true;
+    this.loadCustomerInsights(customer.id);
+  }
+
+  closeCustomerQuickView() {
+    this.showCustomerQuickView = false;
+    this.customerPatterns = null;
+    this.customerHistory = [];
+  }
+
+  loadCustomerInsights(customerId: string) {
+    this.customerService.getPurchasePatterns(customerId).subscribe({
+      next: (patterns) => {
+        this.customerPatterns = patterns;
+      },
+      error: (err) => console.error('Failed to load purchase patterns:', err)
+    });
+
+    this.customerService.getPurchaseHistory(customerId).subscribe({
+      next: (history) => {
+        this.customerHistory = history.slice(0, 5);
+      },
+      error: (err) => console.error('Failed to load purchase history:', err)
+    });
   }
 }

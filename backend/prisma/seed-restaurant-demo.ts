@@ -1445,8 +1445,28 @@ async function main() {
   console.log(`✓ Recipes: ${recipeCount} (with automatic cost calculation)`);
   console.log(`✓ Customers: ${customers.length}`);
   console.log(`✓ Orders: 50`);
+  // Create System Settings with Loyalty Configuration
+  console.log('⚙️  Creating system settings with loyalty configuration...');
+  await prisma.systemSettings.deleteMany({});
+  await prisma.systemSettings.create({
+    data: {
+      shiftMode: 'MANUAL',
+      shiftStartingCash: 100,
+      requireShiftForSales: false,
+      inactivityTimeout: 30,
+      loyaltyPointsPerDollar: 1,
+      loyaltyPointsToRedeem: 100,
+      loyaltyRedemptionValue: 10,
+      businessName: 'Restaurant Demo',
+      currency: 'USD',
+      taxRate: 0.15
+    }
+  });
+  console.log('✓ Created system settings with loyalty configuration\\n');
+
   console.log('\n');
-  console.log('Login Credentials (Password for all: password123):');
+  console.log('═══════════════════════════════════════════════');
+  console.log('🎉 RESTAURANT DEMO DATA GENERATION COMPLETE! 🎉');
   console.log('═══════════════════════════════════════════════');
   console.log('1. ADMIN:           admin@restaurant.com');
   console.log('2. OWNER:           owner@restaurant.com');

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
 import shiftService from '../services/shift.service';
+import loyaltyService from '../services/loyalty.service';
 
 export class SaleController {
   // Create new sale
@@ -144,15 +145,8 @@ export class SaleController {
 
         // Update customer loyalty points if applicable
         if (customerId) {
-          const points = Math.floor(totalAmount / 10); // 1 point per 10 currency units
-          await tx.customer.update({
-            where: { id: customerId },
-            data: {
-              loyaltyPoints: {
-                increment: points
-              }
-            }
-          });
+          const points = await loyaltyService.calculatePointsEarned(Number(totalAmount));
+          await loyaltyService.addPoints(customerId, points);
         }
 
         // Update shift statistics if sale is linked to a shift

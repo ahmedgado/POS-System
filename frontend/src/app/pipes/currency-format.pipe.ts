@@ -7,7 +7,7 @@ import { SettingsService } from '../services/settings.service';
   pure: false
 })
 export class CurrencyFormatPipe implements PipeTransform {
-  constructor(private settingsService: SettingsService) {}
+  constructor(private settingsService: SettingsService) { }
 
   transform(value: number | null | undefined): string {
     if (value === null || value === undefined) return '';
@@ -19,7 +19,10 @@ export class CurrencyFormatPipe implements PipeTransform {
     const decimalSep = settings?.decimalSeparator || '.';
 
     // Format number with separators
-    const [integerPart, decimalPart] = value.toFixed(decimalPlaces).split('.');
+    const numValue = Number(value);
+    if (isNaN(numValue)) return '';
+
+    const [integerPart, decimalPart] = numValue.toFixed(decimalPlaces).split('.');
     const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, thousandSep);
 
     return `${symbol}${formattedInteger}${decimalPart ? decimalSep + decimalPart : ''}`;

@@ -190,4 +190,72 @@ export class SettingsController {
     const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
     return timeRegex.test(time);
   }
+
+  /**
+   * GET /api/settings/loyalty - Get loyalty program settings
+   */
+  async getLoyaltySettings(_req: AuthRequest, res: Response) {
+    const settings = await prisma.systemSettings.findFirst();
+
+    if (!settings) {
+      return ApiResponse.error(res, 'System settings not found. Please run database seed.', 500);
+    }
+
+    return ApiResponse.success(res, {
+      loyaltyPointsPerDollar: Number(settings.loyaltyPointsPerDollar),
+      loyaltyPointsToRedeem: settings.loyaltyPointsToRedeem,
+      loyaltyRedemptionValue: Number(settings.loyaltyRedemptionValue)
+    });
+  }
+
+  /**
+   * PUT /api/settings/loyalty - Update loyalty program settings
+   */
+  async updateLoyaltySettings(req: AuthRequest, res: Response) {
+    const {
+      loyaltyPointsPerDollar,
+      loyaltyPointsToRedeem,
+      loyaltyRedemptionValue
+    } = req.body;
+
+    // Validate inputs
+    if (loyaltyPointsPerDollar !== undefined && (loyaltyPointsPerDollar < 0 || loyaltyPointsPerDollar > 100)) {
+      return ApiResponse.error(res, 'Points per dollar must be between 0 and 100', 400);
+    }
+
+    if (loyaltyPointsToRedeem !== undefined && loyaltyPointsToRedeem < 1) {
+      return ApiResponse.error(res, 'Minimum points to redeem must be at least 1', 400);
+    }
+
+    if (loyaltyRedemptionValue !== undefined && loyaltyRedemptionValue < 0) {
+      return ApiResponse.error(res, 'Redemption value must be positive', 400);
+    }
+
+    // Get existing settings
+    const existingSettings = await prisma.systemSettings.findFirst();
+
+    if (!existingSettings) {
+      return ApiResponse.error(res, 'System settings not found', 500);
+    }
+
+    // Update settings
+    const updatedSettings = await prisma.systemSettings.update({
+      where: { id: existingSettings.id },
+      data: {
+        ...(loyaltyPointsPerDollar !== undefined && { loyaltyPointsPerDollar }),
+        ...(loyaltyPointsToRedeem !== undefined && { loyaltyPointsToRedeem }),
+        ...(loyaltyRedemptionValue !== undefined && { loyaltyRedemptionValue })
+      }
+    });
+
+    // Clear loyalty service cache so it picks up new settings
+    const loyaltyService = (await import('../services/loyalty.service')).default;
+    loyaltyService.clearCache();
+
+    return ApiResponse.success(res, {
+      loyaltyPointsPerDollar: Number(updatedSettings.loyaltyPointsPerDollar),
+      loyaltyPointsToRedeem: updatedSettings.loyaltyPointsToRedeem,
+      loyaltyRedemptionValue: Number(updatedSettings.loyaltyRedemptionValue)
+    }, 'Loyalty settings updated successfully');
+  }
 }

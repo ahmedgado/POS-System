@@ -36,7 +36,7 @@ router.get(
   '/',
   validate([
     query('page').optional().isInt({ min: 1 }),
-    query('limit').optional().isInt({ min: 1, max: 100 }),
+    query('limit').optional().isInt({ min: 1, max: 1000 }),
     query('status').optional().isIn(['COMPLETED', 'REFUNDED', 'PARTIALLY_REFUNDED', 'VOIDED']),
     query('dateFrom').optional().isISO8601(),
     query('dateTo').optional().isISO8601(),

@@ -5,6 +5,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import { ReportService, SalesReportData, InventoryReportData, CashierPerformanceData, FinancialReportData, DrawerPullReportData, ServerProductivityReportData, HourlyIncomeReportData, CardTransactionsReportData, JournalReportData } from '../services/report.service';
 import { ShiftService, Shift } from '../services/shift.service';
 import { UserService, User } from '../services/user.service';
+import { CustomerService, CustomerAnalytics } from '../services/customer.service';
 import { CurrencyFormatPipe } from '../pipes/currency-format.pipe';
 
 @Component({
@@ -1019,7 +1020,8 @@ export class ReportsComponent implements OnInit {
     { id: 'server-productivity', label: 'Server Productivity', icon: '👤' },
     { id: 'hourly-income', label: 'Hourly Income', icon: '⏰' },
     { id: 'card-transactions', label: 'Card Transactions', icon: '💳' },
-    { id: 'journal', label: 'Journal', icon: '📋' }
+    { id: 'journal', label: 'Journal', icon: '📋' },
+    { id: 'customer-analytics', label: 'Customer Analytics', icon: '👥' }
   ];
 
   activeTab = 'sales';
@@ -1044,10 +1046,13 @@ export class ReportsComponent implements OnInit {
   selectedWaiterId = '';
   waiters: User[] = [];
 
+  customerAnalytics: CustomerAnalytics | null = null;
+
   constructor(
     private reportService: ReportService,
     private shiftService: ShiftService,
-    private userService: UserService
+    private userService: UserService,
+    private customerService: CustomerService
   ) { }
 
   ngOnInit() {
@@ -1303,8 +1308,24 @@ export class ReportsComponent implements OnInit {
       case 'hourly-income': return !!this.hourlyIncomeReport;
       case 'card-transactions': return !!this.cardTransactionsReport;
       case 'journal': return !!this.journalReport;
+      case 'customer-analytics': return !!this.customerAnalytics;
       default: return false;
     }
+  }
+
+  loadCustomerAnalytics() {
+    this.loading = true;
+    this.customerService.getCustomerAnalytics(this.startDate, this.endDate).subscribe({
+      next: (data) => {
+        this.customerAnalytics = data;
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Failed to load customer analytics:', err);
+        alert('Failed to load customer analytics');
+        this.loading = false;
+      }
+    });
   }
 
   formatDate(dateString: string): string {

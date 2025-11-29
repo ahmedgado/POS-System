@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { SettingsService, AllSettings, StoreSettings, TaxSettings, ReceiptSettings, CurrencySettings, SystemSettings, ShiftSettings } from '../services/settings.service';
+import { SettingsService, AllSettings, StoreSettings, TaxSettings, ReceiptSettings, CurrencySettings, SystemSettings, ShiftSettings, LoyaltySettings } from '../services/settings.service';
 
 @Component({
   selector: 'app-settings',
@@ -528,6 +528,78 @@ import { SettingsService, AllSettings, StoreSettings, TaxSettings, ReceiptSettin
           </form>
         </div>
 
+        <!-- Loyalty Program Settings Tab -->
+        <div *ngIf="activeTab === 'loyalty'" style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);padding:32px;">
+          <h3 style="margin:0 0 24px 0;color:#333;font-size:18px;font-weight:600;">🎁 Loyalty Program Configuration</h3>
+          <form (submit)="saveLoyaltySettings(); $event.preventDefault()">
+            <div style="background:#e8f5e9;border-left:4px solid #4caf50;padding:16px;border-radius:4px;margin-bottom:24px;">
+              <div style="font-weight:600;color:#2e7d32;margin-bottom:8px;">ℹ️ How Loyalty Works:</div>
+              <ul style="margin:0;padding-left:20px;color:#388e3c;font-size:13px;line-height:1.6;">
+                <li>Customers earn points automatically when making purchases</li>
+                <li>Points can be redeemed for discounts at checkout</li>
+                <li>Configure the earning rate and redemption value below</li>
+              </ul>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-bottom:24px;">
+              <div>
+                <label style="display:block;font-size:14px;font-weight:600;color:#333;margin-bottom:8px;">Points Per Dollar</label>
+                <input
+                  type="number"
+                  [(ngModel)]="loyaltySettings.loyaltyPointsPerDollar"
+                  name="loyaltyPointsPerDollar"
+                  step="0.1"
+                  min="0"
+                  max="100"
+                  required
+                  style="width:100%;padding:12px;border:2px solid #ddd;border-radius:8px;font-size:14px;outline:none;">
+                <div style="font-size:12px;color:#666;margin-top:4px;">Points earned per $1 spent</div>
+              </div>
+
+              <div>
+                <label style="display:block;font-size:14px;font-weight:600;color:#333;margin-bottom:8px;">Min Points to Redeem</label>
+                <input
+                  type="number"
+                  [(ngModel)]="loyaltySettings.loyaltyPointsToRedeem"
+                  name="loyaltyPointsToRedeem"
+                  min="1"
+                  required
+                  style="width:100%;padding:12px;border:2px solid #ddd;border-radius:8px;font-size:14px;outline:none;">
+                <div style="font-size:12px;color:#666;margin-top:4px;">Minimum points needed</div>
+              </div>
+
+              <div>
+                <label style="display:block;font-size:14px;font-weight:600;color:#333;margin-bottom:8px;">Redemption Value ($)</label>
+                <input
+                  type="number"
+                  [(ngModel)]="loyaltySettings.loyaltyRedemptionValue"
+                  name="loyaltyRedemptionValue"
+                  step="0.01"
+                  min="0"
+                  required
+                  style="width:100%;padding:12px;border:2px solid #ddd;border-radius:8px;font-size:14px;outline:none;">
+                <div style="font-size:12px;color:#666;margin-top:4px;">Dollar value of min points</div>
+              </div>
+            </div>
+
+            <div style="background:#f8f9fa;padding:20px;border-radius:8px;margin-bottom:24px;">
+              <div style="font-weight:600;color:#333;margin-bottom:12px;">📊 Example Calculation:</div>
+              <div style="color:#666;font-size:14px;line-height:1.8;">
+                • Customer spends <strong>$100</strong> → Earns <strong>{{ loyaltySettings.loyaltyPointsPerDollar * 100 }} points</strong><br>
+                • Customer redeems <strong>{{ loyaltySettings.loyaltyPointsToRedeem }} points</strong> → Gets <strong>\${{ loyaltySettings.loyaltyRedemptionValue }} discount</strong><br>
+                • Redemption rate: <strong>{{ (loyaltySettings.loyaltyRedemptionValue / loyaltySettings.loyaltyPointsToRedeem * 100).toFixed(1) }}%</strong> of points value
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              [disabled]="saving"
+              style="background:#c4a75b;color:#1a1a1a;border:none;padding:14px 32px;border-radius:8px;font-weight:600;cursor:pointer;font-size:16px;">
+              {{ saving ? 'Saving...' : 'Save Loyalty Settings' }}
+            </button>
+          </form>
+        </div>
+
         <!-- Backup Tab -->
         <div *ngIf="activeTab === 'backup'" style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);padding:32px;">
           <h3 style="margin:0 0 24px 0;color:#333;font-size:18px;font-weight:600;">Database Backup & Restore</h3>
@@ -593,6 +665,7 @@ export class SettingsComponent implements OnInit {
     { id: 'currency', label: 'Currency', icon: '💵' },
     { id: 'system', label: 'System', icon: '⚙️' },
     { id: 'shifts', label: 'Shifts', icon: '📊' },
+    { id: 'loyalty', label: 'Loyalty', icon: '🎁' },
     { id: 'backup', label: 'Backup', icon: '💾' }
   ];
 
@@ -653,6 +726,12 @@ export class SettingsComponent implements OnInit {
     inactivityTimeout: 30
   };
 
+  loyaltySettings: LoyaltySettings = {
+    loyaltyPointsPerDollar: 1,
+    loyaltyPointsToRedeem: 100,
+    loyaltyRedemptionValue: 10
+  };
+
   logoFile: File | null = null;
   backupFile: File | null = null;
 
@@ -661,6 +740,7 @@ export class SettingsComponent implements OnInit {
   ngOnInit() {
     this.loadSettings();
     this.loadShiftSettings();
+    this.loadLoyaltySettings();
   }
 
   loadSettings() {
@@ -790,6 +870,31 @@ export class SettingsComponent implements OnInit {
       error: (err) => {
         this.saving = false;
         this.showError('Failed to save shift settings');
+      }
+    });
+  }
+
+  loadLoyaltySettings() {
+    this.settingsService.getLoyaltySettings().subscribe({
+      next: (response) => {
+        this.loyaltySettings = response.data;
+      },
+      error: (err) => {
+        console.error('Failed to load loyalty settings:', err);
+      }
+    });
+  }
+
+  saveLoyaltySettings() {
+    this.saving = true;
+    this.settingsService.updateLoyaltySettings(this.loyaltySettings).subscribe({
+      next: () => {
+        this.saving = false;
+        this.showSuccess('Loyalty settings saved successfully');
+      },
+      error: (err) => {
+        this.saving = false;
+        this.showError('Failed to save loyalty settings');
       }
     });
   }

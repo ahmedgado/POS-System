@@ -59,6 +59,12 @@ export interface ShiftSettings {
   inactivityTimeout: number;
 }
 
+export interface LoyaltySettings {
+  loyaltyPointsPerDollar: number;
+  loyaltyPointsToRedeem: number;
+  loyaltyRedemptionValue: number;
+}
+
 export interface AllSettings {
   store: StoreSettings;
   tax: TaxSettings;
@@ -166,5 +172,14 @@ export class SettingsService {
 
   updateShiftSettings(settings: Partial<ShiftSettings>): Observable<{ data: ShiftSettings; message: string }> {
     return this.http.put<{ data: ShiftSettings; message: string }>(`${this.baseUrl}/shift`, settings);
+  }
+
+  // Loyalty Program Settings
+  getLoyaltySettings(): Observable<{ data: LoyaltySettings }> {
+    return this.http.get<{ data: LoyaltySettings }>(`${this.baseUrl}/loyalty`);
+  }
+
+  updateLoyaltySettings(settings: Partial<LoyaltySettings>): Observable<{ data: LoyaltySettings; message: string }> {
+    return this.http.put<{ data: LoyaltySettings; message: string }>(`${this.baseUrl}/loyalty`, settings);
   }
 }

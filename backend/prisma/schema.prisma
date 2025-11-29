@@ -251,6 +251,9 @@ model Customer {
   lastName        String
   email           String?   @unique
   phone           String?   @unique
+  city            String?
+  address         String?
+  active          Boolean   @default(true)
   loyaltyPoints   Int       @default(0)
   storeCredit     Decimal   @default(0) @db.Decimal(10, 2)
   totalSpent      Decimal   @default(0) @db.Decimal(10, 2)
@@ -647,6 +650,11 @@ model SystemSettings {
   shiftStartingCash    Decimal     @default(0) @db.Decimal(10, 2)
   requireShiftForSales Boolean     @default(false) // Block sales without open shift
   inactivityTimeout    Int         @default(30)    // Minutes of inactivity before auto-close (ON_DEMAND mode)
+  
+  // Loyalty Program Settings
+  loyaltyPointsPerDollar   Decimal     @default(1) @db.Decimal(10, 2)    // Points earned per $1 spent
+  loyaltyPointsToRedeem    Int         @default(100)                      // Minimum points to redeem
+  loyaltyRedemptionValue   Decimal     @default(10) @db.Decimal(10, 2)   // Dollar value of redemption (e.g., 100 points = $10)
   
   // General Settings
   businessName         String      @default("POS System")
